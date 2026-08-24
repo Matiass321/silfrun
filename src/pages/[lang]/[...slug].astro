@@ -5,6 +5,7 @@ import ProsePage from '~/components/pages/ProsePage.astro';
 import FaqPage from '~/components/pages/FaqPage.astro';
 import ListPage from '~/components/pages/ListPage.astro';
 import ContactPage from '~/components/pages/ContactPage.astro';
+import PricesPage from '~/components/pages/PricesPage.astro';
 
 import { LOCALES, SITE, type Locale } from '~/config/site';
 import { SLUGS, SERVICE_KEYS, type PageKey, type ServiceKey } from '~/i18n/routes';
@@ -33,6 +34,7 @@ export function getStaticPaths() {
     'about',
     'faq',
     'quote',
+    'prices',
     'contact',
     'privacy',
     'terms',
@@ -111,6 +113,8 @@ if (area) {
 
   {pageKey === 'quote' && <ContactPage locale={locale} variant="quote" />}
   {pageKey === 'contact' && <ContactPage locale={locale} variant="contact" />}
+
+  {pageKey === 'prices' && <PricesPage locale={locale} />}
 
   {pageKey === 'process' && (
     <ProsePage locale={locale} heading={s.process.title} eyebrow={s.process.eyebrow} page={c.process} />

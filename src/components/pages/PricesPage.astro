@@ -1,0 +1,163 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import Pending from '~/components/Pending.astro';
+import { SITE, money, type Locale } from '~/config/site';
+import { t } from '~/i18n';
+import { path } from '~/i18n/routes';
+
+interface Props { locale: Locale }
+
+const { locale } = Astro.props;
+const s = t(locale);
+const p = s.prices;
+const { items, minimumCallout } = SITE.pricing;
+
+type ItemKey = keyof typeof p.items;
+
+/**
+ * A price line, or a clearly marked pending value.
+ *
+ * An unset amount is never rendered as a number and never guessed at — it
+ * shows as a placeholder, exactly like an unfilled phone number, so a figure
+ * the business has not agreed to cannot reach a customer.
+ */
+const rows = items.map((item) => ({
+  key: item.key as ItemKey,
+  label: p.items[item.key as ItemKey],
+  amount: item.from,
+  unit: item.unit,
+  minQty: item.minQty,
+}));
+
+const pendingLabel = locale === 'is' ? 'verð væntanlegt' : 'price pending';
+
+/**
+ * Offer structured data is emitted only for lines with a real price. While
+ * every amount is null, no Offer markup is emitted at all rather than
+ * publishing a priceless offer.
+ */
+const priced = rows.filter((r) => r.amount !== null);
+
+const offersLd =
+  priced.length > 0
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'OfferCatalog',
+        name: p.title,
+        itemListElement: priced.map((r) => ({
+          '@type': 'Offer',
+          itemOffered: { '@type': 'Service', name: r.label },
+          price: r.amount,
+          priceCurrency: SITE.pricing.currency,
+        })),
+      }
+    : null;
+---
+
+{offersLd && <script type="application/ld+json" is:inline set:html={JSON.stringify(offersLd)} />}
+
+<article>
+  <header class="section section--tight">
+    <div class="wrap wrap--narrow">
+      <Breadcrumbs locale={locale} trail={[{ label: p.title.replace('.', '') }]} />
+      <p class="eyebrow">{p.eyebrow}</p>
+      <h1>{p.title}</h1>
+      <p class="lead">{p.lead}</p>
+    </div>
+  </header>
+
+  <section class="section section--tight">
+    <div class="wrap wrap--narrow stack stack--24">
+      <ul class="rates">
+        {rows.map((r) => (
+          <li class="rate">
+            <div class="rate__label">
+              <span>{r.label}</span>
+              {r.minQty && <span class="rate__note">{p.minQty.replace('{n}', String(r.minQty))}</span>}
+            </div>
+            <div class="rate__value">
+              {r.amount === null ? (
+                <Pending label={pendingLabel} locale={locale} nowrap />
+              ) : (
+                <>
+                  <span class="rate__from">{p.fromLabel}</span>
+                  <span class="rate__amount">{money(r.amount, locale)}</span>
+                  {r.unit === 'm2' && <span class="rate__note">{p.perM2}</span>}
+                </>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <p class="vat">{p.vatNote}</p>
+    </div>
+  </section>
+
+  <section class="section section--sunk">
+    <div class="wrap wrap--narrow stack stack--16">
+      <h2>{p.minimumTitle}</h2>
+      <p class="muted">{p.minimumBody}</p>
+      <p class="minimum">
+        {minimumCallout === null
+          ? <Pending label={pendingLabel} locale={locale} nowrap />
+          : money(minimumCallout, locale)}
+      </p>
+    </div>
+  </section>
+
+  <section class="section section--deep">
+    <div class="wrap wrap--narrow stack stack--24">
+      <h2>{s.finalCta.title}</h2>
+      <p class="lead">{s.finalCta.body}</p>
+      <p><a class="btn btn--primary" href={path('quote', locale)}>{p.cta}</a></p>
+    </div>
+  </section>
+</article>
+
+<style>
+  .rates { display: flex; flex-direction: column; }
+
+  .rate {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-8) var(--space-24);
+    padding-block: var(--space-16);
+    border-block-end: 1px solid var(--line);
+  }
+
+  .rate__label { display: flex; flex-direction: column; gap: 2px; }
+
+  .rate__value {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-8);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rate__from {
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  .rate__amount {
+    font-family: var(--display);
+    font-size: var(--step-1);
+    font-weight: var(--weight-semi);
+  }
+
+  .rate__note { font-size: var(--step--1); color: var(--muted); }
+
+  .vat { font-size: var(--step--1); color: var(--muted); }
+
+  .muted { color: var(--ink-soft); }
+
+  .minimum {
+    font-family: var(--display);
+    font-size: var(--step-2);
+    font-weight: var(--weight-semi);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

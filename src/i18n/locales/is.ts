@@ -14,6 +14,7 @@ export const is = {
     about: 'Um okkur',
     contact: 'Hafa samband',
     quote: 'Fá tilboð',
+    prices: 'Verðskrá',
     menu: 'Valmynd',
     close: 'Loka',
     skip: 'Beint í efni',
@@ -124,6 +125,29 @@ export const is = {
    * text and therefore translatable. Holding them in the config is how a site
    * ends up showing one language's placeholder on every other language's page.
    */
+  prices: {
+    eyebrow: "Verð",
+    title: "Verðskrá.",
+    lead: "Byrjunarverð með virðisaukaskatti. Endanlegt verð er staðfest út frá myndum áður en við komum, því ástandið breytir verkinu.",
+    fromLabel: "frá",
+    perM2: "á fermetra",
+    minQty: "lágmark {n} stk.",
+    minimumTitle: "Lágmarksgjald",
+    minimumBody: "Hver heimsókn hefur lágmarksgjald. Sértu með fleiri en eitt stykki borgar sig að taka þau í sömu heimsókn.",
+    vatNote: "Öll verð eru með virðisaukaskatti.",
+    cta: "Fá staðfest verð",
+    items: {
+      sofa2: "Tveggja sæta sófi",
+      sofa3: "Þriggja sæta sófi",
+      sofaCorner: "Hornsófi eða tungusófi",
+      armchair: "Hægindastóll",
+      diningChair: "Borðstofustóll",
+      rug: "Teppi",
+      carpet: "Gólfteppi",
+      odour: "Blett- og lyktarmeðferð",
+    },
+  },
+
   pending: {
     legalName: 'Skráð heiti félags væntanlegt',
     kennitala: 'Kennitala væntanleg',

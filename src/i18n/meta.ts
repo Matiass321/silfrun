@@ -81,6 +81,11 @@ export const PAGE_META: MetaTable = {
       description:
         'Sendu tvær til þrjár myndir og staðsetningu. Við metum verkið, segjum hvað er hægt og staðfestum verð fyrir heimsókn.',
     },
+    prices: {
+      title: "Verðskrá fyrir hreinsun",
+      description:
+        "Byrjunarverð fyrir hreinsun á sófum, áklæðum, teppum og gólfteppum. Endanlegt verð staðfest út frá myndum áður en við komum.",
+    },
     contact: {
       title: 'Hafa samband við Silfrúnu',
       description: 'Sími, netfang og opnunartími. Við svörum fyrirspurnum á íslensku og ensku.',
@@ -157,6 +162,11 @@ export const PAGE_META: MetaTable = {
       title: 'Request a cleaning quote',
       description:
         'Send two or three photographs and your location. We assess the work, tell you what is possible and confirm the price before the visit.',
+    },
+    prices: {
+      title: 'Cleaning price list',
+      description:
+        'Starting prices for cleaning sofas, upholstery, rugs and fitted carpet. The final figure is confirmed from photographs before we come.',
     },
     contact: {
       title: 'Contact Silfrún',

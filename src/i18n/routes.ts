@@ -24,6 +24,7 @@ export type PageKey =
   | 'about'
   | 'faq'
   | 'quote'
+  | 'prices'
   | 'contact'
   | 'privacy'
   | 'terms';
@@ -46,6 +47,7 @@ export const SLUGS: SlugTable = {
   about:   { is: 'um-okkur',         en: 'about' },
   faq:     { is: 'algengar-spurningar', en: 'faq' },
   quote:   { is: 'fa-tilbod',        en: 'request-a-quote' },
+  prices:  { is: 'verd',             en: 'prices' },
   contact: { is: 'hafa-samband',     en: 'contact' },
 
   privacy: { is: 'personuvernd', en: 'privacy' },

@@ -29,6 +29,19 @@ export const TODO = <T,>(placeholder: T): T => {
   return placeholder;
 };
 
+/**
+ * A published "from" price.
+ *
+ * `unit` decides how it reads: a flat item price, a rate per square metre,
+ * or a surcharge added to another line. `from` is null until supplied.
+ */
+export interface PriceItem {
+  key: string;
+  from: number | null;
+  unit?: "item" | "m2" | "surcharge";
+  minQty?: number;
+}
+
 export const SITE = {
   url: 'https://silfrun.is',
 
@@ -108,11 +121,37 @@ export const SITE = {
    * it does require never publishing a number the business has not agreed to —
    * so this stays 'on-request' until real figures exist.
    */
+  /**
+   * Published "from" prices.
+   *
+   * Publishing is the differentiator: most cleaning firms here hide prices
+   * behind a quote form, and someone who cannot find a number assumes
+   * expensive and leaves. They stay "from" prices because condition genuinely
+   * changes the work, and the final figure is confirmed from photographs.
+   *
+   * Every amount is null until the business supplies it. A null renders as a
+   * visibly pending value and is omitted from structured data — it is never
+   * shown as a real price and never guessed at.
+   */
   pricing: {
-    strategy: 'on-request' as 'on-request' | 'from-prices',
-    currency: 'ISK',
+    currency: "ISK",
+    /** Whether the published figures already include VSK. */
     includesVsk: true,
-    items: [] as { key: string; from: number }[],
+    /**
+     * Minimum charge for a visit. Not optional: a single armchair does not
+     * cover the trip once travel and setup are counted.
+     */
+    minimumCallout: null as number | null,
+    items: [
+      { key: "sofa2", from: null },
+      { key: "sofa3", from: null },
+      { key: "sofaCorner", from: null },
+      { key: "armchair", from: null },
+      { key: "diningChair", from: null, minQty: 4 },
+      { key: "rug", from: null, unit: "m2" },
+      { key: "carpet", from: null, unit: "m2" },
+      { key: "odour", from: null, unit: "surcharge" },
+    ] as PriceItem[],
   },
 };
 

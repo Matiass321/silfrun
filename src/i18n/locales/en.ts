@@ -18,6 +18,7 @@ export const en: typeof is = {
     about: 'About',
     contact: 'Contact',
     quote: 'Request a quote',
+    prices: 'Prices',
     menu: 'Menu',
     close: 'Close',
     skip: 'Skip to content',
@@ -119,6 +120,29 @@ export const en: typeof is = {
     legalHeading: 'Legal',
     rights: 'All rights reserved.',
     kennitalaLabel: 'Reg. no.',
+  },
+
+  prices: {
+    eyebrow: "Prices",
+    title: "Price list.",
+    lead: "Starting prices, VAT included. The final figure is confirmed from photographs before we come, because condition genuinely changes the work.",
+    fromLabel: "from",
+    perM2: "per m²",
+    minQty: "minimum {n}",
+    minimumTitle: "Minimum charge",
+    minimumBody: "Every visit carries a minimum charge. If you have more than one piece, it is worth taking them in the same visit.",
+    vatNote: "All prices include VAT.",
+    cta: "Get a confirmed price",
+    items: {
+      sofa2: "Two-seat sofa",
+      sofa3: "Three-seat sofa",
+      sofaCorner: "Corner or chaise sofa",
+      armchair: "Armchair",
+      diningChair: "Dining chair",
+      rug: "Rug",
+      carpet: "Fitted carpet",
+      odour: "Stain and odour treatment",
+    },
   },
 
   pending: {
