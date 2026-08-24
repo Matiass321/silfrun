@@ -9,8 +9,17 @@ import { SITE } from './src/config/site.ts';
  * few hundred bytes of progressive enhancement. A cleaning company's site has
  * no need for a framework runtime, and the speed is a competitive advantage.
  */
+/**
+ * SITE_URL and BASE_PATH are read from the environment so one build can target
+ * either a subpath host (GitHub Pages serves at /silfrun/) or a real domain at
+ * the root, with no code change. Defaults are the production domain.
+ */
+const SITE_URL = process.env.SITE_URL ?? SITE.url;
+const BASE_PATH = process.env.BASE_PATH ?? '/';
+
 export default defineConfig({
-  site: SITE.url,
+  site: SITE_URL,
+  base: BASE_PATH,
   output: 'static',
 
   integrations: [

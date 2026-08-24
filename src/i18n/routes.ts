@@ -54,10 +54,18 @@ export const SLUGS: SlugTable = {
   terms:   { is: 'skilmalar',    en: 'terms' },
 };
 
+/**
+ * The deployment base, e.g. "/" on a real domain or "/silfrun/" on GitHub
+ * Pages. Every internal href is built through the two helpers below, so
+ * honouring the base here is what makes a subpath deploy work at all — a
+ * hand-written "/is/..." href would 404 there.
+ */
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 /** Site-root-relative path for a page in a locale. Always trailing-slashed. */
 export function path(key: PageKey, locale: Locale): string {
   const slug = SLUGS[key][locale];
-  return slug ? `/${locale}/${slug}/` : `/${locale}/`;
+  return slug ? `${BASE}/${locale}/${slug}/` : `${BASE}/${locale}/`;
 }
 
 /** Path to a service-area page, e.g. /en/service-areas/reykjavik/ */
