@@ -129,9 +129,20 @@ export const SITE = {
    * expensive and leaves. They stay "from" prices because condition genuinely
    * changes the work, and the final figure is confirmed from photographs.
    *
-   * Every amount is null until the business supplies it. A null renders as a
-   * visibly pending value and is omitted from structured data — it is never
-   * shown as a real price and never guessed at.
+   * An amount left null renders as a visibly pending value and is omitted from
+   * structured data — never shown as a real price and never guessed at.
+   *
+   * THE FIGURES BELOW ARE A PROPOSAL, NOT RESEARCHED LOCAL DATA. They were set
+   * by comparison: Iceland runs roughly 1.6x the Spanish price level, a
+   * comparable Spanish operator charges EUR 105 for a three-seat sofa, and
+   * premium positioning sits about 1.3-1.5x above the resulting mid-market
+   * figure. They have NOT been checked against actual Reykjavik competitors.
+   * Verify before launch, and against real job times.
+   *
+   * Round thousands are deliberate. Nine-endings read as discount retail;
+   * round numbers read as a confident price.
+   *
+   * Amounts include VSK at 24%, so a 35,000 line is 28,226 net to the business.
    */
   pricing: {
     currency: "ISK",
@@ -141,16 +152,16 @@ export const SITE = {
      * Minimum charge for a visit. Not optional: a single armchair does not
      * cover the trip once travel and setup are counted.
      */
-    minimumCallout: null as number | null,
+    minimumCallout: 27000 as number | null,
     items: [
-      { key: "sofa2", from: null },
-      { key: "sofa3", from: null },
-      { key: "sofaCorner", from: null },
-      { key: "armchair", from: null },
-      { key: "diningChair", from: null, minQty: 4 },
-      { key: "rug", from: null, unit: "m2" },
-      { key: "carpet", from: null, unit: "m2" },
-      { key: "odour", from: null, unit: "surcharge" },
+      { key: "sofa2", from: 27000 },
+      { key: "sofa3", from: 35000 },
+      { key: "sofaCorner", from: 48000 },
+      { key: "armchair", from: 15000 },
+      { key: "diningChair", from: 6000, minQty: 4 },
+      { key: "rug", from: 4500, unit: "m2" },
+      { key: "carpet", from: 2200, unit: "m2" },
+      { key: "odour", from: 12000, unit: "surcharge" },
     ] as PriceItem[],
   },
 };
