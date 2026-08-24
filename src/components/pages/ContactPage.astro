@@ -1,0 +1,183 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import Pending from '~/components/Pending.astro';
+import { SITE, isPlaceholder, type Locale } from '~/config/site';
+import { t } from '~/i18n';
+
+interface Props {
+  locale: Locale;
+  variant: 'quote' | 'contact';
+}
+
+const { locale, variant } = Astro.props;
+const s = t(locale);
+
+const isQuote = variant === 'quote';
+const heading = isQuote ? s.nav.quote : s.nav.contact;
+
+/**
+ * No form.
+ *
+ * The site is fully static with no backend, so a form would either post
+ * nowhere or quietly depend on a third-party service nobody has chosen yet.
+ * Asking for photographs by email or phone is honest about how the enquiry
+ * actually reaches the business, and it is what the assessment needs anyway.
+ *
+ * When a backend exists, this becomes a real form and the instructions below
+ * move into it as field help.
+ */
+const copy = {
+  is: {
+    lead: 'Sendu tvær til þrjár myndir og staðsetningu. Við metum verkið, segjum hvað er hægt og staðfestum verð áður en við komum.',
+    contactLead: 'Við svörum fyrirspurnum á íslensku og ensku.',
+    whatTitle: 'Hvað á að senda',
+    what: [
+      'Tvær til þrjár myndir af stykkinu í dagsbirtu — heildarmynd og nærmynd af því sem helst þarf að laga',
+      'Mynd af merkimiðanum ef þú finnur hann, oftast undir sessu eða á neðri brún',
+      'Hvað olli blettinum og hvenær, ef það á við',
+      'Hvort einhver hreinsivara hafi þegar verið borin á',
+      'Hvar á höfuðborgarsvæðinu verkið er',
+    ],
+    whyTitle: 'Hvers vegna myndir',
+    why: 'Af myndum sjáum við gerð efnisins, hvar álagið liggur og hversu umfangsmikið verkið er. Það gerir okkur kleift að staðfesta verð áður en við komum, í stað þess að nefna tölu á staðnum.',
+    hoursTitle: 'Opnunartími',
+  },
+  en: {
+    lead: 'Send two or three photographs and your location. We assess the work, tell you what is possible and confirm the price before we come.',
+    contactLead: 'We answer enquiries in Icelandic and English.',
+    whatTitle: 'What to send',
+    what: [
+      'Two or three photographs of the piece in daylight — the whole item, and a close-up of what most needs attention',
+      'A photograph of the care label if you can find it, usually under a cushion or along the lower edge',
+      'What caused the stain and when, if that applies',
+      'Whether any cleaning product has already been used on it',
+      'Where in the capital area the work is',
+    ],
+    whyTitle: 'Why photographs',
+    why: 'From photographs we can see the construction, where the load has fallen and how large the job is. That lets us confirm a price before arriving, rather than naming a figure on the spot.',
+    hoursTitle: 'Opening hours',
+  },
+}[locale];
+
+const dayNames: Record<Locale, string[]> = {
+  is: ['sunnudaga', 'mánudaga', 'þriðjudaga', 'miðvikudaga', 'fimmtudaga', 'föstudaga', 'laugardaga'],
+  en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+};
+---
+
+<article>
+  <header class="section section--tight">
+    <div class="wrap wrap--narrow">
+      <Breadcrumbs locale={locale} trail={[{ label: heading }]} />
+      <p class="eyebrow">{heading}</p>
+      <h1>{heading}</h1>
+      <p class="lead">{isQuote ? copy.lead : copy.contactLead}</p>
+    </div>
+  </header>
+
+  <section class="section section--tight">
+    <div class="wrap wrap--narrow contact">
+      <div class="contact__card">
+        <h2 class="contact__title">{s.common.phone}</h2>
+        {isPlaceholder(SITE.contact.phone)
+          ? <p><Pending label={s.pending.phone} locale={locale} nowrap /></p>
+          : <p><a class="contact__link" href={`tel:${SITE.contact.phoneE164}`}>{SITE.contact.phone}</a></p>}
+      </div>
+
+      <div class="contact__card">
+        <h2 class="contact__title">{s.common.email}</h2>
+        {isPlaceholder(SITE.contact.email)
+          ? <p><Pending label={s.pending.email} locale={locale} /></p>
+          : <p><a class="contact__link" href={`mailto:${SITE.contact.email}`}>{SITE.contact.email}</a></p>}
+      </div>
+
+      <div class="contact__card">
+        <h2 class="contact__title">{copy.hoursTitle}</h2>
+        {SITE.hours.map((h) => (
+          <p class="contact__hours">
+            {locale === 'is'
+              ? `${dayNames.is[h.days[0]]}–${dayNames.is[h.days[h.days.length - 1]]}`
+              : `${dayNames.en[h.days[0]]}–${dayNames.en[h.days[h.days.length - 1]]}`}
+            {' '}{h.opens}–{h.closes}
+          </p>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  {isQuote && (
+    <section class="section section--sunk">
+      <div class="wrap wrap--narrow stack stack--32">
+        <div class="stack stack--16">
+          <h2>{copy.whatTitle}</h2>
+          <ul class="ticks">
+            {copy.what.map((item) => <li>{item}</li>)}
+          </ul>
+        </div>
+
+        <div class="stack stack--16">
+          <h2>{copy.whyTitle}</h2>
+          <p class="muted">{copy.why}</p>
+        </div>
+      </div>
+    </section>
+  )}
+</article>
+
+<style>
+  .contact {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--space-16);
+  }
+
+  .contact__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    padding: var(--space-24);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+  }
+
+  .contact__title {
+    font-family: var(--body);
+    font-size: var(--step--1);
+    font-weight: var(--weight-semi);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .contact__link {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent-line);
+  }
+
+  .contact__link:hover { color: var(--accent); }
+
+  .contact__hours { font-size: var(--step--1); color: var(--ink-soft); }
+
+  .muted { color: var(--ink-soft); }
+
+  .ticks { display: flex; flex-direction: column; gap: var(--space-12); }
+
+  .ticks li {
+    position: relative;
+    padding-inline-start: var(--space-32);
+    color: var(--ink-soft);
+    font-size: var(--step--1);
+  }
+
+  .ticks li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.62em;
+    width: 14px;
+    height: 1px;
+    background: var(--accent);
+  }
+</style>

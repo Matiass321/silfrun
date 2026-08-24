@@ -1,0 +1,195 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import Pending from '~/components/Pending.astro';
+import { SITE, type Locale } from '~/config/site';
+import { t } from '~/i18n';
+import { path, areaPath, SERVICE_KEYS } from '~/i18n/routes';
+import { SERVICE_CONTENT } from '~/data/services';
+
+interface Props {
+  locale: Locale;
+  variant: 'services' | 'areas' | 'area';
+  /** Present only when variant is 'area'. */
+  area?: { slug: string; name: string; primary: boolean };
+}
+
+const { locale, variant, area } = Astro.props;
+const s = t(locale);
+
+const primaryAreas = SITE.areas.filter((a) => a.primary);
+const otherAreas = SITE.areas.filter((a) => !a.primary);
+
+const areaPendingNote =
+  locale === 'is'
+    ? 'Nánari upplýsingar um þetta svæði — akstursleiðir, algengir húsakostir og hvað er venjulega bókað hér — bíða þess að fyrirtækið staðfesti þær.'
+    : 'Detail specific to this area — travel routes, the housing typically found here and what is usually booked — is pending confirmation from the business.';
+---
+
+<article>
+  {variant === 'services' && (
+    <>
+      <header class="section section--tight">
+        <div class="wrap wrap--narrow">
+          <Breadcrumbs locale={locale} trail={[{ label: s.nav.services }]} />
+          <p class="eyebrow">{s.services.eyebrow}</p>
+          <h1>{s.services.title}</h1>
+          <p class="lead">{s.services.lead}</p>
+        </div>
+      </header>
+
+      <section class="section section--tight">
+        <div class="wrap stack stack--24">
+          <ul class="grid">
+            {SERVICE_KEYS.map((key) => (
+              <li class="tile">
+                <a class="tile__link" href={path(key, locale)}>
+                  <h2 class="tile__title">{s.services[key].name}</h2>
+                  <p class="tile__body">{SERVICE_CONTENT[locale][key].lead}</p>
+                  <span class="tile__more" aria-hidden="true">&rarr;</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    </>
+  )}
+
+  {variant === 'areas' && (
+    <>
+      <header class="section section--tight">
+        <div class="wrap wrap--narrow">
+          <Breadcrumbs locale={locale} trail={[{ label: s.nav.areas }]} />
+          <p class="eyebrow">{s.areas.eyebrow}</p>
+          <h1>{s.areas.title}</h1>
+          <p class="lead">{s.areas.lead}</p>
+        </div>
+      </header>
+
+      <section class="section section--tight">
+        <div class="wrap wrap--narrow stack stack--32">
+          <div class="stack stack--16">
+            <h2>{locale === 'is' ? 'Aðalsvæði' : 'Main areas'}</h2>
+            <ul class="chips">
+              {primaryAreas.map((a) => (
+                <li><a class="chip" href={areaPath(a.slug, locale)}>{a.name}</a></li>
+              ))}
+            </ul>
+          </div>
+
+          <div class="stack stack--16">
+            <h2>{locale === 'is' ? 'Önnur svæði' : 'Other areas'}</h2>
+            <ul class="chips">
+              {otherAreas.map((a) => (
+                <li><a class="chip" href={areaPath(a.slug, locale)}>{a.name}</a></li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+    </>
+  )}
+
+  {variant === 'area' && area && (
+    <>
+      <header class="section section--tight">
+        <div class="wrap wrap--narrow">
+          <Breadcrumbs
+            locale={locale}
+            trail={[{ label: s.nav.areas, href: path('areas', locale) }, { label: area.name }]}
+          />
+          <p class="eyebrow">{s.areas.eyebrow}</p>
+          <h1>{s.areas.inArea} {area.name}</h1>
+          <p class="lead">
+            {locale === 'is'
+              ? `Við hreinsum sófa, áklæði, teppi og gólfteppi í ${area.name}. Unnið er á staðnum og efnið metið áður en nokkuð er borið á.`
+              : `We clean sofas, upholstery, rugs and fitted carpet in ${area.name}. The work is done on site, with the material assessed before anything is applied.`}
+          </p>
+        </div>
+      </header>
+
+      <section class="section section--tight">
+        <div class="wrap wrap--narrow stack stack--24">
+          <h2>{locale === 'is' ? 'Þjónusta í boði hér' : 'Services available here'}</h2>
+          <ul class="chips">
+            {SERVICE_KEYS.map((key) => (
+              <li><a class="chip" href={path(key, locale)}>{s.services[key].name}</a></li>
+            ))}
+          </ul>
+          {/* Nothing local is asserted until the business supplies it — a
+              name-swapped template across six towns is a doorway page. */}
+          <p class="area-note"><Pending label={areaPendingNote} locale={locale} /></p>
+        </div>
+      </section>
+
+      <section class="section section--sunk">
+        <div class="wrap wrap--narrow stack stack--16">
+          <h2>{locale === 'is' ? 'Önnur svæði' : 'Other areas'}</h2>
+          <ul class="chips">
+            {SITE.areas.filter((a) => a.slug !== area.slug).map((a) => (
+              <li><a class="chip" href={areaPath(a.slug, locale)}>{a.name}</a></li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    </>
+  )}
+
+  <section class="section section--deep">
+    <div class="wrap wrap--narrow stack stack--24">
+      <h2>{s.finalCta.title}</h2>
+      <p class="lead">{s.finalCta.body}</p>
+      <p><a class="btn btn--primary" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
+    </div>
+  </section>
+</article>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    gap: var(--space-16);
+  }
+
+  .tile { display: flex; }
+
+  .tile__link {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+    width: 100%;
+    padding: var(--space-32) var(--space-24) var(--space-24);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+    text-decoration: none;
+    transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  }
+
+  .tile__link:hover {
+    border-color: var(--accent-line);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .tile__title { font-size: var(--step-1); }
+  .tile__body { font-size: var(--step--1); color: var(--muted); flex: 1; }
+  .tile__more { color: var(--accent); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: var(--space-12); }
+
+  .chip {
+    display: inline-block;
+    padding: var(--space-8) var(--space-16);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font-size: var(--step--1);
+    text-decoration: none;
+    transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  }
+
+  .chip:hover { border-color: var(--accent-line); color: var(--accent); }
+
+  .area-note { font-size: var(--step--1); }
+</style>

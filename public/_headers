@@ -1,0 +1,23 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+  # ------------------------------------------------------------------
+  # REMOVE THIS LINE AT LAUNCH.
+  #
+  # The site still shows placeholder company details, has no photography,
+  # and its legal pages are drafts awaiting review. None of that may be
+  # indexed — a search result carrying "Kennitala væntanleg" is worse than
+  # no search result at all.
+  #
+  # It also keeps the *.pages.dev preview domain out of the index, which
+  # would otherwise compete with silfrun.is for the same content.
+  #
+  # Delete once site.ts holds real data and the custom domain is live.
+  # ------------------------------------------------------------------
+  X-Robots-Tag: noindex, nofollow
+
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable

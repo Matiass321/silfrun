@@ -1,0 +1,75 @@
+---
+import { SITE, type Locale } from '~/config/site';
+import { path } from '~/i18n/routes';
+
+interface Crumb {
+  label: string;
+  /** Absent on the final crumb, which is the current page. */
+  href?: string;
+}
+
+interface Props {
+  locale: Locale;
+  trail: Crumb[];
+}
+
+const { locale, trail } = Astro.props;
+
+const home = { label: SITE.brand, href: path('home', locale) };
+const all: Crumb[] = [home, ...trail];
+
+/**
+ * BreadcrumbList structured data mirrors the visible trail exactly.
+ *
+ * The final crumb carries no href on the page but still needs an item URL in
+ * the markup, so it uses the canonical of the current page.
+ */
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: all.map((c, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: c.label,
+    item: c.href ? `${SITE.url}${c.href}` : Astro.url.href,
+  })),
+};
+---
+
+<script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+
+<nav class="crumbs" aria-label={locale === 'is' ? 'Brauðmylsna' : 'Breadcrumb'}>
+  <ol class="crumbs__list">
+    {all.map((c, i) => (
+      <li class="crumbs__item">
+        {c.href ? <a class="crumbs__link" href={c.href}>{c.label}</a> : <span aria-current="page">{c.label}</span>}
+        {i < all.length - 1 && <span class="crumbs__sep" aria-hidden="true">/</span>}
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+  .crumbs { margin-block-end: var(--space-24); }
+
+  .crumbs__list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-8);
+    font-size: var(--step--1);
+    color: var(--muted);
+  }
+
+  .crumbs__item { display: inline-flex; align-items: center; gap: var(--space-8); }
+
+  .crumbs__link {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color var(--dur) var(--ease);
+  }
+
+  .crumbs__link:hover { color: var(--accent); }
+
+  .crumbs__sep { color: var(--line-strong); }
+</style>

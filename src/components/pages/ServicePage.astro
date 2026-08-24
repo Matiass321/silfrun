@@ -1,0 +1,211 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import { type Locale } from '~/config/site';
+import { t } from '~/i18n';
+import { path, SERVICE_KEYS, type ServiceKey } from '~/i18n/routes';
+import { SERVICE_CONTENT } from '~/data/services';
+
+interface Props {
+  locale: Locale;
+  service: ServiceKey;
+}
+
+const { locale, service } = Astro.props;
+const s = t(locale);
+const c = SERVICE_CONTENT[locale][service];
+
+const others = SERVICE_KEYS.filter((k) => k !== service);
+
+/**
+ * FAQPage structured data is emitted only because every answer on this page is
+ * genuinely written. If a service ever gains a placeholder answer, filter for
+ * it here rather than marking up a non-answer as an answer.
+ */
+const faqLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: c.faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
+---
+
+<script type="application/ld+json" is:inline set:html={JSON.stringify(faqLd)} />
+
+<article>
+  <header class="section section--tight">
+    <div class="wrap wrap--narrow">
+      <Breadcrumbs
+        locale={locale}
+        trail={[{ label: s.nav.services, href: path('services', locale) }, { label: s.services[service].name }]}
+      />
+      <p class="eyebrow">{s.services.eyebrow}</p>
+      <h1>{s.services[service].name}</h1>
+      <p class="lead">{c.lead}</p>
+    </div>
+  </header>
+
+  <section class="section section--tight">
+    <div class="wrap wrap--narrow prose">
+      {c.body.map((para) => <p>{para}</p>)}
+    </div>
+  </section>
+
+  <section class="section section--sunk">
+    <div class="wrap wrap--narrow stack stack--32">
+      <div class="stack stack--16">
+        <h2>{c.includedTitle}</h2>
+        <ul class="ticks">
+          {c.included.map((item) => <li>{item}</li>)}
+        </ul>
+      </div>
+
+      <div class="stack stack--16">
+        <h2>{c.materialTitle}</h2>
+        <dl class="defs">
+          {c.material.map((m) => (
+            <div class="def">
+              <dt>{m.name}</dt>
+              <dd>{m.note}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="wrap wrap--narrow stack stack--16">
+      <h2>{c.expectTitle}</h2>
+      <ul class="plain">
+        {c.expect.map((e) => <li>{e}</li>)}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section section--sunk">
+    <div class="wrap wrap--narrow stack stack--16">
+      <h2>{locale === 'is' ? 'Algengar spurningar' : 'Common questions'}</h2>
+      <div class="faqs">
+        {c.faqs.map((f) => (
+          <details class="faq">
+            <summary class="faq__q">{f.q}</summary>
+            <p class="faq__a">{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="wrap wrap--narrow stack stack--16">
+      <h2>{locale === 'is' ? 'Önnur þjónusta' : 'Other services'}</h2>
+      <ul class="others">
+        {others.map((k) => (
+          <li><a class="other" href={path(k, locale)}>{s.services[k].name}</a></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section section--deep">
+    <div class="wrap wrap--narrow stack stack--24">
+      <h2>{s.finalCta.title}</h2>
+      <p class="lead">{s.finalCta.body}</p>
+      <p><a class="btn btn--primary" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
+    </div>
+  </section>
+</article>
+
+<style>
+  .prose { display: flex; flex-direction: column; gap: var(--space-16); }
+  .prose p { color: var(--ink-soft); }
+
+  .ticks { display: flex; flex-direction: column; gap: var(--space-12); }
+
+  .ticks li {
+    position: relative;
+    padding-inline-start: var(--space-32);
+    color: var(--ink-soft);
+    font-size: var(--step-0);
+  }
+
+  .ticks li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.62em;
+    width: 14px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .defs { display: flex; flex-direction: column; gap: var(--space-16); margin: 0; }
+
+  .def {
+    display: grid;
+    grid-template-columns: minmax(9rem, 14rem) 1fr;
+    gap: var(--space-16);
+    padding-block-end: var(--space-16);
+    border-block-end: 1px solid var(--line);
+  }
+
+  .def dt { font-weight: var(--weight-semi); }
+  .def dd { margin: 0; color: var(--muted); font-size: var(--step--1); }
+
+  .plain { display: flex; flex-direction: column; gap: var(--space-16); }
+  .plain li { color: var(--ink-soft); }
+
+  .faqs { display: flex; flex-direction: column; }
+
+  .faq { border-block-end: 1px solid var(--line); }
+
+  .faq__q {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-16);
+    padding-block: var(--space-16);
+    font-weight: var(--weight-semi);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq__q::-webkit-details-marker { display: none; }
+
+  .faq__q::after {
+    content: '+';
+    color: var(--accent);
+    font-size: var(--step-1);
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .faq[open] .faq__q::after { content: '\2212'; }
+
+  .faq__a {
+    padding-block-end: var(--space-24);
+    color: var(--muted);
+    font-size: var(--step--1);
+  }
+
+  .others { display: flex; flex-wrap: wrap; gap: var(--space-12); }
+
+  .other {
+    display: inline-block;
+    padding: var(--space-8) var(--space-16);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font-size: var(--step--1);
+    text-decoration: none;
+    transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  }
+
+  .other:hover { border-color: var(--accent-line); color: var(--accent); }
+
+  @media (max-width: 34rem) {
+    .def { grid-template-columns: 1fr; gap: var(--space-4); }
+  }
+</style>

@@ -1,0 +1,145 @@
+---
+import Marketing from '~/layouts/Marketing.astro';
+import ServicePage from '~/components/pages/ServicePage.astro';
+import ProsePage from '~/components/pages/ProsePage.astro';
+import FaqPage from '~/components/pages/FaqPage.astro';
+import ListPage from '~/components/pages/ListPage.astro';
+import ContactPage from '~/components/pages/ContactPage.astro';
+
+import { LOCALES, SITE, type Locale } from '~/config/site';
+import { SLUGS, SERVICE_KEYS, type PageKey, type ServiceKey } from '~/i18n/routes';
+import { t, alternates, areaAlternates } from '~/i18n';
+import { PAGE_META, AREA_META } from '~/i18n/meta';
+import { CONTENT } from '~/data/content';
+
+/**
+ * Resolves every translated slug to the page that owns it.
+ *
+ * Routing is driven by the slug table rather than by the filesystem, because
+ * the filesystem cannot produce translated path segments — /is/sofahreinsun/
+ * and /en/sofa-cleaning/ are the same page. Service-area pages are emitted
+ * here too, beneath the translated areas slug.
+ *
+ * Only keys listed in `built` are emitted. Anything else 404s until its
+ * template exists, rather than shipping an empty shell.
+ */
+export function getStaticPaths() {
+  const built: PageKey[] = [
+    ...SERVICE_KEYS,
+    'services',
+    'process',
+    'results',
+    'areas',
+    'about',
+    'faq',
+    'quote',
+    'contact',
+    'privacy',
+    'terms',
+  ];
+
+  const paths = [];
+
+  for (const locale of LOCALES) {
+    for (const key of built) {
+      paths.push({
+        params: { lang: locale, slug: SLUGS[key][locale] },
+        props: { locale, pageKey: key, area: null },
+      });
+    }
+
+    for (const area of SITE.areas) {
+      paths.push({
+        params: { lang: locale, slug: `${SLUGS.areas[locale]}/${area.slug}` },
+        props: { locale, pageKey: 'areas' as PageKey, area },
+      });
+    }
+  }
+
+  return paths;
+}
+
+type AreaProp = { slug: string; name: string; primary: boolean } | null;
+
+const { locale, pageKey, area } = Astro.props as {
+  locale: Locale;
+  pageKey: PageKey;
+  area: AreaProp;
+};
+
+const s = t(locale);
+const c = CONTENT[locale];
+const isService = (SERVICE_KEYS as readonly PageKey[]).includes(pageKey);
+
+/**
+ * Area pages compose their title and description from a per-locale pattern
+ * rather than being hand-written six times. Everything else reads from the
+ * meta table, so no description is ever a recycled piece of body copy.
+ */
+let title: string;
+let description: string;
+let alt: ReturnType<typeof alternates>;
+
+if (area) {
+  title = AREA_META[locale].title.replace('{area}', area.name);
+  description = AREA_META[locale].description.replace('{area}', area.name);
+  alt = areaAlternates(area.slug, locale);
+} else {
+  const meta = PAGE_META[locale][pageKey];
+  title = meta.title;
+  description = meta.description;
+  alt = alternates(pageKey, locale);
+}
+---
+
+<Marketing
+  locale={locale}
+  pageKey={pageKey}
+  title={title}
+  description={description}
+  canonical={alt.canonical}
+  alternates={alt.list}
+  xDefault={alt.xDefault}
+>
+  {isService && <ServicePage locale={locale} service={pageKey as ServiceKey} />}
+
+  {pageKey === 'services' && <ListPage locale={locale} variant="services" />}
+  {pageKey === 'areas' && !area && <ListPage locale={locale} variant="areas" />}
+  {pageKey === 'areas' && area && <ListPage locale={locale} variant="area" area={area} />}
+
+  {pageKey === 'faq' && <FaqPage locale={locale} />}
+
+  {pageKey === 'quote' && <ContactPage locale={locale} variant="quote" />}
+  {pageKey === 'contact' && <ContactPage locale={locale} variant="contact" />}
+
+  {pageKey === 'process' && (
+    <ProsePage locale={locale} heading={s.process.title} eyebrow={s.process.eyebrow} page={c.process} />
+  )}
+  {pageKey === 'results' && (
+    <ProsePage locale={locale} heading={s.work.title} eyebrow={s.work.eyebrow} page={c.results} />
+  )}
+  {pageKey === 'about' && (
+    <ProsePage locale={locale} heading={s.nav.about} eyebrow={s.why.eyebrow} page={c.about} />
+  )}
+
+  {pageKey === 'privacy' && (
+    <ProsePage
+      locale={locale}
+      heading={PAGE_META[locale].privacy.title}
+      eyebrow={locale === 'is' ? 'Lagalegt' : 'Legal'}
+      page={c.privacy}
+      legal
+      cta={false}
+    />
+  )}
+  {pageKey === 'terms' && (
+    <ProsePage
+      locale={locale}
+      heading={PAGE_META[locale].terms.title}
+      eyebrow={locale === 'is' ? 'Lagalegt' : 'Legal'}
+      page={c.terms}
+      legal
+      cta={false}
+    />
+  )}
+</Marketing>

@@ -1,0 +1,113 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import { date, type Locale } from '~/config/site';
+import { t } from '~/i18n';
+import { path } from '~/i18n/routes';
+import { CONTENT, LEGAL_UPDATED, type ProsePage } from '~/data/content';
+
+interface Props {
+  locale: Locale;
+  /** Heading shown as the h1 and as the final breadcrumb. */
+  heading: string;
+  eyebrow: string;
+  page: ProsePage;
+  /** Legal pages carry a draft notice and a last-reviewed date. */
+  legal?: boolean;
+  /** Suppress the closing call to action on pages where it would jar. */
+  cta?: boolean;
+}
+
+const { locale, heading, eyebrow, page, legal = false, cta = true } = Astro.props;
+const s = t(locale);
+const c = CONTENT[locale];
+---
+
+<article>
+  <header class="section section--tight">
+    <div class="wrap wrap--narrow">
+      <Breadcrumbs locale={locale} trail={[{ label: heading }]} />
+      <p class="eyebrow">{eyebrow}</p>
+      <h1>{heading}</h1>
+      <p class="lead">{page.lead}</p>
+
+      {legal && (
+        <div class="draft">
+          <p class="draft__date">{c.legalUpdatedLabel}: {date(LEGAL_UPDATED, locale)}</p>
+          <p class="draft__note">{c.legalDraftNotice}</p>
+        </div>
+      )}
+    </div>
+  </header>
+
+  <section class="section section--tight">
+    <div class="wrap wrap--narrow sections">
+      {page.sections.map((sec) => (
+        <section class="block">
+          <h2>{sec.heading}</h2>
+          {sec.paragraphs.map((p) => <p>{p}</p>)}
+          {sec.points && (
+            <ul class="ticks">
+              {sec.points.map((pt) => <li>{pt}</li>)}
+            </ul>
+          )}
+        </section>
+      ))}
+    </div>
+  </section>
+
+  {cta && (
+    <section class="section section--deep">
+      <div class="wrap wrap--narrow stack stack--24">
+        <h2>{s.finalCta.title}</h2>
+        <p class="lead">{s.finalCta.body}</p>
+        <p><a class="btn btn--primary" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
+      </div>
+    </section>
+  )}
+</article>
+
+<style>
+  .draft {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    margin-block-start: var(--space-24);
+    padding: var(--space-16);
+    background: var(--accent-tint);
+    border-inline-start: 2px solid var(--accent);
+    border-radius: var(--radius);
+  }
+
+  .draft__date {
+    font-size: var(--step--1);
+    font-weight: var(--weight-semi);
+    color: var(--accent);
+  }
+
+  .draft__note { font-size: var(--step--1); color: var(--ink-soft); }
+
+  .sections { display: flex; flex-direction: column; gap: var(--space-48); }
+
+  .block { display: flex; flex-direction: column; gap: var(--space-16); }
+  .block h2 { font-size: var(--step-2); }
+  .block p { color: var(--ink-soft); }
+
+  .ticks { display: flex; flex-direction: column; gap: var(--space-12); }
+
+  .ticks li {
+    position: relative;
+    padding-inline-start: var(--space-32);
+    color: var(--ink-soft);
+    font-size: var(--step--1);
+  }
+
+  .ticks li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.62em;
+    width: 14px;
+    height: 1px;
+    background: var(--accent);
+  }
+</style>
