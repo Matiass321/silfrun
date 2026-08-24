@@ -1,0 +1,106 @@
+---
+import '@fontsource-variable/cormorant-garamond';
+import '@fontsource-variable/manrope';
+import '~/styles/tokens.css';
+import '~/styles/base.css';
+
+import { SITE, isPlaceholder, type Locale } from '~/config/site';
+import { t } from '~/i18n';
+import type { Alternate } from '~/i18n';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  canonical: string;
+  alternates: Alternate[];
+  xDefault: string;
+  /** Emit LocalBusiness structured data. Only the homepage needs it. */
+  business?: boolean;
+}
+
+const { locale, title, description, canonical, alternates, xDefault, business = false } = Astro.props;
+const s = t(locale);
+
+const fullTitle = `${title} · ${SITE.brand}`;
+
+/**
+ * LocalBusiness structured data, assembled from real values only.
+ *
+ * Every field is omitted rather than filled with a placeholder — publishing
+ * "[Símanúmer væntanlegt]" as a telephone number in machine-readable markup is
+ * worse than publishing no telephone number at all.
+ */
+const hoursSpec = SITE.hours.map((h) => ({
+  '@type': 'OpeningHoursSpecification',
+  dayOfWeek: h.days.map((d) => ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d]),
+  opens: h.opens,
+  closes: h.closes,
+}));
+
+const jsonLd = business
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'LocalBusiness',
+      '@id': `${SITE.url}/#business`,
+      name: SITE.brand,
+      url: canonical,
+      description,
+      areaServed: SITE.areas.map((a) => ({ '@type': 'City', name: a.name })),
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: SITE.address.city,
+        addressCountry: SITE.address.country,
+        ...(isPlaceholder(SITE.address.street) ? {} : { streetAddress: SITE.address.street }),
+        ...(isPlaceholder(SITE.address.postalCode) ? {} : { postalCode: SITE.address.postalCode }),
+      },
+      openingHoursSpecification: hoursSpec,
+      ...(isPlaceholder(SITE.contact.phoneE164) ? {} : { telephone: SITE.contact.phoneE164 }),
+      ...(isPlaceholder(SITE.contact.email) ? {} : { email: SITE.contact.email }),
+    }
+  : null;
+
+const websiteLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': `${SITE.url}/#website`,
+  url: canonical,
+  name: SITE.brand,
+  description,
+  inLanguage: locale,
+};
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
+    <link rel="alternate" hreflang="x-default" href={xDefault} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.brand} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={locale === 'is' ? 'is_IS' : 'en_GB'} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#35555F" />
+
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(websiteLd)} />
+    {jsonLd && <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />}
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main">{s.nav.skip}</a>
+    <slot />
+  </body>
+</html>

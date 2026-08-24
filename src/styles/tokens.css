@@ -1,0 +1,132 @@
+/**
+ * Design tokens.
+ *
+ * The palette follows the name: silfur is silver, so the neutrals carry a cool
+ * blue cast rather than a warm one, and the accent is pewter rather than a
+ * saturated brand colour. Restraint is the point — a premium service reads as
+ * expensive through space and typography, not through colour.
+ *
+ * Every colour is defined here. Components reference tokens only, so a theme
+ * change never means hunting through component styles.
+ */
+
+:root {
+  /* ---- surface ---- */
+  --paper:        #F6F8F8;
+  --surface:      #FFFFFF;
+  --surface-sunk: #EDF1F2;
+  --surface-deep: #161E22;
+
+  /* ---- ink ---- */
+  --ink:          #131A1E;
+  --ink-soft:     #3A474D;
+  --muted:        #66757B;
+  --ink-invert:   #F2F6F6;
+
+  /* ---- line ---- */
+  --line:         #DCE4E5;
+  --line-strong:  #B9C6C9;
+
+  /* ---- accent: pewter ---- */
+  --accent:       #35555F;
+  --accent-hover: #24404A;
+  --accent-tint:  #E4EDEF;
+  --accent-line:  #9FBAC1;
+
+  /* ---- type ---- */
+  --display: 'Cormorant Garamond Variable', 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --body:    'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --weight-body: 400;
+  --weight-medium: 500;
+  --weight-semi: 600;
+  --weight-display: 500;
+
+  /* Fluid type scale. Ratio widens on larger screens so the display face gets
+     the room it needs without the body copy growing with it. */
+  --step--1: clamp(0.82rem, 0.79rem + 0.14vw, 0.89rem);
+  --step-0:  clamp(1rem, 0.97rem + 0.16vw, 1.08rem);
+  --step-1:  clamp(1.18rem, 1.11rem + 0.35vw, 1.4rem);
+  --step-2:  clamp(1.45rem, 1.3rem + 0.72vw, 1.9rem);
+  --step-3:  clamp(1.8rem, 1.5rem + 1.4vw, 2.7rem);
+  --step-4:  clamp(2.2rem, 1.6rem + 2.9vw, 4rem);
+
+  /* ---- space ---- */
+  --space-4:  0.25rem;
+  --space-8:  0.5rem;
+  --space-12: 0.75rem;
+  --space-16: 1rem;
+  --space-24: 1.5rem;
+  --space-32: 2rem;
+  --space-48: 3rem;
+  --space-64: 4rem;
+  --space-96: 6rem;
+
+  --wrap:        76rem;
+  --wrap-narrow: 46rem;
+  --measure:     64ch;
+
+  --radius:      2px;
+  --radius-card: 3px;
+
+  --shadow-card: 0 1px 2px rgba(19, 26, 30, 0.05);
+  --shadow-lift: 0 12px 32px -12px rgba(19, 26, 30, 0.18);
+
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur:  260ms;
+}
+
+/**
+ * Dark theme.
+ *
+ * Guarded so an explicit light choice beats a dark operating system, and
+ * repeated for the stamped attribute so the toggle wins in both directions.
+ * Only tokens are redefined — never component rules.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paper:        #0D1315;
+    --surface:      #141C1F;
+    --surface-sunk: #1A2428;
+    --surface-deep: #080C0E;
+
+    --ink:          #E9EFEF;
+    --ink-soft:     #B7C4C7;
+    --muted:        #85949A;
+    --ink-invert:   #101719;
+
+    --line:         #253135;
+    --line-strong:  #37474C;
+
+    --accent:       #8FB4BD;
+    --accent-hover: #A9C8CF;
+    --accent-tint:  #17272C;
+    --accent-line:  #40606A;
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-lift: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+  }
+}
+
+:root[data-theme='dark'] {
+  --paper:        #0D1315;
+  --surface:      #141C1F;
+  --surface-sunk: #1A2428;
+  --surface-deep: #080C0E;
+
+  --ink:          #E9EFEF;
+  --ink-soft:     #B7C4C7;
+  --muted:        #85949A;
+  --ink-invert:   #101719;
+
+  --line:         #253135;
+  --line-strong:  #37474C;
+
+  --accent:       #8FB4BD;
+  --accent-hover: #A9C8CF;
+  --accent-tint:  #17272C;
+  --accent-line:  #40606A;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-lift: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+}

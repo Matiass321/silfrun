@@ -1,0 +1,12 @@
+# Pre-launch: nothing here should be indexed yet.
+#
+# The site still shows placeholder company details and has no real photography.
+# At launch, replace this file with the block below.
+#
+#   User-agent: *
+#   Allow: /
+#
+#   Sitemap: https://silfrun.is/sitemap-index.xml
+
+User-agent: *
+Disallow: /

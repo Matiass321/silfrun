@@ -1,0 +1,271 @@
+---
+import Marketing from '~/layouts/Marketing.astro';
+import Pending from '~/components/Pending.astro';
+
+import { LOCALES, SITE, type Locale } from '~/config/site';
+import { t, alternates } from '~/i18n';
+import { path, areaPath, SERVICE_KEYS } from '~/i18n/routes';
+
+export function getStaticPaths() {
+  return LOCALES.map((locale) => ({ params: { lang: locale }, props: { locale } }));
+}
+
+const { locale } = Astro.props as { locale: Locale };
+const s = t(locale);
+const alt = alternates('home', locale);
+
+/** Step numbers are written out here so the markup stays declarative. */
+const steps = s.process.steps.map((step, i) => ({ ...step, num: String(i + 1).padStart(2, '0') }));
+---
+
+<Marketing
+  locale={locale}
+  pageKey="home"
+  title={s.meta.home.title}
+  description={s.meta.home.description}
+  canonical={alt.canonical}
+  alternates={alt.list}
+  xDefault={alt.xDefault}
+  business
+>
+  <section class="hero">
+    <div class="wrap hero__inner">
+      <p class="eyebrow">{s.hero.eyebrow}</p>
+      <h1>{s.hero.title}</h1>
+      <p class="lead hero__lead">{s.hero.lead}</p>
+
+      <div class="hero__actions">
+        <a class="btn btn--primary" href={path('quote', locale)}>{s.hero.ctaPrimary}</a>
+        <a class="btn btn--ghost" href={path('services', locale)}>{s.hero.ctaSecondary}</a>
+      </div>
+
+      <p class="hero__note">{s.hero.note}</p>
+    </div>
+  </section>
+
+  <section class="section section--tight trust">
+    <div class="wrap trust__grid">
+      <div class="trust__item">
+        <h2 class="trust__title">{s.trust.equipmentTitle}</h2>
+        <p class="trust__body">{s.trust.equipmentBody}</p>
+      </div>
+      <div class="trust__item">
+        <h2 class="trust__title">{s.trust.onSiteTitle}</h2>
+        <p class="trust__body">{s.trust.onSiteBody}</p>
+      </div>
+      <div class="trust__item">
+        <h2 class="trust__title">{s.trust.materialTitle}</h2>
+        <p class="trust__body">{s.trust.materialBody}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--sunk">
+    <div class="wrap stack stack--32">
+      <header class="section-head">
+        <p class="eyebrow">{s.services.eyebrow}</p>
+        <h2>{s.services.title}</h2>
+        <p class="lead">{s.services.lead}</p>
+      </header>
+
+      <ul class="cards">
+        {SERVICE_KEYS.map((key) => (
+          <li class="card">
+            <a class="card__link" href={path(key, locale)}>
+              <h3 class="card__title">{s.services[key].name}</h3>
+              <p class="card__body">{s.services[key].body}</p>
+              <span class="card__more" aria-hidden="true">&rarr;</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap stack stack--32">
+      <header class="section-head">
+        <p class="eyebrow">{s.process.eyebrow}</p>
+        <h2>{s.process.title}</h2>
+      </header>
+
+      <ol class="steps">
+        {steps.map((step) => (
+          <li class="step">
+            <span class="step__num">{step.num}</span>
+            <h3 class="step__title">{step.title}</h3>
+            <p class="step__body">{step.body}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section section--sunk">
+    <div class="wrap stack stack--32">
+      <header class="section-head">
+        <p class="eyebrow">{s.why.eyebrow}</p>
+        <h2>{s.why.title}</h2>
+        <p class="lead">{s.why.lead}</p>
+      </header>
+
+      <ul class="whys">
+        {s.why.points.map((p) => (
+          <li class="why">
+            <h3 class="why__title">{p.title}</h3>
+            <p class="why__body">{p.body}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap stack stack--24">
+      <header class="section-head">
+        <p class="eyebrow">{s.work.eyebrow}</p>
+        <h2>{s.work.title}</h2>
+        <p class="lead">{s.work.lead}</p>
+      </header>
+      <p class="placeholder-note"><Pending label={s.work.pending} locale={locale} /></p>
+    </div>
+  </section>
+
+  <section class="section section--sunk">
+    <div class="wrap stack stack--24">
+      <header class="section-head">
+        <p class="eyebrow">{s.areas.eyebrow}</p>
+        <h2>{s.areas.title}</h2>
+        <p class="lead">{s.areas.lead}</p>
+      </header>
+
+      <ul class="areas">
+        {SITE.areas.map((area) => (
+          <li><a class="area" href={areaPath(area.slug, locale)}>{area.name}</a></li>
+        ))}
+      </ul>
+
+      <p><a class="link-arrow" href={path('areas', locale)}>{s.areas.cta}</a></p>
+    </div>
+  </section>
+
+  <section class="section section--deep">
+    <div class="wrap stack stack--24 final">
+      <h2>{s.finalCta.title}</h2>
+      <p class="lead">{s.finalCta.body}</p>
+      <p><a class="btn btn--primary" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
+    </div>
+  </section>
+</Marketing>
+
+<style>
+  .hero { padding-block: clamp(var(--space-64), 11vw, 9rem); }
+  .hero__inner { display: flex; flex-direction: column; gap: var(--space-24); }
+  .hero__inner h1 { max-width: 18ch; }
+  .hero__lead { max-width: 52ch; }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-16);
+    margin-block-start: var(--space-8);
+  }
+
+  .hero__note { font-size: var(--step--1); color: var(--muted); max-width: 46ch; }
+
+  .trust { border-block: 1px solid var(--line); }
+
+  .trust__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: var(--space-32);
+  }
+
+  .trust__item { display: flex; flex-direction: column; gap: var(--space-8); }
+  .trust__title { font-family: var(--body); font-size: var(--step-0); font-weight: var(--weight-semi); }
+  .trust__body { font-size: var(--step--1); color: var(--muted); }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: var(--space-16);
+  }
+
+  .card { display: flex; }
+
+  .card__link {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    width: 100%;
+    padding: var(--space-32) var(--space-24) var(--space-24);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+    text-decoration: none;
+    transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  }
+
+  .card__link:hover {
+    border-color: var(--accent-line);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .card__title { font-size: var(--step-1); }
+  .card__body { font-size: var(--step--1); color: var(--muted); flex: 1; }
+  .card__more { color: var(--accent); font-size: var(--step-0); }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--space-32);
+  }
+
+  .step { display: flex; flex-direction: column; gap: var(--space-8); }
+
+  .step__num {
+    font-family: var(--display);
+    font-size: var(--step-2);
+    color: var(--accent-line);
+    line-height: 1;
+  }
+
+  .step__title { font-family: var(--body); font-size: var(--step-0); font-weight: var(--weight-semi); }
+  .step__body { font-size: var(--step--1); color: var(--muted); }
+
+  .whys {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    gap: var(--space-32);
+  }
+
+  .why {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    padding-block-start: var(--space-16);
+    border-block-start: 1px solid var(--line-strong);
+  }
+
+  .why__title { font-family: var(--body); font-size: var(--step-0); font-weight: var(--weight-semi); }
+  .why__body { font-size: var(--step--1); color: var(--muted); }
+
+  .areas { display: flex; flex-wrap: wrap; gap: var(--space-12); }
+
+  .area {
+    display: inline-block;
+    padding: var(--space-8) var(--space-16);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font-size: var(--step--1);
+    text-decoration: none;
+    transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  }
+
+  .area:hover { border-color: var(--accent-line); color: var(--accent); }
+
+  .placeholder-note { font-size: var(--step--1); }
+  .final { align-items: flex-start; }
+</style>

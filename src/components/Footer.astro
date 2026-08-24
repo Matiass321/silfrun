@@ -1,0 +1,173 @@
+---
+import Logo from './Logo.astro';
+import Pending from './Pending.astro';
+import { SITE, isPlaceholder, type Locale } from '~/config/site';
+import { t } from '~/i18n';
+import { path, SERVICE_KEYS } from '~/i18n/routes';
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const s = t(locale);
+
+/**
+ * The year is stamped at build time. A site rebuilt each deploy shows the
+ * right year; a hardcoded one silently goes stale every January.
+ */
+const year = new Date().getFullYear();
+
+const serviceLinks = SERVICE_KEYS.map((k) => ({ href: path(k, locale), label: s.services[k].name }));
+
+const companyLinks = [
+  { href: path('about', locale),   label: s.nav.about },
+  { href: path('process', locale), label: s.nav.process },
+  { href: path('results', locale), label: s.nav.work },
+  { href: path('areas', locale),   label: s.nav.areas },
+  { href: path('faq', locale),     label: locale === 'is' ? 'Algengar spurningar' : 'FAQ' },
+  { href: path('contact', locale), label: s.nav.contact },
+];
+
+const legalLinks = [
+  { href: path('privacy', locale), label: locale === 'is' ? 'Persónuvernd' : 'Privacy' },
+  { href: path('terms', locale),   label: locale === 'is' ? 'Skilmálar' : 'Terms' },
+];
+---
+
+<footer class="foot">
+  <div class="wrap foot__inner">
+    <div class="foot__brand">
+      <Logo />
+      <p class="foot__tagline">{s.footer.tagline}</p>
+    </div>
+
+    <nav class="foot__col" aria-label={s.footer.servicesHeading}>
+      <h2 class="foot__heading">{s.footer.servicesHeading}</h2>
+      <ul class="foot__list">
+        {serviceLinks.map((l) => <li><a class="foot__link" href={l.href}>{l.label}</a></li>)}
+      </ul>
+    </nav>
+
+    <nav class="foot__col" aria-label={s.footer.companyHeading}>
+      <h2 class="foot__heading">{s.footer.companyHeading}</h2>
+      <ul class="foot__list">
+        {companyLinks.map((l) => <li><a class="foot__link" href={l.href}>{l.label}</a></li>)}
+      </ul>
+    </nav>
+
+    <div class="foot__col">
+      <h2 class="foot__heading">{s.nav.contact}</h2>
+      <ul class="foot__list">
+        <li class="foot__meta">
+          {s.common.phone}:{' '}
+          {isPlaceholder(SITE.contact.phone)
+            ? <Pending label={s.pending.phone} locale={locale} nowrap />
+            : <a class="foot__link" href={`tel:${SITE.contact.phoneE164}`}>{SITE.contact.phone}</a>}
+        </li>
+        <li class="foot__meta">
+          {s.common.email}:{' '}
+          {isPlaceholder(SITE.contact.email)
+            ? <Pending label={s.pending.email} locale={locale} />
+            : <a class="foot__link" href={`mailto:${SITE.contact.email}`}>{SITE.contact.email}</a>}
+        </li>
+        <li class="foot__meta">{s.common.hours}: {s.common.weekdays} {SITE.hours[0].opens}–{SITE.hours[0].closes}</li>
+      </ul>
+      <nav class="foot__legal" aria-label={s.footer.legalHeading}>
+        <ul class="foot__list foot__list--inline">
+          {legalLinks.map((l) => <li><a class="foot__link" href={l.href}>{l.label}</a></li>)}
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  <div class="wrap foot__base">
+    <p class="foot__fine">
+      © {year} {isPlaceholder(SITE.legalName)
+        ? <Pending label={s.pending.legalName} locale={locale} />
+        : SITE.legalName}. {s.footer.rights}
+    </p>
+    <p class="foot__fine">
+      {s.footer.kennitalaLabel}{' '}
+      {isPlaceholder(SITE.kennitala)
+        ? <Pending label={s.pending.kennitala} locale={locale} nowrap />
+        : SITE.kennitala}
+    </p>
+  </div>
+</footer>
+
+<style>
+  .foot {
+    background: var(--surface-deep);
+    color: var(--ink-invert);
+    padding-block: var(--space-64) var(--space-32);
+    margin-block-start: auto;
+  }
+
+  .foot__inner {
+    display: grid;
+    grid-template-columns: 1.5fr repeat(3, 1fr);
+    gap: var(--space-48) var(--space-32);
+    align-items: start;
+  }
+
+  .foot :global(.logo) { color: var(--ink-invert); }
+  .foot :global(.logo__mark) { color: var(--accent-line); }
+
+  .foot__brand { display: flex; flex-direction: column; gap: var(--space-16); }
+
+  .foot__tagline {
+    font-size: var(--step--1);
+    color: var(--ink-invert);
+    opacity: 0.66;
+    max-width: 26ch;
+  }
+
+  .foot__col { display: flex; flex-direction: column; gap: var(--space-16); }
+
+  .foot__heading {
+    font-family: var(--body);
+    font-size: var(--step--1);
+    font-weight: var(--weight-semi);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-line);
+    margin: 0;
+  }
+
+  .foot__list { display: flex; flex-direction: column; gap: var(--space-12); }
+  .foot__list--inline { flex-direction: row; flex-wrap: wrap; gap: var(--space-16); }
+
+  .foot__link {
+    font-size: var(--step--1);
+    color: var(--ink-invert);
+    opacity: 0.78;
+    text-decoration: none;
+    transition: opacity var(--dur) var(--ease);
+  }
+
+  .foot__link:hover { opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
+
+  .foot__meta { font-size: var(--step--1); opacity: 0.78; }
+  .foot__meta :global(.pending) { color: var(--accent-line); }
+
+  .foot__legal { margin-block-start: var(--space-8); }
+
+  .foot__base {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-8) var(--space-24);
+    margin-block-start: var(--space-48);
+    padding-block-start: var(--space-24);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .foot__fine { font-size: var(--step--1); opacity: 0.6; max-width: none; }
+  .foot__fine :global(.pending) { color: var(--accent-line); opacity: 1; }
+
+  @media (max-width: 60rem) {
+    .foot__inner { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 34rem) {
+    .foot__inner { grid-template-columns: 1fr; gap: var(--space-32); }
+  }
+</style>

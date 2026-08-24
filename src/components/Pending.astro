@@ -1,0 +1,43 @@
+---
+import type { Locale } from '~/config/site';
+
+interface Props {
+  label: string;
+  locale: Locale;
+  /** Only for short values that read wrong when broken — a phone number or a
+      registration number. Never for a sentence. */
+  nowrap?: boolean;
+}
+
+const { label, locale, nowrap = false } = Astro.props;
+
+/**
+ * Renders a value still awaiting real business data.
+ *
+ * Marked visually and for assistive technology so an unfilled phone number or
+ * company name can never be mistaken for a real one. The marker text is
+ * translated: a developer string read aloud in English on an Icelandic page is
+ * its own kind of bug.
+ */
+const COPY: Record<Locale, { title: string; sr: string }> = {
+  is: { title: 'Bíður raunverulegra upplýsinga', sr: 'Staðgengill — raunveruleg gildi vantar' },
+  en: { title: 'Awaiting real business data', sr: 'Placeholder — real value pending' },
+};
+
+const copy = COPY[locale];
+---
+
+<span class:list={['pending', { 'pending--nowrap': nowrap }]} data-placeholder title={copy.title}>
+  <span aria-hidden="true">{label}</span>
+  <span class="visually-hidden">{copy.sr}</span>
+</span>
+
+<style>
+  .pending {
+    color: var(--muted);
+    font-style: italic;
+    text-decoration: underline dotted var(--line-strong);
+    text-underline-offset: 3px;
+  }
+  .pending--nowrap { white-space: nowrap; }
+</style>

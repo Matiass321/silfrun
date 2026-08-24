@@ -1,0 +1,61 @@
+---
+import { LOCALES, SITE } from '~/config/site';
+
+/**
+ * Root entry point.
+ *
+ * The site is fully static, so this cannot read Accept-Language the way a
+ * server route could. It does the next best thing: a real page with real
+ * links plus a meta refresh to the canonical locale.
+ *
+ * Deliberately NOT an empty redirect shell. Anything that fetches a URL and
+ * reads what comes back — an SEO auditor, and more importantly an AI crawler —
+ * would otherwise see nothing and conclude the site is empty. It is excluded
+ * from the sitemap and marked noindex, because it is not a content page.
+ *
+ * If this later moves to a host with edge redirects, replace it with a 302 on
+ * Accept-Language and delete this file.
+ */
+const target = `/${SITE.defaultLocale}/`;
+const LABEL: Record<string, string> = { is: 'Íslenska', en: 'English' };
+---
+
+<!doctype html>
+<html lang={SITE.defaultLocale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="refresh" content={`0; url=${target}`} />
+    <meta name="robots" content="noindex, follow" />
+    <title>{SITE.brand}</title>
+    <link rel="canonical" href={`${SITE.url}${target}`} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        background: #F6F8F8;
+        color: #131A1E;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      h1 { font-family: Georgia, serif; font-weight: 500; margin: 0; }
+      ul { display: flex; gap: 1rem; list-style: none; padding: 0; margin: 0; }
+      a { color: #35555F; }
+    </style>
+  </head>
+  <body>
+    <h1>{SITE.brand}</h1>
+    <nav>
+      <ul>
+        {LOCALES.map((l) => (
+          <li><a href={`/${l}/`} lang={l}>{LABEL[l]}</a></li>
+        ))}
+      </ul>
+    </nav>
+  </body>
+</html>

@@ -1,0 +1,37 @@
+---
+import { SITE } from '~/config/site';
+
+interface Props { class?: string }
+const { class: className = '' } = Astro.props;
+
+/**
+ * The wordmark carries the accent, so the brand stays legible when the mark
+ * is not. The accented form is always used in display — silfrun.is is the
+ * domain, Silfrún is the name.
+ */
+---
+
+<span class:list={['logo', className]}>
+  <svg class="logo__mark" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none">
+    <path d="M12 2.5 4.2 12 12 21.5 19.8 12Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+    <path d="M12 6.8 7.6 12 12 17.2 16.4 12Z" fill="currentColor" opacity=".22" />
+  </svg>
+  <span class="logo__word">{SITE.brand}</span>
+</span>
+
+<style>
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    font-family: var(--display);
+    font-size: var(--step-1);
+    font-weight: var(--weight-semi);
+    letter-spacing: 0.01em;
+    line-height: 1;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .logo__mark { color: var(--accent); flex-shrink: 0; }
+  .logo__word { padding-top: 2px; }
+</style>

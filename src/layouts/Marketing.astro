@@ -1,0 +1,36 @@
+---
+import Base from './Base.astro';
+import Header from '~/components/Header.astro';
+import Footer from '~/components/Footer.astro';
+
+import type { Locale } from '~/config/site';
+import type { Alternate } from '~/i18n';
+import type { PageKey } from '~/i18n/routes';
+
+interface Props {
+  locale: Locale;
+  pageKey: PageKey;
+  title: string;
+  description: string;
+  canonical: string;
+  alternates: Alternate[];
+  xDefault: string;
+  business?: boolean;
+}
+
+const { locale, pageKey, ...meta } = Astro.props;
+---
+
+<Base locale={locale} {...meta}>
+  <Header locale={locale} pageKey={pageKey} />
+  <main id="main" class="main"><slot /></main>
+  <Footer locale={locale} />
+</Base>
+
+<style is:global>
+  /* The body is the flex column that pins the footer to the bottom on short
+     pages. Declared here rather than in base.css because it is a consequence
+     of this layout's structure, not of the document. */
+  body { display: flex; flex-direction: column; min-height: 100vh; }
+  .main { flex: 1; }
+</style>
