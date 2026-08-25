@@ -43,7 +43,17 @@ export interface PriceItem {
 }
 
 export const SITE = {
-  url: 'https://silfrun.is',
+  /**
+   * The canonical origin. Every canonical link, hreflang alternate, sitemap
+   * entry, structured-data @id and the llms.txt map are built from this, so it
+   * is the only place the live domain is written.
+   *
+   * silfrun.is is also an active zone. If the .is becomes the primary domain
+   * later, change this line, redeploy, and add a redirect from .com to .is —
+   * both serving the same pages without one canonicalising to the other is
+   * what splits a site's ranking between two domains.
+   */
+  url: 'https://silfrun.com',
 
   /**
    * Iceland does not observe daylight saving and sits on UTC year round, but
@@ -66,8 +76,10 @@ export const SITE = {
   locales: LOCALES,
 
   contact: {
-    phone: TODO(''),
-    phoneE164: TODO(''),
+    /** Display form. Icelandic seven-digit subscriber number, grouped 3-4. */
+    phone: '+354 771 3011',
+    /** E.164, for tel: links and structured data. No spaces, leading plus. */
+    phoneE164: '+3547713011',
     email: TODO(''),
 
     /**
@@ -79,7 +91,7 @@ export const SITE = {
      * silently pointing a WhatsApp button at a landline loses the enquiry with
      * no error anyone would see.
      */
-    whatsapp: TODO(''),
+    whatsapp: '3547713011',
 
     /**
      * Facebook page username for m.me, without the domain — the part after
