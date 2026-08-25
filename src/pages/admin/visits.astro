@@ -1,0 +1,232 @@
+---
+import Admin from '~/layouts/Admin.astro';
+import VisitTable from '~/components/admin/VisitTable.astro';
+import { requireAdmin, env } from '~/lib/admin-guard';
+import {
+  listVisits, getVisit, parseItems, formatPhone,
+  VISIT_STATUSES, type VisitRow, type VisitStatus,
+} from '~/lib/visits';
+import { isk, clock, longDate } from '~/lib/time';
+
+export const prerender = false;
+
+const gate = await requireAdmin(Astro);
+if (gate) return gate;
+
+const { DB } = env(Astro);
+
+const ref = Astro.url.searchParams.get('ref');
+const filterRaw = Astro.url.searchParams.get('status') ?? 'open';
+const filter = (['open', 'all', ...VISIT_STATUSES] as string[]).includes(filterRaw) ? filterRaw : 'open';
+const saved = Astro.url.searchParams.get('saved') === '1';
+
+let rows: VisitRow[] = [];
+let one: VisitRow | null = null;
+let dbError: string | null = null;
+
+if (!DB) {
+  dbError = 'Gagnagrunnurinn er ekki bundinn (DB).';
+} else {
+  try {
+    if (ref) one = await getVisit(DB, ref);
+    rows = await listVisits(DB, { status: filter as VisitStatus | 'open' | 'all' });
+  } catch (e) {
+    dbError = `Gagnagrunnurinn svarar ekki. Keyrðu "npm run db:migrate:remote". (${String(e).slice(0, 120)})`;
+  }
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  new: 'Ný', quoted: 'Verð sent', scheduled: 'Á dagskrá', done: 'Lokið', cancelled: 'Afturkallað',
+};
+const ITEM_LABEL: Record<string, string> = {
+  sofa: 'Sófi', rug: 'Teppi', carpet: 'Gólfteppi', stains: 'Blettir',
+};
+
+const FILTERS = [
+  { v: 'open', l: 'Opið' },
+  { v: 'new', l: 'Nýjar' },
+  { v: 'scheduled', l: 'Á dagskrá' },
+  { v: 'done', l: 'Lokið' },
+  { v: 'all', l: 'Allt' },
+];
+
+const wa = one ? `https://wa.me/${one.phone.replace(/[^0-9]/g, '')}` : null;
+const scheduledDate = one?.scheduled_at ? new Date(one.scheduled_at * 1000).toISOString().slice(0, 10) : one?.preferred_date ?? '';
+const scheduledTime = one?.scheduled_at ? clock(one.scheduled_at) : '09:00';
+---
+
+<Admin title="Heimsóknir" current="visits">
+  <div class="adm__wrap">
+    <header class="adm__head">
+      <div>
+        <h1 class="adm__title">Heimsóknir</h1>
+        <p class="adm__sub">{rows.length} færslur</p>
+      </div>
+      <a class="btn btn--foil" href="/admin/new-visit/">Ný heimsókn</a>
+    </header>
+
+    {dbError && <p class="adm__msg adm__msg--err">{dbError}</p>}
+    {saved && <p class="adm__msg adm__msg--ok">Vistað.</p>}
+    {ref && !one && !dbError && <p class="adm__msg adm__msg--warn">Fann ekki {ref}.</p>}
+
+    {one && (
+      <section class="adm__panel det">
+        <header class="det__head">
+          <div>
+            <h2 class="det__ref">{one.ref}</h2>
+            <span class:list={['adm__st', `adm__st--${one.status}`]}>
+              {STATUS_LABEL[one.status] ?? one.status}
+            </span>
+          </div>
+          <a class="btn btn--ghost btn--sm" href="/admin/visits/">Loka</a>
+        </header>
+
+        <dl class="det__facts">
+          <div><dt>Viðskiptavinur</dt><dd>{one.name}</dd></div>
+          <div>
+            <dt>Sími</dt>
+            <dd>
+              <a href={`tel:${one.phone}`}>{formatPhone(one.phone)}</a>
+              {wa && <a class="det__wa" href={wa} target="_blank" rel="noopener">WhatsApp</a>}
+            </dd>
+          </div>
+          {one.email && <div><dt>Netfang</dt><dd><a href={`mailto:${one.email}`}>{one.email}</a></dd></div>}
+          <div><dt>Óskadagur</dt><dd>{longDate(one.preferred_date, 'is')}</dd></div>
+          <div><dt>Tímabil</dt><dd>{one.window === 'morning' ? 'Fyrir hádegi' : one.window === 'afternoon' ? 'Eftir hádegi' : 'Hvort sem er'}</dd></div>
+          <div><dt>Verk</dt><dd>{parseItems(one.items).map((i) => ITEM_LABEL[i] ?? i).join(', ') || '—'}</dd></div>
+          <div><dt>Heimilisfang</dt><dd>{one.address ?? '—'}</dd></div>
+          <div><dt>Svæði</dt><dd>{one.area ?? '—'}</dd></div>
+          <div><dt>Verð</dt><dd>{isk(one.quote_isk)}</dd></div>
+        </dl>
+
+        <form class="det__form" method="POST" action="/api/admin/visit">
+          <input type="hidden" name="ref" value={one.ref} />
+
+          <div class="adm__row">
+            <label class="sf-field">
+              <span class="sf-field__label">Staða</span>
+              <select class="sf-select" name="status">
+                {VISIT_STATUSES.map((st) => (
+                  <option value={st} selected={st === one!.status}>{STATUS_LABEL[st]}</option>
+                ))}
+              </select>
+            </label>
+
+            <label class="sf-field">
+              <span class="sf-field__label">Verð (ISK)</span>
+              <input class="sf-input" type="number" name="quote_isk" min="0" step="500"
+                     value={one.quote_isk ?? ''} placeholder="—" />
+            </label>
+          </div>
+
+          <div class="adm__row">
+            <label class="sf-field">
+              <span class="sf-field__label">Dagsetning</span>
+              <input class="sf-input" type="date" name="date" value={scheduledDate} />
+            </label>
+
+            <label class="sf-field">
+              <span class="sf-field__label">Tími</span>
+              <input class="sf-input" type="time" name="time" value={scheduledTime} step="900" />
+              <span class="sf-field__hint">Sett þegar staðan er „Á dagskrá“.</span>
+            </label>
+          </div>
+
+          <label class="sf-field">
+            <span class="sf-field__label">Heimilisfang</span>
+            <input class="sf-input" type="text" name="address" value={one.address ?? ''} />
+          </label>
+
+          <label class="sf-field">
+            <span class="sf-field__label">Athugasemdir</span>
+            <textarea class="sf-input sf-input--textarea" name="notes" rows="3">{one.notes ?? ''}</textarea>
+          </label>
+
+          <div class="adm__actions">
+            <button class="btn btn--foil" type="submit">Vista</button>
+            <a class="btn btn--ghost" href="/admin/visits/">Hætta við</a>
+          </div>
+        </form>
+      </section>
+    )}
+
+    <nav class="filt" aria-label="Sía">
+      {FILTERS.map((f) => (
+        <a class:list={['filt__a', { 'filt__a--on': f.v === filter }]}
+           href={`/admin/visits/?status=${f.v}`}>{f.l}</a>
+      ))}
+    </nav>
+
+    <VisitTable rows={rows} empty="Engar heimsóknir í þessari síu." />
+  </div>
+</Admin>
+
+<style>
+  .det { margin-block-end: var(--space-600); }
+
+  .det__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-300);
+    margin-block-end: var(--space-400);
+  }
+
+  .det__ref {
+    font-family: var(--font-mono);
+    font-size: var(--text-lg);
+    letter-spacing: 0;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-150);
+  }
+
+  .det__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+    gap: var(--space-300);
+    margin: 0 0 var(--space-500);
+    padding-block-end: var(--space-400);
+    border-block-end: 1px solid var(--edge-quiet);
+  }
+
+  .det__facts dt {
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-block-end: var(--space-075);
+  }
+
+  .det__facts dd { margin: 0; color: var(--text-primary); font-size: var(--text-sm); }
+  .det__facts a { color: var(--text-accent); text-decoration: none; }
+  .det__facts a:hover { color: var(--text-primary); }
+
+  .det__wa {
+    display: inline-block;
+    margin-inline-start: var(--space-200);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+  }
+
+  .det__form { display: flex; flex-direction: column; gap: var(--space-300); }
+
+  .filt { display: flex; flex-wrap: wrap; gap: var(--space-150); margin-block-end: var(--space-300); }
+
+  .filt__a {
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    padding: 0 var(--space-200);
+    border: 1px solid var(--edge-hairline);
+    border-radius: var(--radius-pill);
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: var(--transition-control);
+  }
+
+  .filt__a:hover { color: var(--text-primary); border-color: var(--edge-strong); }
+  .filt__a--on { color: var(--basalt-900); background: var(--silver-050); border-color: var(--silver-050); }
+</style>

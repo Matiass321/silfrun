@@ -1,6 +1,12 @@
 User-agent: *
 Allow: /
 
+# The admin tool and its API are not public. Every admin route also sends
+# X-Robots-Tag: noindex — a Disallow only asks a crawler not to fetch, and does
+# nothing about a URL that leaked into a link somewhere.
+Disallow: /admin/
+Disallow: /api/
+
 # The site ships no JavaScript, so nothing here needs a rendering budget.
 # Crawl-delay is deliberately absent: 45 static pages do not warrant one, and
 # Google ignores it in any case.

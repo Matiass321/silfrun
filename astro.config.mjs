@@ -1,5 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import cloudflare from '@astrojs/cloudflare';
 import sitemap from '@astrojs/sitemap';
 
 import { SITE } from './src/config/site.ts';
@@ -20,7 +21,26 @@ const BASE_PATH = process.env.BASE_PATH ?? '/';
 export default defineConfig({
   site: SITE_URL,
   base: BASE_PATH,
+
+  /**
+   * Static by default. All 45 marketing pages are prerendered to HTML and
+   * ship no JavaScript; only the admin tool and its API opt out with
+   *
+   *   export const prerender = false;
+   *
+   * so the public site keeps its speed and the adapter exists purely to give
+   * the admin routes a server and a D1 binding.
+   */
   output: 'static',
+
+  adapter: cloudflare({
+    // Images are built at compile time; no image-resizing worker at runtime.
+    imageService: 'compile',
+    platformProxy: {
+      // Gives `astro dev` a local D1 database through wrangler.
+      enabled: true,
+    },
+  }),
 
   integrations: [
     sitemap({
@@ -30,7 +50,12 @@ export default defineConfig({
        * genuinely translated. hreflang is generated from the slug table in
        * src/i18n/routes.ts instead, which is correct by construction.
        */
-      filter: (page) => new URL(page).pathname !== '/',
+      filter: (page) => {
+        const path = new URL(page).pathname;
+        // '/' is a language chooser, not content. The admin is not public.
+        if (path === '/') return false;
+        return !path.startsWith('/admin');
+      },
     }),
   ],
 

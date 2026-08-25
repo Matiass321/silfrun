@@ -1,0 +1,156 @@
+---
+import Admin from '~/layouts/Admin.astro';
+import { requireAdmin, env } from '~/lib/admin-guard';
+import { getSetting } from '~/lib/auth';
+import { SITE, isPlaceholder, whatsappUrl } from '~/config/site';
+
+export const prerender = false;
+
+const gate = await requireAdmin(Astro);
+if (gate) return gate;
+
+const { DB, ADMIN_SESSION_SECRET, ADMIN_PASSWORD_HASH } = env(Astro);
+
+const saved = Astro.url.searchParams.get('saved') === '1';
+const err = Astro.url.searchParams.get('e');
+const MESSAGES: Record<string, string> = {
+  short: 'Nýja lykilorðið þarf að vera minnst 12 stafir.',
+  mismatch: 'Lykilorðin stemma ekki.',
+  wrong: 'Núverandi lykilorð er rangt.',
+  nodb: 'Gagnagrunnurinn er ekki bundinn.',
+};
+
+/* Health checks, so a broken install says which piece is missing. */
+let dbOk = false;
+let dbDetail = 'Ekki bundinn';
+if (DB) {
+  try {
+    await DB.prepare('SELECT 1 FROM settings LIMIT 1').first();
+    dbOk = true;
+    dbDetail = 'Tengdur, skema til staðar';
+  } catch {
+    dbDetail = 'Bundinn en skema vantar — keyrðu npm run db:migrate:remote';
+  }
+}
+
+const passwordInD1 = DB ? Boolean(await getSetting(DB, 'admin_password_hash')) : false;
+
+const checks = [
+  { label: 'D1 gagnagrunnur', ok: dbOk, detail: dbDetail },
+  { label: 'ADMIN_SESSION_SECRET', ok: Boolean(ADMIN_SESSION_SECRET), detail: ADMIN_SESSION_SECRET ? 'Sett' : 'Vantar — innskráning virkar ekki' },
+  { label: 'Lykilorð', ok: passwordInD1 || Boolean(ADMIN_PASSWORD_HASH), detail: passwordInD1 ? 'Geymt í D1' : ADMIN_PASSWORD_HASH ? 'Geymt sem leyndarmál' : 'Ekki sett' },
+  { label: 'WhatsApp', ok: whatsappUrl() !== null, detail: whatsappUrl() ? SITE.contact.phone : 'Ekki stillt í site.ts' },
+  { label: 'Netfang', ok: !isPlaceholder(SITE.contact.email), detail: isPlaceholder(SITE.contact.email) ? 'Ekki stillt í site.ts' : String(SITE.contact.email) },
+  { label: 'Kennitala', ok: !isPlaceholder(SITE.kennitala), detail: isPlaceholder(SITE.kennitala) ? 'Vantar — lögbundið á vefsíðu fyrirtækis' : String(SITE.kennitala) },
+];
+---
+
+<Admin title="Stillingar" current="settings">
+  <div class="adm__wrap st">
+    <header class="adm__head">
+      <div>
+        <h1 class="adm__title">Stillingar</h1>
+        <p class="adm__sub">Staða uppsetningar og lykilorð.</p>
+      </div>
+    </header>
+
+    {saved && <p class="adm__msg adm__msg--ok">Lykilorð uppfært.</p>}
+    {err && MESSAGES[err] && <p class="adm__msg adm__msg--err">{MESSAGES[err]}</p>}
+
+    <section class="adm__panel">
+      <h2 class="st__h">Kerfisstaða</h2>
+      <ul class="st__checks">
+        {checks.map((c) => (
+          <li class="st__check">
+            <span class:list={['st__dot', c.ok ? 'st__dot--ok' : 'st__dot--no']} aria-hidden="true"></span>
+            <span class="st__label">{c.label}</span>
+            <span class="st__detail">{c.detail}</span>
+            <span class="visually-hidden">{c.ok ? 'Í lagi' : 'Vantar'}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="adm__panel st__sec">
+      <h2 class="st__h">Breyta lykilorði</h2>
+      <p class="st__note">
+        Geymt sem PBKDF2-hash. Ef þú gleymir því er hægt að eyða línunni
+        <code>admin_password_hash</code> úr <code>settings</code> og setja upp aftur.
+      </p>
+
+      <form class="adm__form" method="POST" action="/api/admin/password">
+        <label class="sf-field">
+          <span class="sf-field__label">Núverandi lykilorð</span>
+          <input class="sf-input" type="password" name="current" autocomplete="current-password" required />
+        </label>
+
+        <div class="adm__row">
+          <label class="sf-field">
+            <span class="sf-field__label">Nýtt lykilorð</span>
+            <input class="sf-input" type="password" name="password" minlength="12" autocomplete="new-password" required />
+          </label>
+          <label class="sf-field">
+            <span class="sf-field__label">Endurtaktu</span>
+            <input class="sf-input" type="password" name="confirm" minlength="12" autocomplete="new-password" required />
+          </label>
+        </div>
+
+        <div class="adm__actions">
+          <button class="btn btn--foil" type="submit" disabled={!DB}>Vista lykilorð</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="adm__panel st__sec">
+      <h2 class="st__h">Breytt í kóða</h2>
+      <p class="st__note">
+        Verð, þjónustusvæði, opnunartími og tengiliðaupplýsingar eru í
+        <code>src/config/site.ts</code> — ekki hér. Það er eini staðurinn sem
+        þau eru skrifuð, svo síðan og byggingin geta ekki orðið ósammála.
+      </p>
+    </section>
+  </div>
+</Admin>
+
+<style>
+  .st__h {
+    font-family: var(--font-text);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 var(--space-300);
+  }
+
+  .st__sec { margin-block-start: var(--space-400); }
+
+  .st__checks { display: flex; flex-direction: column; }
+
+  .st__check {
+    display: grid;
+    grid-template-columns: 10px 12rem 1fr;
+    gap: var(--space-250);
+    align-items: baseline;
+    padding-block: var(--space-200);
+    border-block-end: 1px solid var(--edge-quiet);
+  }
+
+  .st__check:last-child { border-block-end: 0; }
+
+  .st__dot { width: 6px; height: 6px; border-radius: var(--radius-pill); align-self: center; }
+  .st__dot--ok { background: var(--signal-positive); }
+  .st__dot--no { background: var(--signal-caution); }
+
+  .st__label { font-size: var(--text-sm); color: var(--text-primary); }
+  .st__detail { font: var(--type-mono); color: var(--text-muted); }
+
+  .st__note { font-size: var(--text-sm); color: var(--text-secondary); margin-block-end: var(--space-300); }
+
+  code { font-size: var(--text-xs); color: var(--text-accent); }
+
+  @media (max-width: 40rem) {
+    .st__check { grid-template-columns: 10px 1fr; }
+    .st__detail { grid-column: 2; }
+  }
+</style>

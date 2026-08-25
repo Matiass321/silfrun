@@ -1,0 +1,192 @@
+---
+import Admin from '~/layouts/Admin.astro';
+import { requireAdmin, env } from '~/lib/admin-guard';
+import { visitsBetween, parseItems, formatPhone, type VisitRow } from '~/lib/visits';
+import { today, addDays, startOfDay, endOfDay, clock, isoDate, longDate } from '~/lib/time';
+
+export const prerender = false;
+
+const gate = await requireAdmin(Astro);
+if (gate) return gate;
+
+const { DB } = env(Astro);
+
+/**
+ * Two weeks forward from today, not a calendar month.
+ *
+ * A month grid on a phone is unreadable and mostly empty for a business that
+ * books a fortnight ahead. A dense list of the days that actually have work is
+ * what the person driving the van needs.
+ */
+const DAYS = 14;
+const from = Astro.url.searchParams.get('from') ?? today();
+const start = startOfDay(from);
+const end = endOfDay(addDays(from, DAYS - 1));
+
+let rows: VisitRow[] = [];
+let dbError: string | null = null;
+
+if (!DB) {
+  dbError = 'Gagnagrunnurinn er ekki bundinn (DB).';
+} else {
+  try {
+    rows = await visitsBetween(DB, start, end);
+  } catch (e) {
+    dbError = `Gagnagrunnurinn svarar ekki. Keyrðu "npm run db:migrate:remote". (${String(e).slice(0, 120)})`;
+  }
+}
+
+/** Group by local day so each day renders once, in order. */
+const byDay = new Map<string, VisitRow[]>();
+for (let i = 0; i < DAYS; i++) byDay.set(addDays(from, i), []);
+for (const r of rows) {
+  if (!r.scheduled_at) continue;
+  const d = isoDate(r.scheduled_at);
+  if (byDay.has(d)) byDay.get(d)!.push(r);
+}
+
+const days = [...byDay.entries()];
+const todayIso = today();
+
+const ITEM_LABEL: Record<string, string> = {
+  sofa: 'Sófi', rug: 'Teppi', carpet: 'Gólfteppi', stains: 'Blettir',
+};
+
+const prev = addDays(from, -DAYS);
+const next = addDays(from, DAYS);
+---
+
+<Admin title="Dagatal" current="calendar">
+  <div class="adm__wrap">
+    <header class="adm__head">
+      <div>
+        <h1 class="adm__title">Dagatal</h1>
+        <p class="adm__sub">{rows.length} bókanir næstu {DAYS} daga</p>
+      </div>
+      <div class="adm__actions">
+        <a class="btn btn--ghost btn--sm" href={`/admin/calendar/?from=${prev}`}>← Fyrri</a>
+        <a class="btn btn--ghost btn--sm" href="/admin/calendar/">Í dag</a>
+        <a class="btn btn--ghost btn--sm" href={`/admin/calendar/?from=${next}`}>Næstu →</a>
+      </div>
+    </header>
+
+    {dbError && <p class="adm__msg adm__msg--err">{dbError}</p>}
+
+    <div class="cal">
+      {days.map(([iso, list]) => (
+        <section class:list={['cal__d', { 'cal__d--today': iso === todayIso, 'cal__d--empty': list.length === 0 }]}>
+          <header class="cal__h">
+            <span class="cal__date">{longDate(iso, 'is')}</span>
+            {iso === todayIso && <span class="cal__badge">Í dag</span>}
+            {list.length > 0 && <span class="cal__n">{list.length}</span>}
+          </header>
+
+          {list.length === 0 ? (
+            <p class="cal__none">—</p>
+          ) : (
+            <ul class="cal__list">
+              {list.map((r) => (
+                <li class="cal__item">
+                  <span class="cal__time">{clock(r.scheduled_at!)}</span>
+                  <span class="cal__body">
+                    <a class="cal__name" href={`/admin/visits/?ref=${r.ref}`}>{r.name}</a>
+                    <span class="cal__meta">
+                      {parseItems(r.items).map((i) => ITEM_LABEL[i] ?? i).join(', ') || '—'}
+                      {r.area ? ` · ${r.area}` : ''}
+                    </span>
+                    {r.address && <span class="cal__addr">{r.address}</span>}
+                  </span>
+                  <a class="cal__ph" href={`tel:${r.phone}`}>{formatPhone(r.phone)}</a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ))}
+    </div>
+  </div>
+</Admin>
+
+<style>
+  .cal { display: flex; flex-direction: column; }
+
+  .cal__d {
+    padding-block: var(--space-300);
+    border-block-end: 1px solid var(--edge-quiet);
+  }
+
+  .cal__d--empty { opacity: .5; }
+  .cal__d--today { border-inline-start: 1px solid var(--accent); padding-inline-start: var(--space-300); }
+
+  .cal__h {
+    display: flex;
+    align-items: center;
+    gap: var(--space-200);
+    margin-block-end: var(--space-200);
+  }
+
+  .cal__date {
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .cal__d--today .cal__date { color: var(--text-primary); }
+
+  .cal__badge {
+    font: var(--type-mono);
+    font-size: 10px;
+    color: var(--text-accent);
+  }
+
+  .cal__n {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-inset);
+    color: var(--text-secondary);
+    font-family: var(--font-mono); font-size: 10px;
+  }
+
+  .cal__none { font-family: var(--font-mono); color: var(--silver-600); margin: 0; }
+
+  .cal__list { display: flex; flex-direction: column; gap: var(--space-200); }
+
+  .cal__item {
+    display: grid;
+    grid-template-columns: 4rem 1fr auto;
+    gap: var(--space-250);
+    align-items: baseline;
+  }
+
+  .cal__time {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cal__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+  .cal__name { color: var(--text-primary); text-decoration: none; font-size: var(--text-sm); }
+  .cal__name:hover { color: var(--text-accent); }
+
+  .cal__meta { font-size: var(--text-xs); color: var(--text-muted); }
+  .cal__addr { font-size: var(--text-xs); color: var(--silver-600); }
+
+  .cal__ph {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .cal__ph:hover { color: var(--text-accent); }
+
+  @media (max-width: 40rem) {
+    .cal__item { grid-template-columns: 3.5rem 1fr; }
+    .cal__ph { grid-column: 2; }
+  }
+</style>

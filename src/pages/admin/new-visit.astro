@@ -1,0 +1,148 @@
+---
+import Admin from '~/layouts/Admin.astro';
+import { requireAdmin, env } from '~/lib/admin-guard';
+import { SITE } from '~/config/site';
+import { today } from '~/lib/time';
+
+export const prerender = false;
+
+const gate = await requireAdmin(Astro);
+if (gate) return gate;
+
+const { DB } = env(Astro);
+
+const err = Astro.url.searchParams.get('e');
+const MESSAGES: Record<string, string> = {
+  name: 'Nafn vantar.',
+  phone: 'Símanúmer vantar.',
+  date: 'Dagsetning vantar.',
+  nodb: 'Gagnagrunnurinn er ekki bundinn.',
+};
+
+const SERVICES = [
+  { key: 'sofa', label: 'Sófi og áklæði' },
+  { key: 'rug', label: 'Teppi' },
+  { key: 'carpet', label: 'Gólfteppi' },
+  { key: 'stains', label: 'Blettir og lykt' },
+];
+---
+
+<Admin title="Ný heimsókn" current="visits">
+  <div class="adm__wrap nv">
+    <header class="adm__head">
+      <div>
+        <h1 class="adm__title">Ný heimsókn</h1>
+        <p class="adm__sub">Skráð handvirkt eftir símtal eða WhatsApp-skilaboð.</p>
+      </div>
+      <a class="btn btn--ghost" href="/admin/visits/">Til baka</a>
+    </header>
+
+    {!DB && <p class="adm__msg adm__msg--err">Gagnagrunnurinn er ekki bundinn (DB).</p>}
+    {err && MESSAGES[err] && <p class="adm__msg adm__msg--err">{MESSAGES[err]}</p>}
+
+    <form class="adm__panel adm__form" method="POST" action="/api/admin/new-visit">
+      <fieldset class="fs">
+        <legend class="fs__l">Viðskiptavinur</legend>
+        <div class="adm__row">
+          <label class="sf-field">
+            <span class="sf-field__label">Nafn</span>
+            <input class="sf-input" type="text" name="name" required autocomplete="off" />
+          </label>
+          <label class="sf-field">
+            <span class="sf-field__label">Sími</span>
+            <input class="sf-input" type="tel" name="phone" required placeholder="771 3011" autocomplete="off" />
+            <span class="sf-field__hint">Sjö tölustafir, eða með +354.</span>
+          </label>
+        </div>
+        <div class="adm__row">
+          <label class="sf-field">
+            <span class="sf-field__label">Netfang</span>
+            <input class="sf-input" type="email" name="email" autocomplete="off" />
+          </label>
+          <label class="sf-field">
+            <span class="sf-field__label">Svæði</span>
+            <select class="sf-select" name="area">
+              <option value="">—</option>
+              {SITE.areas.map((a) => <option value={a.name}>{a.name}</option>)}
+            </select>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="fs">
+        <legend class="fs__l">Verkið</legend>
+        <div class="nv__items">
+          {SERVICES.map((s) => (
+            <label class="sf-check">
+              <input type="checkbox" name="items" value={s.key} />
+              <span class="sf-check__box"></span>
+              <span class="sf-check__text">{s.label}</span>
+            </label>
+          ))}
+        </div>
+
+        <label class="sf-field">
+          <span class="sf-field__label">Heimilisfang</span>
+          <input class="sf-input" type="text" name="address" autocomplete="off" />
+        </label>
+      </fieldset>
+
+      <fieldset class="fs">
+        <legend class="fs__l">Tími</legend>
+        <div class="adm__row">
+          <label class="sf-field">
+            <span class="sf-field__label">Óskadagur</span>
+            <input class="sf-input" type="date" name="preferred_date" required value={today()} />
+          </label>
+          <label class="sf-field">
+            <span class="sf-field__label">Tímabil</span>
+            <select class="sf-select" name="window">
+              <option value="morning">Fyrir hádegi</option>
+              <option value="afternoon">Eftir hádegi</option>
+              <option value="either">Hvort sem er</option>
+            </select>
+          </label>
+        </div>
+      </fieldset>
+
+      <label class="sf-field">
+        <span class="sf-field__label">Athugasemdir</span>
+        <textarea class="sf-input sf-input--textarea" name="notes" rows="3"
+                  placeholder="Efni, blettir, aðgengi, bílastæði…"></textarea>
+      </label>
+
+      <div class="adm__actions">
+        <button class="btn btn--foil" type="submit" disabled={!DB}>Skrá heimsókn</button>
+        <a class="btn btn--ghost" href="/admin/visits/">Hætta við</a>
+      </div>
+    </form>
+  </div>
+</Admin>
+
+<style>
+  .nv .adm__wrap { max-width: 46rem; }
+
+  .fs {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-300);
+  }
+
+  .fs__l {
+    padding: 0;
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-block-end: var(--space-100);
+  }
+
+  .nv__items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
+    gap: var(--space-200);
+  }
+</style>

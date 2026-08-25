@@ -1,0 +1,122 @@
+---
+import Admin from '~/layouts/Admin.astro';
+import { requireAdmin, env } from '~/lib/admin-guard';
+import { listCustomers, customerVisitCounts, formatPhone, type Customer } from '~/lib/visits';
+import { isoDate } from '~/lib/time';
+
+export const prerender = false;
+
+const gate = await requireAdmin(Astro);
+if (gate) return gate;
+
+const { DB } = env(Astro);
+
+const q = (Astro.url.searchParams.get('q') ?? '').trim().toLowerCase();
+
+let all: Customer[] = [];
+let counts: Record<number, number> = {};
+let dbError: string | null = null;
+
+if (!DB) {
+  dbError = 'Gagnagrunnurinn er ekki bundinn (DB).';
+} else {
+  try {
+    [all, counts] = await Promise.all([listCustomers(DB), customerVisitCounts(DB)]);
+  } catch (e) {
+    dbError = `Gagnagrunnurinn svarar ekki. Keyrðu "npm run db:migrate:remote". (${String(e).slice(0, 120)})`;
+  }
+}
+
+/**
+ * Filtering in memory rather than in SQL.
+ *
+ * A household list of this size fits in one query, and a LIKE across three
+ * columns would need its own index to stay fast for no benefit at this scale.
+ * If the list ever passes a few thousand rows this moves into the query.
+ */
+const rows = q
+  ? all.filter((c) =>
+      [c.name, c.phone, c.email ?? '', c.area ?? ''].join(' ').toLowerCase().includes(q)
+    )
+  : all;
+
+const repeat = rows.filter((c) => (counts[c.id] ?? 0) > 1).length;
+---
+
+<Admin title="Viðskiptavinir" current="customers">
+  <div class="adm__wrap">
+    <header class="adm__head">
+      <div>
+        <h1 class="adm__title">Viðskiptavinir</h1>
+        <p class="adm__sub">{rows.length} skráðir · {repeat} með fleiri en eina heimsókn</p>
+      </div>
+      <a class="btn btn--foil" href="/admin/new-visit/">Ný heimsókn</a>
+    </header>
+
+    {dbError && <p class="adm__msg adm__msg--err">{dbError}</p>}
+
+    <form class="cs__search" method="GET" action="/admin/customers/">
+      <label class="sf-field">
+        <span class="visually-hidden">Leita</span>
+        <input class="sf-input" type="search" name="q" value={q} placeholder="Leita að nafni, síma eða svæði…" />
+      </label>
+      <button class="btn btn--ghost" type="submit">Leita</button>
+      {q && <a class="btn btn--ghost" href="/admin/customers/">Hreinsa</a>}
+    </form>
+
+    {rows.length === 0 ? (
+      <div class="adm__tablewrap">
+        <p class="adm__empty">{q ? 'Ekkert fannst.' : 'Engir viðskiptavinir skráðir enn.'}</p>
+      </div>
+    ) : (
+      <div class="adm__tablewrap">
+        <table class="adm__table">
+          <thead>
+            <tr>
+              <th>Nafn</th>
+              <th>Sími</th>
+              <th>Netfang</th>
+              <th>Svæði</th>
+              <th>Heimsóknir</th>
+              <th>Skráður</th>
+              <th><span class="visually-hidden">Aðgerðir</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((c) => (
+              <tr>
+                <td class="adm__strong">{c.name}</td>
+                <td class="adm__num"><a class="cs__a" href={`tel:${c.phone}`}>{formatPhone(c.phone)}</a></td>
+                <td>{c.email ? <a class="cs__a" href={`mailto:${c.email}`}>{c.email}</a> : <span class="cs__none">—</span>}</td>
+                <td>{c.area ?? <span class="cs__none">—</span>}</td>
+                <td class="adm__num">{counts[c.id] ?? 0}</td>
+                <td class="adm__num">{isoDate(c.created_at)}</td>
+                <td>
+                  <a class="btn btn--ghost btn--sm"
+                     href={`https://wa.me/${c.phone.replace(/[^0-9]/g, '')}`}
+                     target="_blank" rel="noopener">WhatsApp</a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+</Admin>
+
+<style>
+  .cs__search {
+    display: flex;
+    gap: var(--space-200);
+    align-items: flex-end;
+    margin-block-end: var(--space-300);
+    flex-wrap: wrap;
+  }
+
+  .cs__search .sf-field { flex: 1; min-width: 14rem; }
+
+  .cs__a { color: var(--text-accent); text-decoration: none; }
+  .cs__a:hover { color: var(--text-primary); }
+  .cs__none { color: var(--silver-600); }
+</style>

@@ -1,0 +1,104 @@
+---
+import Admin from '~/layouts/Admin.astro';
+import { env, resolvePasswordHash } from '~/lib/admin-guard';
+import { SESSION_COOKIE, verifySession } from '~/lib/auth';
+
+export const prerender = false;
+
+const { DB, ADMIN_PASSWORD_HASH, ADMIN_SESSION_SECRET } = env(Astro);
+
+/* Already signed in? Do not make them log in twice. */
+if (ADMIN_SESSION_SECRET) {
+  const token = Astro.cookies.get(SESSION_COOKIE)?.value;
+  if (await verifySession(token, ADMIN_SESSION_SECRET)) {
+    return Astro.redirect('/admin/', 302);
+  }
+}
+
+/**
+ * With no password set anywhere, the only useful thing to offer is setup.
+ * Showing a login form that cannot succeed is a dead end, and the reason is
+ * not something the person standing there can guess at.
+ */
+const hash = await resolvePasswordHash(DB, ADMIN_PASSWORD_HASH);
+if (!hash) return Astro.redirect('/admin/setup/', 302);
+
+const configured = Boolean(ADMIN_SESSION_SECRET);
+
+/* Surfaced from the API redirect; never echoes what was typed. */
+const err = Astro.url.searchParams.get('e');
+const MESSAGES: Record<string, string> = {
+  bad: 'Rangt lykilorð.',
+  rate: 'Of margar tilraunir. Reyndu aftur eftir nokkrar mínútur.',
+  missing: 'Sláðu inn lykilorð.',
+};
+---
+
+<Admin title="Innskráning" bare>
+  <div class="log">
+    <div class="log__mark" aria-hidden="true">
+      <svg viewBox="0 0 48 64" fill="none">
+        <path d="M24 2 Q16 17 6 32 Q16 47 24 62 Z" fill="currentColor" opacity=".10" />
+        <path d="M24 2 Q32 17 42 32 Q32 47 24 62 Q16 47 6 32 Q16 17 24 2 Z"
+              fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" />
+        <path d="M24 2 V62" stroke="currentColor" stroke-width=".75" opacity=".45" />
+      </svg>
+    </div>
+
+    <h1 class="log__title">Stjórnborð</h1>
+    <div class="silfrun-rule log__rule"></div>
+
+    {!configured && (
+      <p class="adm__msg adm__msg--warn">
+        ADMIN_SESSION_SECRET er ekki stillt. Innskráning virkar ekki fyrr en það er sett.
+      </p>
+    )}
+
+    {err && MESSAGES[err] && <p class="adm__msg adm__msg--err">{MESSAGES[err]}</p>}
+
+    <form class="log__form" method="POST" action="/api/admin/login">
+      <label class="sf-field">
+        <span class="sf-field__label">Lykilorð</span>
+        <input
+          class="sf-input"
+          type="password"
+          name="password"
+          autocomplete="current-password"
+          required
+          autofocus
+        />
+      </label>
+
+      <button class="btn btn--foil btn--block" type="submit">Skrá inn</button>
+    </form>
+
+    <p class="log__note">Lotan endist í 12 klukkustundir.</p>
+  </div>
+</Admin>
+
+<style>
+  .log {
+    width: 100%;
+    max-width: 22rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-300);
+    text-align: center;
+  }
+
+  .log__mark { width: 30px; height: 40px; margin-inline: auto; color: var(--silver-300); }
+  .log__mark svg { width: 100%; height: 100%; display: block; }
+
+  .log__title {
+    font-size: var(--display-sm);
+    letter-spacing: var(--tracking-monogram);
+    text-transform: uppercase;
+    padding-left: var(--tracking-monogram);
+  }
+
+  .log__rule { max-width: 5rem; margin-inline: auto; }
+
+  .log__form { display: flex; flex-direction: column; gap: var(--space-300); text-align: start; margin-block-start: var(--space-200); }
+
+  .log__note { font: var(--type-mono); color: var(--text-muted); max-width: none; }
+</style>

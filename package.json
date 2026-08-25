@@ -10,9 +10,13 @@
     "build:ci": "astro build",
     "check": "astro check",
     "deploy": "npm run build && wrangler pages deploy ./dist --project-name silfrun",
-    "og": "node scripts/og-image.mjs"
+    "og": "node scripts/og-image.mjs",
+    "db:migrate:local": "wrangler d1 execute silfrun --local --file=./db/schema.sql",
+    "db:migrate:remote": "wrangler d1 execute silfrun --remote --file=./db/schema.sql",
+    "hash": "node scripts/hash-password.mjs"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^12.6.13",
     "@astrojs/sitemap": "^3.6.0",
     "@fontsource-variable/archivo": "^5.3.0",
     "@fontsource/ibm-plex-mono": "^5.3.0",
@@ -21,6 +25,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.5",
+    "@cloudflare/workers-types": "^5.20260825.1",
     "typescript": "^5.9.3",
     "wrangler": "^4.125.0"
   },

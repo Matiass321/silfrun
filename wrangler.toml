@@ -1,0 +1,46 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "silfrun"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./dist"
+
+# ---------------------------------------------------------------------------
+# D1 — customers, visits, settings and the reminder queue.
+#
+# Bound as DB rather than as the database name, because that is what the code
+# reads (locals.runtime.env.DB). A binding name is a contract with the code,
+# not with the dashboard, so renaming the database must not break the app.
+#
+# Apply the schema after any change:
+#   npm run db:migrate:remote
+# ---------------------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "silfrun"
+database_id = "2ea408ee-f8c2-4a52-9055-88cd6a969c7e"
+# Wrangler defaults this to ./migrations at the repo root, which does not exist
+# here — the files live in db/ beside the schema they belong with.
+migrations_dir = "db/migrations"
+
+# ---------------------------------------------------------------------------
+# Secrets are NEVER committed. Set them from the CLI or the dashboard:
+#
+#   npx wrangler pages secret put ADMIN_PASSWORD_HASH --project-name silfrun
+#   npx wrangler pages secret put ADMIN_SESSION_SECRET --project-name silfrun
+#
+# ADMIN_PASSWORD_HASH can also be written from the browser on first run via
+# /admin/setup/, which is the intended path — a Worker cannot write its own
+# Cloudflare secrets, so without that a terminal would be the only way in.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# KV — Astro's session store.
+#
+# The Cloudflare adapter enables sessions and expects a binding named SESSION;
+# without it the Worker fails at runtime with "Invalid binding `SESSION`". The
+# admin does not actually use Astro sessions — auth is a signed cookie in
+# src/lib/auth.ts — but the binding has to exist for the adapter to boot.
+# ---------------------------------------------------------------------------
+[[kv_namespaces]]
+binding = "SESSION"
+id = "e90713fc5ad44dc3b065957efda363cc"

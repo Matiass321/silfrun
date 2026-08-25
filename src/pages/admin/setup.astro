@@ -1,0 +1,86 @@
+---
+import Admin from '~/layouts/Admin.astro';
+import { env, resolvePasswordHash } from '~/lib/admin-guard';
+
+export const prerender = false;
+
+const { DB, ADMIN_PASSWORD_HASH, ADMIN_SESSION_SECRET } = env(Astro);
+
+/**
+ * First run only.
+ *
+ * Once a password exists this page is closed permanently — otherwise it is an
+ * unauthenticated endpoint that can overwrite the admin password, which is the
+ * whole security model handed away. Changing the password later goes through
+ * Settings, behind the session.
+ */
+const existing = await resolvePasswordHash(DB, ADMIN_PASSWORD_HASH);
+if (existing) return Astro.redirect('/admin/login/', 302);
+
+const ready = Boolean(DB) && Boolean(ADMIN_SESSION_SECRET);
+
+const err = Astro.url.searchParams.get('e');
+const MESSAGES: Record<string, string> = {
+  short: 'Lykilorðið þarf að vera minnst 12 stafir.',
+  mismatch: 'Lykilorðin stemma ekki.',
+  taken: 'Lykilorð hefur þegar verið sett.',
+  nodb: 'Gagnagrunnurinn er ekki tengdur.',
+};
+---
+
+<Admin title="Uppsetning" bare>
+  <div class="set">
+    <h1 class="set__title">Uppsetning</h1>
+    <div class="silfrun-rule set__rule"></div>
+
+    <p class="set__lead">
+      Veldu lykilorð fyrir stjórnborðið. Það er geymt sem PBKDF2-hash — aldrei
+      sem texti — og verður ekki hægt að opna þessa síðu aftur eftir á.
+    </p>
+
+    {!DB && (
+      <p class="adm__msg adm__msg--err">
+        D1-gagnagrunnurinn er ekki bundinn. Keyrðu <code>npm run db:migrate:remote</code> og
+        staðfestu <code>wrangler.toml</code>.
+      </p>
+    )}
+
+    {!ADMIN_SESSION_SECRET && (
+      <p class="adm__msg adm__msg--err">
+        ADMIN_SESSION_SECRET vantar. Settu það áður en lykilorð er valið:
+        <br />
+        <code>npx wrangler pages secret put ADMIN_SESSION_SECRET --project-name silfrun</code>
+      </p>
+    )}
+
+    {err && MESSAGES[err] && <p class="adm__msg adm__msg--err">{MESSAGES[err]}</p>}
+
+    <form class="set__form" method="POST" action="/api/admin/setup">
+      <label class="sf-field">
+        <span class="sf-field__label">Lykilorð</span>
+        <input class="sf-input" type="password" name="password" minlength="12"
+               autocomplete="new-password" required disabled={!ready} />
+        <span class="sf-field__hint">Minnst 12 stafir. Notaðu lykilorðastjóra.</span>
+      </label>
+
+      <label class="sf-field">
+        <span class="sf-field__label">Endurtaktu lykilorðið</span>
+        <input class="sf-input" type="password" name="confirm" minlength="12"
+               autocomplete="new-password" required disabled={!ready} />
+      </label>
+
+      <button class="btn btn--foil btn--block" type="submit" disabled={!ready}>
+        Vista lykilorð
+      </button>
+    </form>
+  </div>
+</Admin>
+
+<style>
+  .set { width: 100%; max-width: 26rem; display: flex; flex-direction: column; gap: var(--space-300); }
+  .set__title { font-size: var(--display-sm); }
+  .set__rule { max-width: 5rem; }
+  .set__lead { color: var(--text-secondary); font-size: var(--text-sm); }
+  .set__form { display: flex; flex-direction: column; gap: var(--space-300); margin-block-start: var(--space-200); }
+  code { font-size: var(--text-xs); word-break: break-all; }
+</style>

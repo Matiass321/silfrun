@@ -1,0 +1,130 @@
+---
+import { parseItems, formatPhone, type VisitRow } from '~/lib/visits';
+import { clock, isk, relativeDays } from '~/lib/time';
+import { whatsappUrl } from '~/config/site';
+
+interface Props {
+  rows: VisitRow[];
+  empty: string;
+  /** Show the fixed time rather than the preferred date. Day views only. */
+  showTime?: boolean;
+}
+
+const { rows, empty, showTime = false } = Astro.props;
+
+const STATUS_LABEL: Record<string, string> = {
+  new: 'Ný',
+  quoted: 'Verð sent',
+  scheduled: 'Á dagskrá',
+  done: 'Lokið',
+  cancelled: 'Afturkallað',
+};
+
+/** Service keys are stored on the row; these are their Icelandic names. */
+const ITEM_LABEL: Record<string, string> = {
+  sofa: 'Sófi',
+  rug: 'Teppi',
+  carpet: 'Gólfteppi',
+  stains: 'Blettir',
+};
+---
+
+{rows.length === 0 ? (
+  <div class="adm__tablewrap"><p class="adm__empty">{empty}</p></div>
+) : (
+  <div class="adm__tablewrap">
+    <table class="adm__table">
+      <thead>
+        <tr>
+          <th>Nr.</th>
+          <th>{showTime ? 'Tími' : 'Dagur'}</th>
+          <th>Viðskiptavinur</th>
+          <th>Verk</th>
+          <th>Svæði</th>
+          <th>Staða</th>
+          <th>Verð</th>
+          <th><span class="visually-hidden">Aðgerðir</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => {
+          const items = parseItems(r.items);
+          const wa = whatsappUrl();
+          return (
+            <tr>
+              <td class="adm__num adm__strong">{r.ref}</td>
+
+              <td class="adm__num">
+                {showTime && r.scheduled_at
+                  ? clock(r.scheduled_at)
+                  : (
+                    <>
+                      {r.preferred_date}
+                      <span class="vt__rel">{relativeDays(r.preferred_date)}</span>
+                    </>
+                  )}
+              </td>
+
+              <td>
+                <span class="adm__strong">{r.name}</span>
+                <a class="vt__phone" href={`tel:${r.phone}`}>{formatPhone(r.phone)}</a>
+              </td>
+
+              <td>
+                {items.length
+                  ? items.map((i) => ITEM_LABEL[i] ?? i).join(', ')
+                  : <span class="vt__none">—</span>}
+              </td>
+
+              <td>{r.area ?? <span class="vt__none">—</span>}</td>
+
+              <td><span class:list={['adm__st', `adm__st--${r.status}`]}>{STATUS_LABEL[r.status] ?? r.status}</span></td>
+
+              <td class="adm__num">{isk(r.quote_isk)}</td>
+
+              <td class="vt__act">
+                <a class="btn btn--ghost btn--sm" href={`/admin/visits/?ref=${r.ref}`}>Opna</a>
+                {wa && (
+                  <a
+                    class="btn btn--ghost btn--sm"
+                    href={`https://wa.me/${r.phone.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    WhatsApp
+                  </a>
+                )}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+)}
+
+<style>
+  .vt__rel {
+    display: block;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0;
+    margin-block-start: 2px;
+  }
+
+  .vt__phone {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    text-decoration: none;
+    margin-block-start: 2px;
+    transition: color var(--dur-fast) var(--ease-glide);
+  }
+
+  .vt__phone:hover { color: var(--text-accent); }
+
+  .vt__none { color: var(--silver-600); }
+
+  .vt__act { white-space: nowrap; display: flex; gap: var(--space-100); }
+</style>
