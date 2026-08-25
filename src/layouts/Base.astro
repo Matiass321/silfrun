@@ -27,11 +27,17 @@ interface Props {
   jsonLd?: object | object[];
   /** Override the social share image. Defaults to the brand card. */
   ogImage?: string;
+  /**
+   * Keep this page out of search. For pages that exist for one visitor at one
+   * moment — a confirmation carrying a reference number has no business in
+   * anybody's search results.
+   */
+  noindex?: boolean;
 }
 
 const {
   locale, title, description, canonical, alternates, xDefault,
-  business = false, jsonLd: pageLd, ogImage,
+  business = false, jsonLd: pageLd, ogImage, noindex = false,
 } = Astro.props;
 const s = t(locale);
 
@@ -160,10 +166,10 @@ const graph = [websiteLd, webPageLd, ...(businessLd ? [businessLd] : []), ...ext
 
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {!noindex && <link rel="canonical" href={canonical} />}
 
-    {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
-    <link rel="alternate" hreflang="x-default" href={xDefault} />
+    {!noindex && alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
+    {!noindex && <link rel="alternate" hreflang="x-default" href={xDefault} />}
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.brand} />
@@ -201,7 +207,12 @@ const graph = [websiteLd, webPageLd, ...(businessLd ? [businessLd] : []), ...ext
       this, Google may truncate to a two-line summary, which is the difference
       between being quoted in an AI answer and being skipped.
     */}
-    <meta name="robots" content="max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta
+      name="robots"
+      content={noindex
+        ? 'noindex, nofollow'
+        : 'max-snippet:-1, max-image-preview:large, max-video-preview:-1'}
+    />
 
     {/* Base-aware: a hardcoded "/favicon.svg" 404s on a subpath deploy. */}
     <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} type="image/svg+xml" />

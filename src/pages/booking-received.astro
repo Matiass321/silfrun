@@ -1,0 +1,178 @@
+---
+import Base from '~/layouts/Base.astro';
+import { whatsappUrl, type Locale } from '~/config/site';
+import { t, alternates } from '~/i18n';
+import { path } from '~/i18n/routes';
+import { ICONS } from '~/data/icons';
+
+/**
+ * Booking confirmation.
+ *
+ * A separate route rather than a state on the quote page, because the quote
+ * page is prerendered — its query string is fixed at build time, so a success
+ * banner rendered there could never actually appear.
+ *
+ * This is the only page on the public site rendered on demand. It carries no
+ * marketing content, is excluded from the sitemap and sent noindex: a
+ * confirmation with a reference number in it has no business in search
+ * results.
+ */
+export const prerender = false;
+
+const url = Astro.url;
+const locale: Locale = url.searchParams.get('lang') === 'en' ? 'en' : 'is';
+const ref = url.searchParams.get('ref');
+const errorCode = url.searchParams.get('e');
+const ok = Boolean(ref) && !errorCode;
+
+const s = t(locale);
+const wa = whatsappUrl(s.contact.prefillQuote);
+
+const COPY = {
+  is: {
+    title: 'Fyrirspurn móttekin',
+    okTitle: 'Fyrirspurnin er komin til okkar.',
+    okBody: 'Við höfum samband samdægurs á virkum dögum.',
+    refLabel: 'Þitt númer',
+    next: 'Næsta skref',
+    photos: 'Sendu okkur tvær til þrjár myndir af stykkinu í dagsbirtu. Af þeim sjáum við gerð efnisins og getum staðfest verð áður en við komum.',
+    waCta: 'Senda myndir á WhatsApp',
+    home: 'Aftur á forsíðu',
+    errTitle: 'Fyrirspurnin komst ekki áleiðis.',
+    errBack: 'Reyna aftur',
+    errors: {
+      name: 'Nafn vantaði.',
+      phone: 'Símanúmerið var ekki gilt.',
+      date: 'Dagsetningu vantaði.',
+      past: 'Dagsetningin var liðin.',
+      rate: 'Of margar fyrirspurnir frá þessari tengingu. Sendu okkur frekar skilaboð á WhatsApp.',
+      down: 'Kerfisvilla okkar megin. Sendu okkur skilaboð á WhatsApp og við tökum fyrirspurnina þar.',
+    },
+  },
+  en: {
+    title: 'Enquiry received',
+    okTitle: 'Your enquiry has reached us.',
+    okBody: 'We will reply the same day on working days.',
+    refLabel: 'Your reference',
+    next: 'Next step',
+    photos: 'Send us two or three photographs of the piece in daylight. From those we can see the construction and confirm a price before we come.',
+    waCta: 'Send photographs on WhatsApp',
+    home: 'Back to the homepage',
+    errTitle: 'Your enquiry did not go through.',
+    errBack: 'Try again',
+    errors: {
+      name: 'A name was missing.',
+      phone: 'The telephone number was not valid.',
+      date: 'A date was missing.',
+      past: 'The date had already passed.',
+      rate: 'Too many enquiries from this connection. Please message us on WhatsApp instead.',
+      down: 'A fault on our side. Please message us on WhatsApp and we will take the enquiry there.',
+    },
+  },
+} as const;
+
+const c = COPY[locale];
+const errMsg = errorCode ? (c.errors as Record<string, string>)[errorCode] ?? c.errors.down : null;
+
+const alt = alternates('quote', locale);
+---
+
+<Base
+  locale={locale}
+  title={c.title}
+  description={c.okBody}
+  canonical={alt.canonical}
+  alternates={alt.list}
+  xDefault={alt.xDefault}
+  noindex
+>
+  <main class="rc" id="main">
+    <div class="rc__inner">
+      {ok ? (
+        <>
+          <span class="rc__tick" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25"
+                 stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+          </span>
+
+          <h1 class="rc__title">{c.okTitle}</h1>
+          <p class="rc__lead">{c.okBody}</p>
+
+          <p class="rc__ref">
+            <span class="rc__reflabel">{c.refLabel}</span>
+            <strong class="rc__refn">{ref}</strong>
+          </p>
+
+          <div class="silfrun-rule rc__rule"></div>
+
+          <h2 class="rc__next">{c.next}</h2>
+          <p class="rc__photos">{c.photos}</p>
+
+          {wa && (
+            <p class="rc__cta">
+              <a class="btn btn--foil btn--lg" href={wa} target="_blank" rel="noopener">
+                <span class="rc__icon" aria-hidden="true" set:html={ICONS.whatsapp} />
+                <span>{c.waCta}</span>
+              </a>
+            </p>
+          )}
+        </>
+      ) : (
+        <>
+          <h1 class="rc__title">{c.errTitle}</h1>
+          <p class="adm__msg adm__msg--err rc__err">{errMsg}</p>
+
+          <p class="rc__cta">
+            <a class="btn btn--foil" href={path('quote', locale)}>{c.errBack}</a>
+            {wa && (
+              <a class="btn btn--ghost" href={wa} target="_blank" rel="noopener">{c.waCta}</a>
+            )}
+          </p>
+        </>
+      )}
+
+      <p class="rc__home"><a class="link-arrow" href={path('home', locale)}>{c.home}</a></p>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .rc { display: flex; align-items: center; justify-content: center; min-height: 78vh; padding: var(--space-800) var(--space-400); }
+
+  .rc__inner { width: 100%; max-width: 34rem; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-250); }
+
+  .rc__tick {
+    display: inline-flex; width: 40px; height: 40px;
+    align-items: center; justify-content: center;
+    border-radius: var(--radius-pill);
+    background: var(--signal-positive-surface);
+    color: var(--signal-positive);
+  }
+  .rc__tick svg { width: 20px; height: 20px; }
+
+  .rc__title { font-size: var(--display-md); margin: 0; max-width: 20ch; }
+  .rc__lead { color: var(--text-secondary); font-size: var(--text-lg); margin: 0; }
+
+  .rc__ref {
+    display: flex; flex-direction: column; gap: var(--space-075);
+    margin: var(--space-200) 0 0;
+    padding: var(--space-250) var(--space-350);
+    background: var(--surface-inset);
+    border-radius: var(--radius-sm);
+  }
+  .rc__reflabel { font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--text-muted); }
+  .rc__refn { font-family: var(--font-mono); font-size: var(--text-lg); color: var(--text-primary); letter-spacing: 0; }
+
+  .rc__rule { width: 100%; margin-block: var(--space-300); }
+
+  .rc__next { font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--text-muted); margin: 0; }
+  .rc__photos { color: var(--text-secondary); margin: 0; }
+
+  .rc__err { width: 100%; }
+
+  .rc__cta { display: flex; flex-wrap: wrap; gap: var(--space-200); margin: var(--space-300) 0 0; }
+  .rc__icon { display: inline-flex; width: 18px; height: 18px; flex: none; }
+  .rc__icon :global(svg) { width: 100%; height: 100%; display: block; }
+
+  .rc__home { margin: var(--space-500) 0 0; }
+</style>

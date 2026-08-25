@@ -3,7 +3,11 @@ import Admin from '~/layouts/Admin.astro';
 import VisitTable from '~/components/admin/VisitTable.astro';
 import { requireAdmin, env } from '~/lib/admin-guard';
 import { listVisits, statusCounts, visitsBetween, type VisitRow } from '~/lib/visits';
-import { today, addDays, startOfDay, endOfDay, longDate } from '~/lib/time';
+import { today, addDays, startOfDay, endOfDay, longDate, clock } from '~/lib/time';
+import {
+  generateTomorrowReminders, pendingReminders, reminderLink,
+  type ReminderRow,
+} from '~/lib/reminders';
 
 export const prerender = false;
 
@@ -16,6 +20,7 @@ let counts: Record<string, number> = {};
 let todays: VisitRow[] = [];
 let tomorrows: VisitRow[] = [];
 let fresh: VisitRow[] = [];
+let reminders: ReminderRow[] = [];
 let dbError: string | null = null;
 
 /**
@@ -31,11 +36,23 @@ if (!DB) {
   try {
     const d0 = today();
     const d1 = addDays(d0, 1);
-    [counts, todays, tomorrows, fresh] = await Promise.all([
+
+    /**
+     * Generated on load rather than on a schedule.
+     *
+     * Cron would mean a Worker that runs whether or not anyone is working, for
+     * a business where somebody opens this page every morning anyway. The
+     * insert is idempotent, so calling it on every load costs one query and
+     * can never produce a duplicate message.
+     */
+    await generateTomorrowReminders(DB);
+
+    [counts, todays, tomorrows, fresh, reminders] = await Promise.all([
       statusCounts(DB),
       visitsBetween(DB, startOfDay(d0), endOfDay(d0)),
       visitsBetween(DB, startOfDay(d1), endOfDay(d1)),
       listVisits(DB, { status: 'new', limit: 20 }),
+      pendingReminders(DB),
     ]);
   } catch (e) {
     dbError = `Gagnagrunnurinn svarar ekki. Keyrðu "npm run db:migrate:remote". (${String(e).slice(0, 120)})`;
@@ -76,6 +93,52 @@ const open = (counts.new ?? 0) + (counts.quoted ?? 0) + (counts.scheduled ?? 0);
         <div class="adm__statl">Opið alls</div>
       </div>
     </div>
+
+    {reminders.length > 0 && (
+      <section class="sec">
+        <h2 class="sec__h">
+          Áminningar að senda
+          <span class="sec__n">{reminders.length}</span>
+        </h2>
+
+        <ul class="rem">
+          {reminders.map((r) => {
+            const link = reminderLink(r);
+            return (
+              <li class="rem__i">
+                <div class="rem__who">
+                  <span class="rem__name">{r.name ?? '—'}</span>
+                  <span class="rem__meta">
+                    {r.subject}
+                    {r.scheduled_at ? ` · ${clock(r.scheduled_at)} á morgun` : ''}
+                  </span>
+                </div>
+
+                <p class="rem__body">{r.body}</p>
+
+                <div class="rem__act">
+                  {link && (
+                    <a class="btn btn--foil btn--sm" href={link} target="_blank" rel="noopener">
+                      Opna í WhatsApp
+                    </a>
+                  )}
+                  <form method="POST" action="/api/admin/reminder">
+                    <input type="hidden" name="id" value={r.id} />
+                    <input type="hidden" name="action" value="sent" />
+                    <button class="btn btn--ghost btn--sm" type="submit">Merkja sent</button>
+                  </form>
+                  <form method="POST" action="/api/admin/reminder">
+                    <input type="hidden" name="id" value={r.id} />
+                    <input type="hidden" name="action" value="dismiss" />
+                    <button class="btn btn--ghost btn--sm" type="submit">Sleppa</button>
+                  </form>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    )}
 
     <section class="sec">
       <h2 class="sec__h">Dagskrá dagsins</h2>
@@ -129,4 +192,38 @@ const open = (counts.new ?? 0) + (counts.quoted ?? 0) + (counts.scheduled ?? 0);
   }
 
   .adm__grid { margin-block-end: var(--space-400); }
+
+  /* ---- reminders ---- */
+
+  .rem { display: flex; flex-direction: column; gap: var(--space-250); }
+
+  .rem__i {
+    padding: var(--space-300);
+    background: var(--surface-raised);
+    border: 1px solid var(--edge-hairline);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-200);
+  }
+
+  .rem__who { display: flex; align-items: baseline; gap: var(--space-200); flex-wrap: wrap; }
+  .rem__name { color: var(--text-primary); font-size: var(--text-sm); }
+  .rem__meta { font: var(--type-mono); color: var(--text-muted); }
+
+  /* The message is shown in full: nobody should press send on text they
+     have not read. */
+  .rem__body {
+    margin: 0;
+    padding: var(--space-250);
+    background: var(--surface-inset);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    max-width: none;
+  }
+
+  .rem__act { display: flex; flex-wrap: wrap; gap: var(--space-150); align-items: center; }
+  .rem__act form { display: contents; }
 </style>

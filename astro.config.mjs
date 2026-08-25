@@ -52,8 +52,10 @@ export default defineConfig({
        */
       filter: (page) => {
         const path = new URL(page).pathname;
-        // '/' is a language chooser, not content. The admin is not public.
+        // '/' is a language chooser, not content. The admin is not public,
+        // and the booking confirmation exists for one visitor at one moment.
         if (path === '/') return false;
+        if (path.startsWith('/booking-received')) return false;
         return !path.startsWith('/admin');
       },
     }),

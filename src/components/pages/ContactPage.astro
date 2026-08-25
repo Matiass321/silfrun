@@ -1,6 +1,7 @@
 ---
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
 import ContactChannels from '~/components/ContactChannels.astro';
+import BookingForm from '~/components/BookingForm.astro';
 import Pending from '~/components/Pending.astro';
 import { SITE, isPlaceholder, type Locale } from '~/config/site';
 import { t } from '~/i18n';
@@ -17,16 +18,18 @@ const isQuote = variant === 'quote';
 const heading = isQuote ? s.nav.quote : s.nav.contact;
 
 /**
- * No form.
+ * The quote page carries a real form; the contact page does not.
  *
- * The site is fully static with no backend, so a form would either post
- * nowhere or quietly depend on a third-party service nobody has chosen yet.
- * Asking for photographs by email or phone is honest about how the enquiry
- * actually reaches the business, and it is what the assessment needs anyway.
+ * Two forms on one site is two places for an enquiry to arrive and one of them
+ * to be missed. Contact stays messaging-only — that is what somebody who wants
+ * to ask a question rather than book a visit is looking for.
  *
- * When a backend exists, this becomes a real form and the instructions below
- * move into it as field help.
+ * Photographs are still collected on WhatsApp rather than uploaded. An upload
+ * field means storage, virus scanning, EXIF stripping and a privacy position
+ * on pictures of the inside of a home, for something the customer can send in
+ * two taps from the device that took it.
  */
+
 const copy = {
   is: {
     lead: 'Sendu tvær til þrjár myndir og staðsetningu. Við metum verkið, segjum hvað er hægt og staðfestum verð áður en við komum.',
@@ -86,6 +89,14 @@ const dayNames: Record<Locale, string[]> = {
       />
     </div>
   </section>
+
+  {isQuote && (
+    <section class="section section--tight">
+      <div class="wrap wrap--narrow">
+        <BookingForm locale={locale} />
+      </div>
+    </section>
+  )}
 
   <section class="section section--tight">
     <div class="wrap wrap--narrow contact">

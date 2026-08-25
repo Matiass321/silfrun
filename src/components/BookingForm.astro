@@ -1,0 +1,266 @@
+---
+import { SITE, type Locale } from '~/config/site';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+
+/**
+ * The enquiry form.
+ *
+ * Posts as a plain HTML form. The marketing pages ship no JavaScript, and a
+ * form that only works with JS enabled fails silently for exactly the people
+ * least likely to try again.
+ *
+ * Photographs are asked for on WhatsApp rather than uploaded here. An upload
+ * field means storage, virus scanning, EXIF stripping and a privacy position
+ * on images of the inside of someone's home — for a photograph they can send
+ * in two taps from the device that took it.
+ */
+const COPY = {
+  is: {
+    title: 'Fáðu mat á verkinu',
+    lead: 'Fylltu út og við höfum samband samdægurs á virkum dögum.',
+    name: 'Nafn',
+    phone: 'Símanúmer',
+    phoneHint: 'Sjö tölustafir. Við sendum WhatsApp-skilaboð til að fá myndir.',
+    email: 'Netfang',
+    emailHint: 'Valfrjálst.',
+    area: 'Svæði',
+    areaNone: 'Veldu svæði',
+    address: 'Heimilisfang',
+    addressHint: 'Valfrjálst á þessu stigi.',
+    what: 'Hvað þarf að hreinsa',
+    date: 'Óskadagur',
+    window: 'Tímabil',
+    windows: { morning: 'Fyrir hádegi', afternoon: 'Eftir hádegi', either: 'Hvort sem er' },
+    notes: 'Lýsing',
+    notesHint: 'Efni, blettir, hversu lengi þeir hafa verið, aðgengi.',
+    submit: 'Senda fyrirspurn',
+    honey: 'Fyrirtæki',
+    errors: {
+      name: 'Sláðu inn nafn.',
+      phone: 'Sláðu inn gilt símanúmer.',
+      date: 'Veldu dagsetningu.',
+      past: 'Veldu dagsetningu í framtíðinni.',
+      rate: 'Of margar fyrirspurnir. Sendu okkur frekar skilaboð á WhatsApp.',
+      down: 'Eitthvað fór úrskeiðis. Sendu okkur skilaboð á WhatsApp í staðinn.',
+    },
+    services: { sofa: 'Sófi og áklæði', rug: 'Teppi', carpet: 'Gólfteppi', stains: 'Blettir og lykt' },
+    required: 'Nauðsynlegt',
+  },
+  en: {
+    title: 'Get your piece assessed',
+    lead: 'Fill this in and we will reply the same day on working days.',
+    name: 'Name',
+    phone: 'Telephone',
+    phoneHint: 'Seven digits. We message on WhatsApp to collect photographs.',
+    email: 'Email',
+    emailHint: 'Optional.',
+    area: 'Area',
+    areaNone: 'Choose an area',
+    address: 'Address',
+    addressHint: 'Optional at this stage.',
+    what: 'What needs cleaning',
+    date: 'Preferred day',
+    window: 'Time of day',
+    windows: { morning: 'Morning', afternoon: 'Afternoon', either: 'Either' },
+    notes: 'Description',
+    notesHint: 'Material, marks, how long they have been there, access.',
+    submit: 'Send enquiry',
+    honey: 'Company',
+    errors: {
+      name: 'Please enter your name.',
+      phone: 'Please enter a valid telephone number.',
+      date: 'Please choose a date.',
+      past: 'Please choose a date in the future.',
+      rate: 'Too many enquiries. Please message us on WhatsApp instead.',
+      down: 'Something went wrong. Please message us on WhatsApp instead.',
+    },
+    services: { sofa: 'Sofa and upholstery', rug: 'Rugs', carpet: 'Fitted carpet', stains: 'Stains and odours' },
+    required: 'Required',
+  },
+} as const;
+
+const c = COPY[locale];
+const todayIso = new Date().toISOString().slice(0, 10);
+---
+
+<div class="bk" id="form">
+  <header class="bk__head">
+        <h2 class="bk__title">{c.title}</h2>
+        <p class="bk__lead">{c.lead}</p>
+      </header>
+
+  <form class="bk__form" method="POST" action="/api/booking">
+        <input type="hidden" name="locale" value={locale} />
+
+        {/* Honeypot: off-screen, not display:none, and never announced. */}
+        <div class="bk__hp" aria-hidden="true">
+          <label>{c.honey}<input type="text" name="company" tabindex="-1" autocomplete="off" /></label>
+        </div>
+
+        <div class="bk__row">
+          <label class="sf-field">
+            <span class="sf-field__label">{c.name} <span class="bk__req">*</span></span>
+            <input class="sf-input" type="text" name="name" required autocomplete="name" />
+          </label>
+
+          <label class="sf-field">
+            <span class="sf-field__label">{c.phone} <span class="bk__req">*</span></span>
+            <input class="sf-input" type="tel" name="phone" required autocomplete="tel" placeholder="771 3011" />
+            <span class="sf-field__hint">{c.phoneHint}</span>
+          </label>
+        </div>
+
+        <div class="bk__row">
+          <label class="sf-field">
+            <span class="sf-field__label">{c.email}</span>
+            <input class="sf-input" type="email" name="email" autocomplete="email" />
+            <span class="sf-field__hint">{c.emailHint}</span>
+          </label>
+
+          <label class="sf-field">
+            <span class="sf-field__label">{c.area}</span>
+            <select class="sf-select" name="area">
+              <option value="">{c.areaNone}</option>
+              {SITE.areas.map((a) => <option value={a.name}>{a.name}</option>)}
+            </select>
+          </label>
+        </div>
+
+        <fieldset class="bk__fs">
+          <legend class="sf-field__label bk__legend">{c.what}</legend>
+          <div class="bk__items">
+            {(['sofa', 'rug', 'carpet', 'stains'] as const).map((k) => (
+              <label class="sf-check">
+                <input type="checkbox" name="items" value={k} />
+                <span class="sf-check__box"></span>
+                <span class="sf-check__text">{c.services[k]}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <div class="bk__row">
+          <label class="sf-field">
+            <span class="sf-field__label">{c.date} <span class="bk__req">*</span></span>
+            <input class="sf-input" type="date" name="preferred_date" required min={todayIso} value={todayIso} />
+          </label>
+
+          <label class="sf-field">
+            <span class="sf-field__label">{c.window}</span>
+            <select class="sf-select" name="window">
+              <option value="either">{c.windows.either}</option>
+              <option value="morning">{c.windows.morning}</option>
+              <option value="afternoon">{c.windows.afternoon}</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="sf-field">
+          <span class="sf-field__label">{c.address}</span>
+          <input class="sf-input" type="text" name="address" autocomplete="street-address" />
+          <span class="sf-field__hint">{c.addressHint}</span>
+        </label>
+
+        <label class="sf-field">
+          <span class="sf-field__label">{c.notes}</span>
+          <textarea class="sf-input sf-input--textarea" name="notes" rows="4"></textarea>
+          <span class="sf-field__hint">{c.notesHint}</span>
+        </label>
+
+        <button class="btn btn--foil btn--lg" type="submit">{c.submit}</button>
+  </form>
+</div>
+
+<style>
+  .bk {
+    padding: var(--space-500);
+    background: var(--surface-raised);
+    border: 1px solid var(--edge-hairline);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--sheen-top);
+  }
+
+  .bk__head { margin-block-end: var(--space-400); }
+  .bk__title { font-size: var(--display-sm); margin: 0 0 var(--space-150); }
+  .bk__lead { color: var(--text-secondary); margin: 0; max-width: 44ch; }
+
+  .bk__err { margin-block-end: var(--space-300); }
+
+  .bk__form { display: flex; flex-direction: column; gap: var(--space-300); }
+
+  .bk__row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+    gap: var(--space-300);
+  }
+
+  .bk__fs { border: 0; padding: 0; margin: 0; }
+  .bk__legend { padding: 0; margin-block-end: var(--space-200); }
+
+  .bk__items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
+    gap: var(--space-200);
+  }
+
+  .bk__req { color: var(--text-accent); }
+
+  /* Off-screen rather than display:none — some bots skip hidden inputs. */
+  .bk__hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  /* ---- success ---- */
+
+  .bk__ok { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-250); }
+
+  .bk__oktick {
+    display: inline-flex;
+    width: 34px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-pill);
+    background: var(--signal-positive-surface);
+    color: var(--signal-positive);
+  }
+
+  .bk__oktick svg { width: 18px; height: 18px; }
+
+  .bk__oktitle { font-size: var(--display-sm); margin: 0; }
+  .bk__okbody { color: var(--text-secondary); margin: 0; }
+
+  .bk__ref {
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    letter-spacing: 0;
+  }
+
+  .bk__okphotos {
+    display: flex;
+    gap: var(--space-200);
+    align-items: flex-start;
+    margin: var(--space-200) 0 0;
+    padding: var(--space-250) var(--space-300);
+    background: var(--surface-inset);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+  }
+
+  .bk__okicon { display: inline-flex; width: 16px; height: 16px; flex: none; color: var(--text-muted); margin-block-start: 2px; }
+  .bk__okicon :global(svg) { width: 100%; height: 100%; display: block; }
+
+  @media (max-width: 34rem) {
+    .bk { padding: var(--space-350); }
+  }
+</style>
