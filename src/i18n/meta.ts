@@ -106,7 +106,7 @@ export const PAGE_META: MetaTable = {
     home: {
       title: 'Specialist sofa and rug cleaning',
       description:
-        'Silfrún specialises in deep cleaning sofas, upholstery, rugs and fitted carpets across the Reykjavík capital area. Every material assessed before anything is applied.',
+        'Deep cleaning for sofas, upholstery, rugs and fitted carpet across the Reykjavík capital area. Every material assessed before anything is applied.',
     },
     services: {
       title: 'Services: upholstery, rugs and stains',

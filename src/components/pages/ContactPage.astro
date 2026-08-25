@@ -1,5 +1,6 @@
 ---
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import ContactChannels from '~/components/ContactChannels.astro';
 import Pending from '~/components/Pending.astro';
 import { SITE, isPlaceholder, type Locale } from '~/config/site';
 import { t } from '~/i18n';
@@ -75,6 +76,16 @@ const dayNames: Record<Locale, string[]> = {
       <p class="lead">{isQuote ? copy.lead : copy.contactLead}</p>
     </div>
   </header>
+
+  <section class="section section--tight">
+    <div class="wrap wrap--narrow">
+      <ContactChannels
+        locale={locale}
+        variant="panel"
+        prefill={isQuote ? s.contact.prefillQuote : s.contact.prefillGeneral}
+      />
+    </div>
+  </section>
 
   <section class="section section--tight">
     <div class="wrap wrap--narrow contact">

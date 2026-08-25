@@ -1,8 +1,10 @@
 ---
 import Marketing from '~/layouts/Marketing.astro';
 import Pending from '~/components/Pending.astro';
+import ContactChannels from '~/components/ContactChannels.astro';
+import ClosingCta from '~/components/ClosingCta.astro';
 
-import { LOCALES, SITE, type Locale } from '~/config/site';
+import { LOCALES, SITE, hasInstantChannel, type Locale } from '~/config/site';
 import { t, alternates } from '~/i18n';
 import { path, areaPath, SERVICE_KEYS } from '~/i18n/routes';
 
@@ -40,6 +42,14 @@ const PLATES: Record<Locale, { ratio: string; note: string }[]> = {
 
 const plates = PLATES[locale];
 const shotBrief = locale === 'is' ? 'Mynd í bið' : 'Shot pending';
+
+/**
+ * When messaging is live it becomes the hero action, because sending a
+ * photograph from the sofa you are looking at is a smaller step than opening a
+ * quote page and reading it. The quote page stays available as the considered
+ * route for anyone who wants to read first.
+ */
+const instant = hasInstantChannel();
 ---
 
 <Marketing
@@ -59,10 +69,19 @@ const shotBrief = locale === 'is' ? 'Mynd í bið' : 'Shot pending';
       <div class="silfrun-rule hero__rule"></div>
       <p class="lead hero__lead">{s.hero.lead}</p>
 
-      <div class="hero__actions">
-        <a class="btn btn--foil btn--lg" href={path('quote', locale)}>{s.hero.ctaPrimary}</a>
-        <a class="btn btn--ghost btn--lg" href={path('services', locale)}>{s.hero.ctaSecondary}</a>
-      </div>
+      {instant ? (
+        <div class="hero__contact">
+          <ContactChannels locale={locale} variant="hero" prefill={s.contact.prefillGeneral} note={false} />
+          <p class="hero__secondary">
+            <a class="link-arrow" href={path('services', locale)}>{s.hero.ctaSecondary}</a>
+          </p>
+        </div>
+      ) : (
+        <div class="hero__actions">
+          <a class="btn btn--foil btn--lg" href={path('quote', locale)}>{s.hero.ctaPrimary}</a>
+          <a class="btn btn--ghost btn--lg" href={path('services', locale)}>{s.hero.ctaSecondary}</a>
+        </div>
+      )}
 
       <p class="hero__note">{s.hero.note}</p>
     </div>
@@ -192,13 +211,7 @@ const shotBrief = locale === 'is' ? 'Mynd í bið' : 'Shot pending';
     </div>
   </section>
 
-  <section class="section section--deep">
-    <div class="wrap final">
-      <h2 class="final__title">{s.finalCta.title}</h2>
-      <p class="lead final__lead">{s.finalCta.body}</p>
-      <p><a class="btn btn--foil btn--lg" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
-    </div>
-  </section>
+  <ClosingCta locale={locale} prefill={s.contact.prefillGeneral} />
 </Marketing>
 
 <style>
@@ -406,16 +419,15 @@ const shotBrief = locale === 'is' ? 'Mynd í bið' : 'Shot pending';
 
   .areas { display: flex; flex-wrap: wrap; gap: var(--space-150); }
 
-  /* ---------- closing plate ---------- */
+  /* ---------- hero contact cluster ---------- */
 
-  .final {
+  .hero__contact {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-300);
+    margin-block-start: var(--space-300);
   }
 
-  .final__title { font-size: var(--display-xl); max-width: 16ch; }
-  .final__lead { max-width: 48ch; }
-  .final p:last-child { margin-block-start: var(--space-200); }
+  .hero__secondary { margin: 0; }
 </style>

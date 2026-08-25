@@ -1,0 +1,151 @@
+---
+import ContactChannels from './ContactChannels.astro';
+import { hasInstantChannel, type Locale } from '~/config/site';
+import { t } from '~/i18n';
+import { path } from '~/i18n/routes';
+import { ICONS } from '~/data/icons';
+
+interface Props {
+  locale: Locale;
+  /** First message written into the chat, so the CTA carries page context. */
+  prefill?: string;
+  /** Constrain to the prose column, for pages set in wrap--narrow. */
+  narrow?: boolean;
+}
+
+const { locale, prefill, narrow = false } = Astro.props;
+const s = t(locale);
+
+/**
+ * The closing plate.
+ *
+ * Every page ends on the same offer, because a visitor who has read to the
+ * bottom of the rug page has already decided they are interested and should
+ * not have to navigate anywhere to act.
+ *
+ * When a messaging channel exists it leads, and the quote page becomes the
+ * quieter second option — messaging converts better than a form precisely
+ * because it asks for nothing but a sentence. Until then the quote page is the
+ * only action, so it takes the primary weight rather than leaving the plate
+ * with no action at all.
+ */
+const instant = hasInstantChannel();
+
+/** What to send. Three concrete items, because "get in touch" asks nothing. */
+const ASK: Record<Locale, string[]> = {
+  is: [
+    'Tvær til þrjár myndir í dagsbirtu',
+    'Mynd af merkimiðanum ef hann finnst',
+    'Hvar á höfuðborgarsvæðinu verkið er',
+  ],
+  en: [
+    'Two or three photographs in daylight',
+    'The care label if you can find it',
+    'Where in the capital area the work is',
+  ],
+};
+---
+
+<section class="section section--deep closing">
+  <div class:list={['wrap', { 'wrap--narrow': narrow }]}>
+    <div class="closing__grid">
+      <div class="closing__lede">
+        <h2 class="closing__title">{s.finalCta.title}</h2>
+        <p class="lead closing__body">{s.finalCta.body}</p>
+
+        {instant ? (
+          <ContactChannels locale={locale} variant="hero" prefill={prefill} />
+        ) : (
+          <p class="closing__action">
+            <a class="btn btn--foil btn--lg" href={path('quote', locale)}>{s.finalCta.cta}</a>
+          </p>
+        )}
+
+        {instant && (
+          <p class="closing__alt">
+            <a class="link-arrow" href={path('quote', locale)}>{s.finalCta.cta}</a>
+          </p>
+        )}
+      </div>
+
+      {/*
+        Telling the visitor exactly what to send removes the last hesitation.
+        "Get in touch" leaves them composing; a three-item list they can satisfy
+        from the sofa they are sitting on does not.
+      */}
+      <aside class="closing__ask">
+        <p class="closing__askhead">
+          <span class="closing__askicon" aria-hidden="true" set:html={ICONS.camera} />
+          <span>{locale === 'is' ? 'Hvað á að senda' : 'What to send'}</span>
+        </p>
+        <ul class="closing__asklist">
+          {ASK[locale].map((item) => <li>{item}</li>)}
+        </ul>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<style>
+  .closing__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(min(17rem, 100%), 0.65fr);
+    gap: var(--space-800) var(--space-1000);
+    align-items: start;
+  }
+
+  .closing__lede { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-300); }
+
+  .closing__title { font-size: var(--display-xl); max-width: 16ch; }
+  .closing__body { max-width: 44ch; }
+
+  .closing__action { margin-block-start: var(--space-200); }
+  .closing__alt { margin-block-start: var(--space-100); }
+
+  /* The ask panel is inset rather than raised: it is a note, not an action. */
+  .closing__ask {
+    padding: var(--space-400);
+    background: var(--surface-inset);
+    border: 1px solid var(--edge-quiet);
+    border-radius: var(--radius-sm);
+  }
+
+  .closing__askhead {
+    display: flex;
+    align-items: center;
+    gap: var(--space-150);
+    margin: 0 0 var(--space-300);
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    max-width: none;
+  }
+
+  .closing__askicon { display: inline-flex; width: 15px; height: 15px; flex: none; color: var(--text-muted); }
+  .closing__askicon :global(svg) { width: 100%; height: 100%; display: block; }
+
+  .closing__asklist { display: flex; flex-direction: column; gap: var(--space-200); }
+
+  .closing__asklist li {
+    position: relative;
+    padding-inline-start: var(--space-300);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+  }
+
+  .closing__asklist li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.68em;
+    width: 12px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  @media (max-width: 64rem) {
+    .closing__grid { grid-template-columns: 1fr; gap: var(--space-600); }
+    .closing__ask { max-width: 32rem; }
+  }
+</style>

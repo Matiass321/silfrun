@@ -1,9 +1,9 @@
 ---
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import ClosingCta from '~/components/ClosingCta.astro';
 import Pending from '~/components/Pending.astro';
 import { SITE, money, type Locale } from '~/config/site';
 import { t } from '~/i18n';
-import { path } from '~/i18n/routes';
 
 interface Props { locale: Locale }
 
@@ -107,13 +107,7 @@ const offersLd =
     </div>
   </section>
 
-  <section class="section section--deep">
-    <div class="wrap wrap--narrow stack stack--24">
-      <h2 class="final__title">{s.finalCta.title}</h2>
-      <p class="lead">{s.finalCta.body}</p>
-      <p class="final__action"><a class="btn btn--foil btn--lg" href={path('quote', locale)}>{p.cta}</a></p>
-    </div>
-  </section>
+  <ClosingCta locale={locale} narrow />
 </article>
 
 <style>

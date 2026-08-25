@@ -1,0 +1,216 @@
+---
+import Pending from './Pending.astro';
+import {
+  SITE,
+  isPlaceholder,
+  whatsappUrl,
+  messengerUrl,
+  type Locale,
+} from '~/config/site';
+import { t } from '~/i18n';
+import { ICONS } from '~/data/icons';
+
+interface Props {
+  locale: Locale;
+  /**
+   * `hero` is the pair of large actions under a heading, `panel` is the
+   * full set as cards on the contact page, `inline` is a quiet row for the
+   * foot of a content section.
+   */
+  variant?: 'hero' | 'panel' | 'inline';
+  /** First message written into the chat for the visitor. */
+  prefill?: string;
+  /** Show the "we reply within a working day" line. */
+  note?: boolean;
+  class?: string;
+}
+
+const {
+  locale,
+  variant = 'hero',
+  prefill,
+  note = true,
+  class: className = '',
+} = Astro.props;
+
+const s = t(locale);
+const c = s.contact;
+
+const wa = whatsappUrl(prefill ?? c.prefillGeneral);
+const me = messengerUrl();
+const phoneLive = !isPlaceholder(SITE.contact.phone);
+const emailLive = !isPlaceholder(SITE.contact.email);
+
+/**
+ * Channels are ordered by how little they ask of the visitor.
+ *
+ * Messaging costs nothing socially: no one has to speak, and the reply arrives
+ * whenever they next look. A phone call asks the most, so it sits last even
+ * though a cleaning business traditionally leads with it. The prefilled first
+ * message matters more than it looks — an empty compose box is where enquiries
+ * are abandoned, because the visitor has to decide what to write.
+ */
+const channels = [
+  {
+    id: 'whatsapp',
+    live: wa !== null,
+    href: wa,
+    label: c.whatsappLabel,
+    short: c.whatsappShort,
+    pending: s.pending.whatsapp,
+    primary: true,
+  },
+  {
+    id: 'messenger',
+    live: me !== null,
+    href: me,
+    label: c.messengerLabel,
+    short: c.messengerShort,
+    pending: s.pending.messenger,
+    primary: false,
+  },
+  {
+    id: 'email',
+    live: emailLive,
+    href: emailLive ? `mailto:${SITE.contact.email}` : null,
+    label: c.emailLabel,
+    short: SITE.contact.email,
+    pending: s.pending.email,
+    primary: false,
+  },
+  {
+    id: 'phone',
+    live: phoneLive,
+    href: phoneLive ? `tel:${SITE.contact.phoneE164}` : null,
+    label: c.callLabel,
+    short: SITE.contact.phone,
+    pending: s.pending.phone,
+    primary: false,
+  },
+];
+
+const anyLive = channels.some((ch) => ch.live);
+---
+
+<div class:list={['channels', `channels--${variant}`, className]}>
+  {variant === 'panel' && (
+    <header class="channels__head">
+      <h2 class="channels__title">{c.channelsTitle}</h2>
+      <p class="channels__lead">{c.channelsLead}</p>
+    </header>
+  )}
+
+  <ul class="channels__list">
+    {channels.map((ch) => (
+      <li class:list={['channels__item', { 'channels__item--pending': !ch.live }]}>
+        {ch.live ? (
+          <a
+            class:list={[
+              'channels__link',
+              ch.primary ? 'btn btn--foil' : 'btn btn--ghost',
+              variant === 'hero' ? 'btn--lg' : '',
+            ]}
+            href={ch.href}
+            {...(ch.id === 'whatsapp' || ch.id === 'messenger'
+              ? { target: '_blank', rel: 'noopener' }
+              : {})}
+          >
+            <span class="channels__icon" aria-hidden="true" set:html={ICONS[ch.id]} />
+            <span>{ch.label}</span>
+          </a>
+        ) : (
+          <span class="channels__placeholder">
+            <span class="channels__icon channels__icon--quiet" aria-hidden="true" set:html={ICONS[ch.id]} />
+            <Pending label={ch.pending} locale={locale} />
+          </span>
+        )}
+      </li>
+    ))}
+  </ul>
+
+  {note && anyLive && <p class="channels__note">{c.replyNote}</p>}
+</div>
+
+<style>
+  .channels { display: flex; flex-direction: column; gap: var(--space-300); }
+
+  .channels__head { display: flex; flex-direction: column; gap: var(--space-200); }
+  .channels__title { font-size: var(--display-md); max-width: 20ch; }
+  .channels__lead { color: var(--text-secondary); font-size: var(--text-lg); max-width: 46ch; }
+
+  .channels__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-200);
+    align-items: stretch;
+  }
+
+  .channels__item { display: flex; }
+
+  .channels__link { text-decoration: none; }
+
+  .channels__icon {
+    display: inline-flex;
+    width: 18px;
+    height: 18px;
+    flex: none;
+  }
+
+  .channels__icon :global(svg) { width: 100%; height: 100%; display: block; }
+  .channels__icon--quiet { opacity: 0.45; }
+
+  .channels__placeholder {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-150);
+    height: var(--control-h);
+    padding: 0 var(--pad-control-x);
+    border: 1px dashed var(--edge-hairline);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+  }
+
+  /* Kelp confirms — the one place the saturated tone is allowed to appear. */
+  .channels__note {
+    position: relative;
+    padding-inline-start: var(--space-250);
+    font: var(--type-mono);
+    color: var(--text-muted);
+    max-width: 48ch;
+  }
+
+  .channels__note::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.55em;
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--signal-positive);
+  }
+
+  /* ---- panel ---- */
+
+  .channels--panel { gap: var(--space-500); }
+
+  .channels--panel .channels__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+    gap: var(--space-200);
+  }
+
+  .channels--panel .channels__item,
+  .channels--panel .channels__link,
+  .channels--panel .channels__placeholder { width: 100%; }
+
+  /* ---- inline ---- */
+
+  .channels--inline .channels__list { gap: var(--space-150); }
+
+  @media (max-width: 34rem) {
+    .channels__list { flex-direction: column; align-items: stretch; }
+    .channels__item, .channels__link, .channels__placeholder { width: 100%; }
+    .channels__placeholder { justify-content: center; }
+  }
+</style>

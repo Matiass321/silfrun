@@ -1,0 +1,148 @@
+---
+import {
+  SITE,
+  isPlaceholder,
+  whatsappUrl,
+  messengerUrl,
+  type Locale,
+} from '~/config/site';
+import { t } from '~/i18n';
+import { ICONS } from '~/data/icons';
+
+interface Props {
+  locale: Locale;
+  /** First message written into the chat, so the bar carries page context. */
+  prefill?: string;
+}
+
+const { locale, prefill } = Astro.props;
+const s = t(locale);
+const c = s.contact;
+
+const wa = whatsappUrl(prefill ?? c.prefillGeneral);
+const me = messengerUrl();
+const phoneLive = !isPlaceholder(SITE.contact.phone);
+
+/**
+ * The thumb bar.
+ *
+ * On a phone the header CTA scrolls away within one screen, and a visitor who
+ * has just read a service page has to travel back up to act. This keeps one
+ * action inside thumb reach for the whole page.
+ *
+ * It renders nothing at all until a channel is real — a disabled or
+ * placeholder bar pinned to the bottom of every page would be worse than no
+ * bar, because it occupies the most valuable space on the screen while doing
+ * nothing. The moment a number is filled in, it appears on its own.
+ */
+const primary = wa
+  ? { href: wa, label: c.whatsappLabel, icon: ICONS.whatsapp, external: true }
+  : me
+    ? { href: me, label: c.messengerLabel, icon: ICONS.messenger, external: true }
+    : null;
+
+const secondary = phoneLive
+  ? { href: `tel:${SITE.contact.phoneE164}`, label: c.callLabel, icon: ICONS.phone }
+  : null;
+
+const show = primary !== null || secondary !== null;
+---
+
+{show && (
+  <div class="sticky" role="complementary" aria-label={c.channelsTitle}>
+    <div class="sticky__inner">
+      <p class="sticky__prompt">{c.stickyPrompt}</p>
+      <div class="sticky__actions">
+        {secondary && (
+          <a class="btn btn--ghost sticky__action sticky__action--quiet" href={secondary.href}>
+            <span class="sticky__icon" aria-hidden="true" set:html={secondary.icon} />
+            <span class="visually-hidden">{secondary.label}</span>
+          </a>
+        )}
+        {primary && (
+          <a
+            class="btn btn--foil sticky__action"
+            href={primary.href}
+            {...(primary.external ? { target: '_blank', rel: 'noopener' } : {})}
+          >
+            <span class="sticky__icon" aria-hidden="true" set:html={primary.icon} />
+            <span>{primary.label}</span>
+          </a>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+
+{show && (
+  <style is:global>
+    /* Reserve the bar's height so the footer is never trapped beneath it. */
+    @media (max-width: 48rem) {
+      body { padding-block-end: 5.5rem; }
+    }
+  </style>
+)}
+
+<style>
+  .sticky {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 60;
+    display: none;
+    background: var(--veil-dark);
+    backdrop-filter: var(--blur-veil);
+    -webkit-backdrop-filter: var(--blur-veil);
+    padding: var(--space-150) var(--space-200)
+             calc(var(--space-150) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* A foil hairline, the same edge the header carries, so the two read as a pair. */
+  .sticky::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    background: var(--foil-hairline);
+    opacity: 0.6;
+  }
+
+  @media (max-width: 48rem) {
+    .sticky { display: block; }
+  }
+
+  .sticky__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-200);
+    max-width: 34rem;
+    margin-inline: auto;
+  }
+
+  .sticky__prompt {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .sticky__actions { display: flex; align-items: center; gap: var(--space-100); flex: none; }
+
+  .sticky__action { flex: none; }
+
+  /* Icon-only, so it must still meet the 44px touch target. */
+  .sticky__action--quiet { width: var(--control-h); padding: 0; }
+
+  .sticky__icon { display: inline-flex; width: 18px; height: 18px; flex: none; }
+  .sticky__icon :global(svg) { width: 100%; height: 100%; display: block; }
+
+  /* Below 26rem the prompt is dropped rather than squeezing the action. */
+  @media (max-width: 26rem) {
+    .sticky__prompt { display: none; }
+    .sticky__inner { justify-content: stretch; }
+    .sticky__actions { flex: 1; }
+    .sticky__action:not(.sticky__action--quiet) { flex: 1; }
+  }
+</style>

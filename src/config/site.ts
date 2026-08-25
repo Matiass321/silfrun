@@ -69,6 +69,23 @@ export const SITE = {
     phone: TODO(''),
     phoneE164: TODO(''),
     email: TODO(''),
+
+    /**
+     * WhatsApp number in international digits, no plus and no spaces — an
+     * Icelandic mobile is '354' followed by the seven digits, e.g. '3546601234'.
+     *
+     * Deliberately separate from phoneE164 rather than derived from it: the
+     * business line is often a landline that cannot receive WhatsApp, and
+     * silently pointing a WhatsApp button at a landline loses the enquiry with
+     * no error anyone would see.
+     */
+    whatsapp: TODO(''),
+
+    /**
+     * Facebook page username for m.me, without the domain — the part after
+     * facebook.com/. Found under Page settings, not the numeric page id.
+     */
+    messenger: TODO(''),
   },
 
   address: {
@@ -165,6 +182,44 @@ export const SITE = {
     ] as PriceItem[],
   },
 };
+
+/**
+ * Deep-link to a WhatsApp conversation, with the first message written for
+ * the visitor.
+ *
+ * Returns null while the number is a placeholder, so a button can never point
+ * at a wrong or empty number — sending a customer to a stranger's WhatsApp is
+ * worse than showing no button at all.
+ *
+ * wa.me is used rather than api.whatsapp.com because it resolves to the
+ * installed app on mobile and to WhatsApp Web on desktop without a redirect.
+ */
+export function whatsappUrl(prefill?: string): string | null {
+  const number = SITE.contact.whatsapp;
+  if (isPlaceholder(number)) return null;
+  const digits = String(number).replace(/[^0-9]/g, '');
+  if (!digits) return null;
+  return prefill
+    ? `https://wa.me/${digits}?text=${encodeURIComponent(prefill)}`
+    : `https://wa.me/${digits}`;
+}
+
+/** Deep-link to Messenger, or null while the handle is a placeholder. */
+export function messengerUrl(): string | null {
+  const handle = SITE.contact.messenger;
+  if (isPlaceholder(handle)) return null;
+  const clean = String(handle)
+    .replace(/^https?:\/\//, '')
+    .replace(/^(?:www\.)?(?:facebook|fb)\.com\//, '')
+    .replace(/^m\.me\//, '')
+    .replace(/^\/+|\/+$/g, '');
+  return clean ? `https://m.me/${clean}` : null;
+}
+
+/** True when at least one instant-messaging channel is live. */
+export function hasInstantChannel(): boolean {
+  return whatsappUrl() !== null || messengerUrl() !== null;
+}
 
 /** True when a value is still an unfilled placeholder. */
 export const isPlaceholder = (v: unknown): boolean =>

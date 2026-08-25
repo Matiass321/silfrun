@@ -1,15 +1,13 @@
 ---
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import ClosingCta from '~/components/ClosingCta.astro';
 import Pending from '~/components/Pending.astro';
 import { type Locale } from '~/config/site';
-import { t } from '~/i18n';
-import { path } from '~/i18n/routes';
 import { CONTENT } from '~/data/content';
 
 interface Props { locale: Locale }
 
 const { locale } = Astro.props;
-const s = t(locale);
 const groups = CONTENT[locale].faq;
 
 const heading = locale === 'is' ? 'Algengar spurningar' : 'Frequently asked questions';
@@ -74,13 +72,7 @@ const pendingLabel = locale === 'is' ? 'Svar væntanlegt' : 'Answer pending';
     </section>
   ))}
 
-  <section class="section section--deep">
-    <div class="wrap wrap--narrow stack stack--24">
-      <h2 class="final__title">{s.finalCta.title}</h2>
-      <p class="lead">{s.finalCta.body}</p>
-      <p class="final__action"><a class="btn btn--foil btn--lg" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
-    </div>
-  </section>
+  <ClosingCta locale={locale} narrow />
 </article>
 
 <style>

@@ -1,12 +1,63 @@
-# Pre-launch: nothing here should be indexed yet.
+# ─────────────────────────────────────────────────────────────────────────────
+# PRE-LAUNCH. Nothing here should be indexed yet.
 #
-# The site still shows placeholder company details and has no real photography.
-# At launch, replace this file with the block below.
+# The site still shows placeholder company details, has no photography of its
+# own work, and its legal pages are drafts awaiting review. A search result
+# carrying "Kennitala væntanleg" is worse than no search result at all.
 #
-#   User-agent: *
-#   Allow: /
+# This also keeps the *.pages.dev preview domain out of the index, where it
+# would otherwise compete with silfrun.is for the same content.
 #
-#   Sitemap: https://silfrun.is/sitemap-index.xml
+# AT LAUNCH: delete everything above the line, uncomment the block below, and
+# remove the X-Robots-Tag line from public/_headers. Both are required —
+# robots.txt alone does not remove a noindex header, and the header alone will
+# not stop a crawler that never reads it.
+# ─────────────────────────────────────────────────────────────────────────────
 
 User-agent: *
 Disallow: /
+
+# ── LAUNCH BLOCK — uncomment all of this ────────────────────────────────────
+#
+# User-agent: *
+# Allow: /
+#
+# # The site ships no JavaScript, so nothing here needs a rendering budget.
+# # Crawl-delay is deliberately absent: 45 static pages do not warrant one, and
+# # Google ignores it anyway.
+#
+# # Answer engines are allowed deliberately rather than by omission. Being
+# # quoted in an AI answer is how a specialist trade business gets found now,
+# # and the content is written to be quotable — plain claims, no marketing
+# # padding, and nothing asserted that the business has not confirmed.
+# User-agent: GPTBot
+# Allow: /
+#
+# User-agent: OAI-SearchBot
+# Allow: /
+#
+# User-agent: ChatGPT-User
+# Allow: /
+#
+# User-agent: PerplexityBot
+# Allow: /
+#
+# User-agent: ClaudeBot
+# Allow: /
+#
+# User-agent: Claude-SearchBot
+# Allow: /
+#
+# User-agent: Google-Extended
+# Allow: /
+#
+# User-agent: Applebot-Extended
+# Allow: /
+#
+# User-agent: Bingbot
+# Allow: /
+#
+# # A plain-language map of the site, generated from the same tables that build
+# # the pages: https://silfrun.is/llms.txt
+#
+# Sitemap: https://silfrun.is/sitemap-index.xml

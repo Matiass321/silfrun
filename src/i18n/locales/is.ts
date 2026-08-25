@@ -155,6 +155,32 @@ export const is = {
     phone: 'Símanúmer væntanlegt',
     email: 'Netfang væntanlegt',
     address: 'Heimilisfang væntanlegt',
+    whatsapp: 'WhatsApp-númer væntanlegt',
+    messenger: 'Messenger væntanlegur',
+  },
+
+  /**
+   * Skilaboðaleiðir.
+   *
+   * Fyrirfram ritaði textinn byrjar samtalið fyrir viðskiptavininn — auð
+   * skilaboð eru hindrun, og fólk hættir frekar við en að finna út hvað það á
+   * að skrifa. Hann nefnir myndirnar strax, því matið byggir á þeim.
+   */
+  contact: {
+    whatsappLabel: 'Senda WhatsApp-skilaboð',
+    whatsappShort: 'WhatsApp',
+    messengerLabel: 'Senda Messenger-skilaboð',
+    messengerShort: 'Messenger',
+    callLabel: 'Hringja',
+    emailLabel: 'Senda tölvupóst',
+    channelsTitle: 'Hafðu samband á þann hátt sem hentar',
+    channelsLead: 'Svar samdægurs á virkum dögum. Sendu myndir og við metum verkið.',
+    replyNote: 'Við svörum að jafnaði innan vinnudags.',
+    prefillGeneral: 'Halló Silfrún. Mig langar að fá mat á hreinsun.',
+    prefillQuote: 'Halló Silfrún. Ég er með myndir af stykki sem þarf að hreinsa og vil fá verðmat.',
+    prefillService: 'Halló Silfrún. Mig langar að spyrja um {service}.',
+    prefillArea: 'Halló Silfrún. Ég er í {area} og vil fá mat á hreinsun.',
+    stickyPrompt: 'Fáðu mat á verkinu',
   },
 
   common: {

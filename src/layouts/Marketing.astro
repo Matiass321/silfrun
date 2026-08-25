@@ -2,6 +2,7 @@
 import Base from './Base.astro';
 import Header from '~/components/Header.astro';
 import Footer from '~/components/Footer.astro';
+import StickyContact from '~/components/StickyContact.astro';
 
 import type { Locale } from '~/config/site';
 import type { Alternate } from '~/i18n';
@@ -16,15 +17,23 @@ interface Props {
   alternates: Alternate[];
   xDefault: string;
   business?: boolean;
+  /** Structured data for this page, merged with the site-wide graph. */
+  jsonLd?: object | object[];
+  /**
+   * First message written into the chat from this page's thumb bar, so a
+   * visitor on the rug page opens a conversation about rugs.
+   */
+  prefill?: string;
 }
 
-const { locale, pageKey, ...meta } = Astro.props;
+const { locale, pageKey, prefill, ...meta } = Astro.props;
 ---
 
 <Base locale={locale} {...meta}>
   <Header locale={locale} pageKey={pageKey} />
   <main id="main" class="main"><slot /></main>
   <Footer locale={locale} />
+  <StickyContact locale={locale} prefill={prefill} />
 </Base>
 
 <style is:global>

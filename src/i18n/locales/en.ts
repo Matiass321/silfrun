@@ -152,6 +152,33 @@ export const en: typeof is = {
     phone: 'Phone number pending',
     email: 'Email address pending',
     address: 'Street address pending',
+    whatsapp: 'WhatsApp number pending',
+    messenger: 'Messenger pending',
+  },
+
+  /**
+   * Messaging channels.
+   *
+   * The prefilled text starts the conversation for the visitor — an empty
+   * message box is friction, and people abandon rather than work out what to
+   * write. It mentions photographs immediately, because the assessment
+   * depends on them.
+   */
+  contact: {
+    whatsappLabel: 'Message us on WhatsApp',
+    whatsappShort: 'WhatsApp',
+    messengerLabel: 'Message us on Messenger',
+    messengerShort: 'Messenger',
+    callLabel: 'Call',
+    emailLabel: 'Send an email',
+    channelsTitle: 'Reach us whichever way suits you',
+    channelsLead: 'Same-day reply on working days. Send photographs and we will assess the work.',
+    replyNote: 'We normally reply within one working day.',
+    prefillGeneral: 'Hello Silfrún. I would like an assessment for cleaning.',
+    prefillQuote: 'Hello Silfrún. I have photographs of a piece that needs cleaning and would like a price.',
+    prefillService: 'Hello Silfrún. I would like to ask about {service}.',
+    prefillArea: 'Hello Silfrún. I am in {area} and would like an assessment.',
+    stickyPrompt: 'Get your piece assessed',
   },
 
   common: {

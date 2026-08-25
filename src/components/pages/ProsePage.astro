@@ -1,8 +1,7 @@
 ---
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import ClosingCta from '~/components/ClosingCta.astro';
 import { date, type Locale } from '~/config/site';
-import { t } from '~/i18n';
-import { path } from '~/i18n/routes';
 import { CONTENT, LEGAL_UPDATED, type ProsePage } from '~/data/content';
 
 interface Props {
@@ -18,7 +17,6 @@ interface Props {
 }
 
 const { locale, heading, eyebrow, page, legal = false, cta = true } = Astro.props;
-const s = t(locale);
 const c = CONTENT[locale];
 ---
 
@@ -56,15 +54,7 @@ const c = CONTENT[locale];
     </div>
   </section>
 
-  {cta && (
-    <section class="section section--deep">
-      <div class="wrap wrap--narrow stack stack--24">
-        <h2 class="final__title">{s.finalCta.title}</h2>
-        <p class="lead">{s.finalCta.body}</p>
-        <p class="final__action"><a class="btn btn--foil btn--lg" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
-      </div>
-    </section>
-  )}
+  {cta && <ClosingCta locale={locale} narrow />}
 </article>
 
 <style>

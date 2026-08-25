@@ -1,5 +1,6 @@
 ---
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import ClosingCta from '~/components/ClosingCta.astro';
 import { type Locale } from '~/config/site';
 import { t } from '~/i18n';
 import { path, SERVICE_KEYS, type ServiceKey } from '~/i18n/routes';
@@ -15,6 +16,9 @@ const s = t(locale);
 const c = SERVICE_CONTENT[locale][service];
 
 const others = SERVICE_KEYS.filter((k) => k !== service);
+
+/** Opens the conversation already naming the service being read about. */
+const prefill = s.contact.prefillService.replace('{service}', s.services[service].name.toLowerCase());
 
 /**
  * FAQPage structured data is emitted only because every answer on this page is
@@ -111,13 +115,7 @@ const faqLd = {
     </div>
   </section>
 
-  <section class="section section--deep">
-    <div class="wrap wrap--narrow stack stack--24">
-      <h2 class="final__title">{s.finalCta.title}</h2>
-      <p class="lead">{s.finalCta.body}</p>
-      <p class="final__action"><a class="btn btn--foil btn--lg" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
-    </div>
-  </section>
+  <ClosingCta locale={locale} narrow prefill={prefill} />
 </article>
 
 <style>

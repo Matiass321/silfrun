@@ -9,6 +9,21 @@ import PricesPage from '~/components/pages/PricesPage.astro';
 
 import { LOCALES, SITE, type Locale } from '~/config/site';
 import { SLUGS, SERVICE_KEYS, type PageKey, type ServiceKey } from '~/i18n/routes';
+
+/**
+ * Which published rate represents each service page.
+ *
+ * A service covers several line items — the sofa page covers two-seat, three-
+ * seat and corner — so the Offer quotes the lowest, which is what a "from"
+ * price means. Written out rather than inferred so a new price key cannot
+ * silently attach itself to the wrong page.
+ */
+const SERVICE_PRICE_KEY: Record<ServiceKey, string> = {
+  sofa: 'sofa2',
+  rug: 'rug',
+  carpet: 'carpet',
+  stains: 'odour',
+};
 import { t, alternates, areaAlternates } from '~/i18n';
 import { PAGE_META, AREA_META } from '~/i18n/meta';
 import { CONTENT } from '~/data/content';
@@ -92,6 +107,112 @@ if (area) {
   description = meta.description;
   alt = alternates(pageKey, locale);
 }
+
+/**
+ * The first message the visitor sends, written for the page they are on.
+ *
+ * A conversation that opens with "I would like to ask about rug cleaning"
+ * saves the visitor from composing anything and saves the business from having
+ * to ask what the enquiry is about. Both halves matter: the message is the
+ * enquiry's first line of context, not decoration.
+ */
+const prefill = area
+  ? s.contact.prefillArea.replace('{area}', area.name)
+  : isService
+    ? s.contact.prefillService.replace('{service}', s.services[pageKey as ServiceKey].name.toLowerCase())
+    : pageKey === 'quote'
+      ? s.contact.prefillQuote
+      : s.contact.prefillGeneral;
+
+/**
+ * Page-level structured data.
+ *
+ * Service pages describe an offering with a real provider and area; the
+ * process page is a genuine HowTo; contact pages declare themselves as such.
+ * Nothing here is emitted speculatively — a Service with no provider or an
+ * Offer with no price is noise that dilutes the rest of the graph.
+ */
+const pageLd: object[] = [];
+
+if (isService) {
+  const key = pageKey as ServiceKey;
+  const item = SITE.pricing.items.find((i) => i.key === SERVICE_PRICE_KEY[key]);
+  pageLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    '@id': `${alt.canonical}#service`,
+    name: s.services[key].name,
+    description,
+    serviceType: s.services[key].name,
+    provider: { '@id': `${SITE.url}/#business` },
+    areaServed: SITE.areas.map((a) => ({ '@type': 'City', name: a.name })),
+    availableChannel: {
+      '@type': 'ServiceChannel',
+      serviceUrl: alt.canonical,
+      availableLanguage: [
+        { '@type': 'Language', name: 'Icelandic', alternateName: 'is' },
+        { '@type': 'Language', name: 'English', alternateName: 'en' },
+      ],
+    },
+    ...(item && item.from !== null
+      ? {
+          offers: {
+            '@type': 'Offer',
+            priceCurrency: SITE.pricing.currency,
+            price: item.from,
+            priceSpecification: {
+              '@type': 'PriceSpecification',
+              minPrice: item.from,
+              priceCurrency: SITE.pricing.currency,
+              valueAddedTaxIncluded: SITE.pricing.includesVsk,
+            },
+            availableAtOrFrom: { '@id': `${SITE.url}/#business` },
+          },
+        }
+      : {}),
+  });
+}
+
+if (pageKey === 'process') {
+  pageLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    '@id': `${alt.canonical}#howto`,
+    name: s.process.title,
+    description,
+    inLanguage: locale === 'is' ? 'is-IS' : 'en-GB',
+    step: s.process.steps.map((step, i) => ({
+      '@type': 'HowToStep',
+      position: i + 1,
+      name: step.title,
+      text: step.body,
+    })),
+  });
+}
+
+if (pageKey === 'contact' || pageKey === 'quote') {
+  pageLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'ContactPage',
+    '@id': `${alt.canonical}#contactpage`,
+    name: title,
+    description,
+    mainEntity: { '@id': `${SITE.url}/#business` },
+  });
+}
+
+if (area) {
+  /* The area page is about a place the business serves, stated as such. */
+  pageLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    '@id': `${alt.canonical}#service`,
+    name: title,
+    description,
+    provider: { '@id': `${SITE.url}/#business` },
+    areaServed: { '@type': 'City', name: area.name, containedInPlace: { '@type': 'Country', name: 'Iceland' } },
+  });
+}
 ---
 
 <Marketing
@@ -102,6 +223,8 @@ if (area) {
   canonical={alt.canonical}
   alternates={alt.list}
   xDefault={alt.xDefault}
+  jsonLd={pageLd}
+  prefill={prefill}
 >
   {isService && <ServicePage locale={locale} service={pageKey as ServiceKey} />}
 
