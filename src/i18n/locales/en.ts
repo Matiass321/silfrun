@@ -22,6 +22,7 @@ export const en: typeof is = {
     menu: 'Menu',
     close: 'Close',
     skip: 'Skip to content',
+    home: 'Silfrún — home',
     language: 'Language',
   },
 

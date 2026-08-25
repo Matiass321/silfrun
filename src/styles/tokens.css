@@ -1,132 +1,353 @@
 /**
- * Design tokens.
+ * Silfrún design tokens — "cold light on black stone".
  *
- * The palette follows the name: silfur is silver, so the neutrals carry a cool
- * blue cast rather than a warm one, and the accent is pewter rather than a
- * saturated brand colour. Restraint is the point — a premium service reads as
- * expensive through space and typography, not through colour.
+ * Clean is read from brightness, low chroma and cool hue, which is why every
+ * mass-market cleaning brand is cyan on white and why they all read as hygiene
+ * rather than luxury. Expensive is read from dark values, few hues, real
+ * material and unearned space. This system holds both.
  *
- * Every colour is defined here. Components reference tokens only, so a theme
- * change never means hunting through component styles.
+ * The ground is basalt, the colour of the uniform the attendants arrive in.
+ * The light is silver and glacier, achromatic and cold. Paper is warm
+ * limestone, because cold white paper reads as a dental practice. One
+ * saturated tone exists — kelp — and it only ever confirms.
+ *
+ * Proportion is the luxury, not the hues: 75% basalt, 15% silver, 7% stone,
+ * 3% kelp. Base ramps first, then semantic aliases. Default scope is the
+ * obsidian ground; [data-theme='vellum'] flips to the warm paper ground.
  */
 
 :root {
-  /* ---- surface ---- */
-  --paper:        #F6F8F8;
-  --surface:      #FFFFFF;
-  --surface-sunk: #EDF1F2;
-  --surface-deep: #161E22;
+  /* ---- Basalt — the brand ink. Cool near-blacks; 900 is the uniform black. ---- */
+  --basalt-950: #07080A;
+  --basalt-900: #0B0D0F;
+  --basalt-850: #101317;
+  --basalt-800: #15191D;
+  --basalt-700: #1D2227;
+  --basalt-600: #272D33;
+  --basalt-500: #343B43;
+  --basalt-400: #49525B;
 
-  /* ---- ink ---- */
-  --ink:          #131A1E;
-  --ink-soft:     #3A474D;
-  --muted:        #66757B;
-  --ink-invert:   #F2F6F6;
+  /* ---- Silver — the metal. Cool, achromatic-leaning; the light the brand throws. ---- */
+  --silver-050: #F2F4F6;
+  --silver-100: #E4E8EB;
+  --silver-200: #D2D7DC;
+  --silver-300: #BAC1C8;
+  --silver-400: #9AA2AA;
+  --silver-500: #7B838C;
+  --silver-600: #5D656E;
 
-  /* ---- line ---- */
-  --line:         #DCE4E5;
-  --line-strong:  #B9C6C9;
+  /* ---- Stone — warm neutrals. Limestone, vellum, unbleached linen. ---- */
+  --stone-050: #FBF9F5;
+  --stone-100: #F4F1EB;
+  --stone-200: #EAE5DD;
+  --stone-300: #D9D3C8;
+  --stone-400: #BEB7AA;
+  --stone-500: #948D82;
+  --stone-600: #6B655C;
 
-  /* ---- accent: pewter ---- */
-  --accent:       #35555F;
-  --accent-hover: #24404A;
-  --accent-tint:  #E4EDEF;
-  --accent-line:  #9FBAC1;
+  /* ---- Glacier — cold light. The only blue permitted, never above 0.04 chroma. ---- */
+  --glacier-050: #EFF5F7;
+  --glacier-100: #D8E5EA;
+  --glacier-200: #BCD1D9;
+  --glacier-300: #9BB8C3;
+  --glacier-400: #7C9FAC;
+  --glacier-500: #5E818F;
+  --glacier-600: #476671;
+  --glacier-700: #344E58;
+  --glacier-800: #22353D;
 
-  /* ---- type ---- */
-  --display: 'Cormorant Garamond Variable', 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
-  --body:    'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  /* ---- Kelp — the single saturated tone. Oxidised mineral green. ---- */
+  --kelp-100: #D5E2DC;
+  --kelp-300: #8FAEA4;
+  --kelp-500: #4C6E62;
+  --kelp-700: #2A4A41;
+  --kelp-900: #162C27;
 
-  --weight-body: 400;
-  --weight-medium: 500;
-  --weight-semi: 600;
-  --weight-display: 500;
+  /* ---- Ochre / Oxide — muted alert tones. Aged brass and iron oxide. ---- */
+  --ochre-300: #D9B77E;
+  --ochre-500: #A8823E;
+  --ochre-700: #6E5325;
+  --oxide-300: #D7A79C;
+  --oxide-500: #A85543;
+  --oxide-700: #6E3427;
 
-  /* Fluid type scale. Ratio widens on larger screens so the display face gets
-     the room it needs without the body copy growing with it. */
-  --step--1: clamp(0.82rem, 0.79rem + 0.14vw, 0.89rem);
-  --step-0:  clamp(1rem, 0.97rem + 0.16vw, 1.08rem);
-  --step-1:  clamp(1.18rem, 1.11rem + 0.35vw, 1.4rem);
-  --step-2:  clamp(1.45rem, 1.3rem + 0.72vw, 1.9rem);
-  --step-3:  clamp(1.8rem, 1.5rem + 1.4vw, 2.7rem);
-  --step-4:  clamp(2.2rem, 1.6rem + 2.9vw, 4rem);
+  /* ---- Metal fills. Rules, monograms, foil edges — never large areas or text. ---- */
+  --foil-silver: linear-gradient(103deg, #5D656E 0%, #BAC1C8 16%, #F2F4F6 31%, #9AA2AA 46%, #E4E8EB 62%, #7B838C 80%, #D2D7DC 100%);
+  --foil-silver-soft: linear-gradient(103deg, #7B838C 0%, #E4E8EB 38%, #9AA2AA 62%, #D2D7DC 100%);
+  --foil-hairline: linear-gradient(90deg, rgba(226,232,238,0) 0%, rgba(226,232,238,.55) 30%, rgba(255,255,255,.85) 50%, rgba(226,232,238,.55) 70%, rgba(226,232,238,0) 100%);
 
-  /* ---- space ---- */
-  --space-4:  0.25rem;
-  --space-8:  0.5rem;
-  --space-12: 0.75rem;
-  --space-16: 1rem;
-  --space-24: 1.5rem;
-  --space-32: 2rem;
-  --space-48: 3rem;
-  --space-64: 4rem;
-  --space-96: 6rem;
+  /* ---- Semantic: obsidian ground (default) ---- */
+  --surface-page:    var(--basalt-900);
+  --surface-raised:  var(--basalt-850);
+  --surface-sunken:  var(--basalt-950);
+  --surface-inset:   rgba(242, 244, 246, .035);
+  --surface-hover:   rgba(242, 244, 246, .06);
+  --surface-active:  rgba(242, 244, 246, .10);
+  --surface-inverse: var(--stone-050);
+  --surface-scrim:   rgba(7, 8, 10, .72);
 
-  --wrap:        76rem;
-  --wrap-narrow: 46rem;
-  --measure:     64ch;
+  --text-primary:    var(--silver-050);
+  --text-secondary:  var(--silver-300);
+  --text-muted:      var(--silver-500);
+  --text-inverse:    var(--basalt-900);
+  --text-accent:     var(--glacier-200);
+  --text-link:       var(--glacier-200);
+  --text-link-hover: var(--silver-050);
 
-  --radius:      2px;
-  --radius-card: 3px;
+  --edge-hairline: rgba(226, 232, 238, .12);
+  --edge-quiet:    rgba(226, 232, 238, .07);
+  --edge-strong:   rgba(226, 232, 238, .28);
+  --edge-accent:   rgba(188, 209, 217, .45);
 
-  --shadow-card: 0 1px 2px rgba(19, 26, 30, 0.05);
-  --shadow-lift: 0 12px 32px -12px rgba(19, 26, 30, 0.18);
+  --accent:       var(--glacier-200);
+  --accent-quiet: var(--glacier-700);
+  --focus-ring:   rgba(155, 184, 195, .55);
 
-  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
-  --dur:  260ms;
+  --signal-positive:         var(--kelp-300);
+  --signal-positive-surface: rgba(76, 110, 98, .20);
+  --signal-caution:          var(--ochre-300);
+  --signal-caution-surface:  rgba(168, 130, 62, .18);
+  --signal-negative:         var(--oxide-300);
+  --signal-negative-surface: rgba(168, 85, 67, .18);
 }
 
 /**
- * Dark theme.
+ * Vellum ground — documents, print, long reading.
  *
- * Guarded so an explicit light choice beats a dark operating system, and
- * repeated for the stamped attribute so the toggle wins in both directions.
- * Only tokens are redefined — never component rules.
+ * Opt-in only. The brand lives on the obsidian ground; vellum exists so a
+ * printed quote or a legal page can sit on warm paper without inventing a
+ * second palette.
  */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --paper:        #0D1315;
-    --surface:      #141C1F;
-    --surface-sunk: #1A2428;
-    --surface-deep: #080C0E;
+[data-theme='vellum'] {
+  --surface-page:    var(--stone-050);
+  --surface-raised:  #FFFFFF;
+  --surface-sunken:  var(--stone-100);
+  --surface-inset:   rgba(11, 13, 15, .03);
+  --surface-hover:   rgba(11, 13, 15, .04);
+  --surface-active:  rgba(11, 13, 15, .07);
+  --surface-inverse: var(--basalt-900);
+  --surface-scrim:   rgba(11, 13, 15, .45);
 
-    --ink:          #E9EFEF;
-    --ink-soft:     #B7C4C7;
-    --muted:        #85949A;
-    --ink-invert:   #101719;
+  --text-primary:    var(--basalt-900);
+  --text-secondary:  var(--basalt-500);
+  --text-muted:      var(--stone-500);
+  --text-inverse:    var(--stone-050);
+  --text-accent:     var(--glacier-700);
+  --text-link:       var(--glacier-700);
+  --text-link-hover: var(--basalt-900);
 
-    --line:         #253135;
-    --line-strong:  #37474C;
+  --edge-hairline: rgba(11, 13, 15, .12);
+  --edge-quiet:    rgba(11, 13, 15, .07);
+  --edge-strong:   rgba(11, 13, 15, .30);
+  --edge-accent:   rgba(52, 78, 88, .35);
 
-    --accent:       #8FB4BD;
-    --accent-hover: #A9C8CF;
-    --accent-tint:  #17272C;
-    --accent-line:  #40606A;
+  --accent:       var(--glacier-700);
+  --accent-quiet: var(--glacier-100);
+  --focus-ring:   rgba(52, 78, 88, .45);
 
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
-    --shadow-lift: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
-  }
+  --signal-positive:         var(--kelp-700);
+  --signal-positive-surface: rgba(76, 110, 98, .12);
+  --signal-caution:          var(--ochre-700);
+  --signal-caution-surface:  rgba(168, 130, 62, .14);
+  --signal-negative:         var(--oxide-700);
+  --signal-negative-surface: rgba(168, 85, 67, .10);
 }
 
-:root[data-theme='dark'] {
-  --paper:        #0D1315;
-  --surface:      #141C1F;
-  --surface-sunk: #1A2428;
-  --surface-deep: #080C0E;
+/**
+ * Typography. Two voices: Marcellus speaks (display, one weight only),
+ * Archivo works (UI, body, data). Mono is for specs and annotation only.
+ *
+ * Both faces cover Icelandic — ÁÐÉÍÓÚÝÞÆÖ áðéíóúýþæö. Marcellus and Archivo
+ * are stand-ins proxying a licensed pairing (an inscriptional display face and
+ * a neutral grotesque); swap the @fontsource imports in Base.astro when the
+ * licences are bought.
+ */
+:root {
+  --font-display: 'Marcellus', 'Times New Roman', Times, serif;
+  --font-text:    'Archivo Variable', 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --ink:          #E9EFEF;
-  --ink-soft:     #B7C4C7;
-  --muted:        #85949A;
-  --ink-invert:   #101719;
+  /* Weights. Display has exactly one. Text stops at 600 — no black, ever. */
+  --weight-display:  400;
+  --weight-light:    300;
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
 
-  --line:         #253135;
-  --line-strong:  #37474C;
+  /**
+   * Display scale (Marcellus). Ratio ~1.34, cut for 1440 desktop, then made
+   * fluid so the 118px hero does not shear off a phone. The lower bound is the
+   * mobile cut, the upper bound the desktop figure from the system.
+   */
+  --display-3xl: clamp(3.25rem, 2.05rem + 6.00vw, 7.375rem);  /* 52 → 118 */
+  --display-2xl: clamp(2.75rem, 1.95rem + 4.00vw, 5.500rem);  /* 44 → 88  */
+  --display-xl:  clamp(2.30rem, 1.75rem + 2.75vw, 4.125rem);  /* 37 → 66  */
+  --display-lg:  clamp(1.95rem, 1.55rem + 2.00vw, 3.125rem);  /* 31 → 50  */
+  --display-md:  clamp(1.65rem, 1.40rem + 1.25vw, 2.375rem);  /* 26 → 38  */
+  --display-sm:  clamp(1.40rem, 1.27rem + 0.65vw, 1.813rem);  /* 22 → 29  */
+  --display-xs:  clamp(1.20rem, 1.13rem + 0.34vw, 1.438rem);  /* 19 → 23  */
 
-  --accent:       #8FB4BD;
-  --accent-hover: #A9C8CF;
-  --accent-tint:  #17272C;
-  --accent-line:  #40606A;
+  /* Text scale (Archivo). Fixed — body copy must not grow with the viewport. */
+  --text-xl:  21px;
+  --text-lg:  18px;
+  --text-md:  16px;
+  --text-sm:  14px;
+  --text-xs:  12.5px;
+  --text-2xs: 11px;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-lift: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+  /* Line heights. Display is tight; body is generous — luxury reads slowly. */
+  --leading-display:       1.06;
+  --leading-display-loose: 1.14;
+  --leading-tight:         1.25;
+  --leading-body:          1.62;
+  --leading-loose:         1.78;
+
+  /* Tracking. Display closes up, micro-caps open wide. This contrast is the signature. */
+  --tracking-display:       -0.02em;
+  --tracking-display-tight: -0.03em;
+  --tracking-body:           0.004em;
+  --tracking-label:          0.06em;
+  --tracking-eyebrow:        0.22em;
+  --tracking-monogram:       0.34em;
+  --tracking-button:         0.14em;
+
+  /* Measure. Never set body wider than 68ch. */
+  --measure-tight: 38ch;
+  --measure-body:  62ch;
+  --measure-wide:  74ch;
+
+  /* Composed roles */
+  --type-display:  var(--weight-display) var(--display-xl)/var(--leading-display) var(--font-display);
+  --type-title:    var(--weight-display) var(--display-md)/var(--leading-display-loose) var(--font-display);
+  --type-subtitle: var(--weight-light) var(--text-xl)/var(--leading-tight) var(--font-text);
+  --type-body:     var(--weight-regular) var(--text-md)/var(--leading-body) var(--font-text);
+  --type-body-sm:  var(--weight-regular) var(--text-sm)/var(--leading-body) var(--font-text);
+  --type-label:    var(--weight-medium) var(--text-xs)/1.3 var(--font-text);
+  --type-eyebrow:  var(--weight-medium) var(--text-2xs)/1.2 var(--font-text);
+  --type-mono:     var(--weight-regular) var(--text-xs)/1.5 var(--font-mono);
+}
+
+/**
+ * Spacing. 4px base, but the useful part of the scale is the top: luxury is
+ * legible as unearned space. Default to one step larger than feels right.
+ */
+:root {
+  --space-000: 0px;
+  --space-025: 2px;
+  --space-050: 4px;
+  --space-075: 6px;
+  --space-100: 8px;
+  --space-150: 12px;
+  --space-200: 16px;
+  --space-250: 20px;
+  --space-300: 24px;
+  --space-400: 32px;
+  --space-500: 40px;
+  --space-600: 48px;
+  --space-800: 64px;
+  --space-1000: 80px;
+  --space-1200: 96px;
+  --space-1600: 128px;
+  --space-2000: 160px;
+  --space-2600: 208px;
+
+  /* Component insets */
+  --pad-control-y: 11px;
+  --pad-control-x: 20px;
+  --pad-control-sm-y: 7px;
+  --pad-control-sm-x: 14px;
+  --pad-card: 32px;
+  --pad-card-lg: 48px;
+  --pad-field-y: 12px;
+  --pad-field-x: 14px;
+
+  /* Layout */
+  --gutter: 24px;
+  --page-margin: 24px;
+  --page-margin-lg: 96px;
+  --container-max: 1240px;
+  --container-prose: 660px;
+  --container-wide: 1440px;
+  --control-h: 42px;
+  --control-h-sm: 32px;
+  --control-h-lg: 52px;
+}
+
+/**
+ * Materials — radii, hairlines, shadow, blur, grain. The system is built from
+ * cut edges and thrown light, not from soft plastic.
+ */
+:root {
+  /* Radii. Near-square. 2px is the house default; 8px is the maximum for anything. */
+  --radius-none: 0px;
+  --radius-xs: 1px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-pill: 999px;
+
+  /* Hairlines. 1px is the only border weight; only its colour changes. */
+  --border-hairline: 1px solid var(--edge-hairline);
+  --border-quiet:    1px solid var(--edge-quiet);
+  --border-strong:   1px solid var(--edge-strong);
+  --border-accent:   1px solid var(--edge-accent);
+  --rule-weight: 1px;
+
+  /* Shadow. Long, low-opacity, cool. Nothing here casts a black blob. */
+  --shadow-000: none;
+  --shadow-100: 0 1px 2px rgba(7,8,10,.28), 0 6px 18px -10px rgba(7,8,10,.40);
+  --shadow-200: 0 2px 6px rgba(7,8,10,.32), 0 22px 44px -20px rgba(7,8,10,.55);
+  --shadow-300: 0 4px 12px rgba(7,8,10,.34), 0 48px 96px -32px rgba(7,8,10,.70);
+  --shadow-vellum-100: 0 1px 2px rgba(11,13,15,.04), 0 8px 24px -14px rgba(11,13,15,.12);
+  --shadow-vellum-200: 0 2px 4px rgba(11,13,15,.05), 0 28px 56px -24px rgba(11,13,15,.18);
+
+  /* Sheen — a 1px lit top edge. This is what makes a surface read as polished. */
+  --sheen-top:        inset 0 1px 0 rgba(242, 244, 246, .10);
+  --sheen-top-strong: inset 0 1px 0 rgba(242, 244, 246, .22);
+  --sheen-vellum:     inset 0 1px 0 rgba(255, 255, 255, .9);
+  --ring-focus:       0 0 0 1px var(--surface-page), 0 0 0 3px var(--focus-ring);
+
+  /* Glass. Only for elements that float over content. */
+  --blur-veil:  blur(14px) saturate(1.05);
+  --blur-scrim: blur(28px) saturate(1.1);
+  --veil-dark:  rgba(11, 13, 15, .62);
+  --veil-light: rgba(251, 249, 245, .72);
+
+  /**
+   * Grain. A 2% basalt tooth over flat fills; keeps large dark areas from
+   * going plastic. Inlined as a data URI rather than a file so the page still
+   * ships zero external requests.
+   */
+  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  --grain-opacity: 0.32;
+  --grain-size: 180px;
+
+  /* Protection gradient for text over imagery — bottom-up, never a flat box. */
+  --scrim-bottom: linear-gradient(to top, rgba(7,8,10,.88) 0%, rgba(7,8,10,.62) 34%, rgba(7,8,10,0) 100%);
+  --scrim-top:    linear-gradient(to bottom, rgba(7,8,10,.72) 0%, rgba(7,8,10,0) 100%);
+}
+
+/**
+ * Motion. Nothing bounces. Nothing springs. Things glide and settle, the way a
+ * hand moves across marble. Opacity and 4–16px translation only.
+ */
+:root {
+  --ease-glide:  cubic-bezier(.22, .61, .36, 1);
+  --ease-settle: cubic-bezier(.16, 1, .30, 1);
+  --ease-exit:   cubic-bezier(.4, .0, 1, 1);
+  --ease-linear: linear;
+
+  --dur-instant: 90ms;
+  --dur-fast:    160ms;
+  --dur-base:    240ms;
+  --dur-slow:    400ms;
+  --dur-veil:    640ms;
+
+  --lift-hover:  -1px;
+  --lift-enter:  8px;
+  --lift-reveal: 16px;
+
+  --transition-control: color var(--dur-fast) var(--ease-glide), background-color var(--dur-fast) var(--ease-glide), border-color var(--dur-fast) var(--ease-glide), box-shadow var(--dur-fast) var(--ease-glide), transform var(--dur-fast) var(--ease-glide);
+  --transition-surface: opacity var(--dur-base) var(--ease-settle), transform var(--dur-base) var(--ease-settle);
+  --transition-veil:    opacity var(--dur-veil) var(--ease-settle);
 }

@@ -27,7 +27,8 @@ const c = CONTENT[locale];
     <div class="wrap wrap--narrow">
       <Breadcrumbs locale={locale} trail={[{ label: heading }]} />
       <p class="eyebrow">{eyebrow}</p>
-      <h1>{heading}</h1>
+      <h1 class="page__title">{heading}</h1>
+      <div class="silfrun-rule page__rule"></div>
       <p class="lead">{page.lead}</p>
 
       {legal && (
@@ -58,56 +59,50 @@ const c = CONTENT[locale];
   {cta && (
     <section class="section section--deep">
       <div class="wrap wrap--narrow stack stack--24">
-        <h2>{s.finalCta.title}</h2>
+        <h2 class="final__title">{s.finalCta.title}</h2>
         <p class="lead">{s.finalCta.body}</p>
-        <p><a class="btn btn--primary" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
+        <p class="final__action"><a class="btn btn--foil btn--lg" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
       </div>
     </section>
   )}
 </article>
 
 <style>
+  .page__title { max-width: 20ch; }
+  .page__rule { max-width: 7rem; margin-block: var(--space-300); }
+
+  /**
+   * The draft notice is a caution plate, not an alert box: aged brass on a
+   * barely-tinted ground, with the signal carried by a 1px edge rather than a
+   * fill. It must read as a standing condition, not as an error.
+   */
   .draft {
     display: flex;
     flex-direction: column;
-    gap: var(--space-8);
-    margin-block-start: var(--space-24);
-    padding: var(--space-16);
-    background: var(--accent-tint);
-    border-inline-start: 2px solid var(--accent);
-    border-radius: var(--radius);
+    gap: var(--space-100);
+    margin-block-start: var(--space-400);
+    padding: var(--space-300);
+    background: var(--signal-caution-surface);
+    border: 1px solid transparent;
+    border-inline-start: 1px solid var(--signal-caution);
+    border-radius: var(--radius-sm);
   }
 
   .draft__date {
-    font-size: var(--step--1);
-    font-weight: var(--weight-semi);
-    color: var(--accent);
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--signal-caution);
   }
 
-  .draft__note { font-size: var(--step--1); color: var(--ink-soft); }
+  .draft__note { font-size: var(--text-sm); color: var(--text-secondary); }
 
-  .sections { display: flex; flex-direction: column; gap: var(--space-48); }
+  .sections { display: flex; flex-direction: column; gap: var(--space-1000); }
 
-  .block { display: flex; flex-direction: column; gap: var(--space-16); }
-  .block h2 { font-size: var(--step-2); }
-  .block p { color: var(--ink-soft); }
+  .block { display: flex; flex-direction: column; gap: var(--space-300); }
+  .block h2 { font-size: var(--display-md); max-width: 24ch; }
+  .block p { color: var(--text-secondary); font-size: var(--text-lg); line-height: var(--leading-loose); }
 
-  .ticks { display: flex; flex-direction: column; gap: var(--space-12); }
-
-  .ticks li {
-    position: relative;
-    padding-inline-start: var(--space-32);
-    color: var(--ink-soft);
-    font-size: var(--step--1);
-  }
-
-  .ticks li::before {
-    content: '';
-    position: absolute;
-    inset-inline-start: 0;
-    top: 0.62em;
-    width: 14px;
-    height: 1px;
-    background: var(--accent);
-  }
+  .final__title { max-width: 16ch; }
+  .final__action { margin-block-start: var(--space-200); }
 </style>

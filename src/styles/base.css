@@ -1,8 +1,10 @@
 /**
- * Base styles.
+ * Silfrún base layer — reset, document defaults, and the components the brand
+ * needs. Element-level and system-level only; anything that belongs to a
+ * single page lives with that page so the two never fight over specificity.
  *
- * Element-level only. Anything component-specific lives with its component so
- * the two never fight over specificity.
+ * Everything below references tokens. No literal colour appears in this file
+ * except inside the foil and hatch fills, which are materials, not palette.
  */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -10,6 +12,73 @@
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font: var(--type-body);
+  letter-spacing: var(--tracking-body);
+  text-wrap: pretty;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/**
+ * Display type. One weight, closed tracking, and a loose display leading so
+ * multi-line headings do not collide. Balanced wrapping matters more here than
+ * anywhere else on the page — a widow in Marcellus at 66px is very visible.
+ */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-display-loose);
+  text-wrap: balance;
+  margin: 0;
+}
+
+h1 { font-size: var(--display-xl); letter-spacing: var(--tracking-display-tight); line-height: var(--leading-display); }
+h2 { font-size: var(--display-lg); }
+h3 { font-size: var(--display-md); }
+h4 { font-size: var(--display-sm); }
+
+p { margin: 0; max-width: var(--measure-body); }
+
+/**
+ * Icelandic compounds run long — "persónuverndarstefna", "þjónustuskilmálar" —
+ * and carry no natural break opportunity, so a narrow screen would otherwise
+ * scroll sideways. break-word only breaks as a last resort, so ordinary prose
+ * is unaffected.
+ */
+body, h1, h2, h3, h4 { overflow-wrap: break-word; }
+
+a { color: inherit; text-decoration: none; }
+
+img, svg, video { display: block; max-width: 100%; height: auto; }
+
+ul, ol { margin: 0; padding: 0; list-style: none; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+hr {
+  border: 0;
+  height: 1px;
+  background: var(--edge-hairline);
+  margin: var(--space-600) 0;
+}
+
+::selection { background: var(--glacier-700); color: var(--silver-050); }
+
+small { font-size: var(--text-xs); }
+code, kbd { font: var(--type-mono); }
+strong { font-weight: var(--weight-medium); }
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-radius: var(--radius-sm);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -21,175 +90,684 @@ html {
   }
 }
 
-body {
-  margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--body);
-  font-size: var(--step-0);
-  font-weight: var(--weight-body);
-  line-height: 1.65;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
+/* ══════════════════════════════════════════════════════════════════════════
+   Brand utilities
+   ══════════════════════════════════════════════════════════════════════════ */
 
-h1, h2, h3, h4 {
-  font-family: var(--display);
-  font-weight: var(--weight-display);
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-  text-wrap: balance;
-  margin: 0;
-}
-
-h1 { font-size: var(--step-4); }
-h2 { font-size: var(--step-3); }
-h3 { font-size: var(--step-1); }
-
-p { margin: 0; max-width: var(--measure); }
-
-a { color: inherit; }
-
-img, svg, video { max-width: 100%; height: auto; display: block; }
-
-ul, ol { margin: 0; padding: 0; list-style: none; }
-
-button { font: inherit; color: inherit; }
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-  border-radius: var(--radius);
-}
-
-/* ---------- layout primitives ---------- */
-
-.wrap {
-  width: 100%;
-  max-width: var(--wrap);
-  margin-inline: auto;
-  padding-inline: var(--space-24);
-}
-
-.wrap--narrow { max-width: var(--wrap-narrow); }
-
-.section { padding-block: clamp(var(--space-48), 8vw, var(--space-96)); }
-.section--tight { padding-block: clamp(var(--space-32), 5vw, var(--space-64)); }
-.section--sunk { background: var(--surface-sunk); }
-.section--deep { background: var(--surface-deep); color: var(--ink-invert); }
-.section--deep h2 { color: var(--ink-invert); }
-
-.stack { display: flex; flex-direction: column; }
-.stack--16 { gap: var(--space-16); }
-.stack--24 { gap: var(--space-24); }
-.stack--32 { gap: var(--space-32); }
-
-/* ---------- shared text elements ---------- */
-
-.eyebrow {
-  font-family: var(--body);
-  font-size: var(--step--1);
-  font-weight: var(--weight-semi);
-  letter-spacing: 0.13em;
+/**
+ * Micro-caps eyebrow — the most-used text style in the system after body.
+ * The wide tracking against the closed-up display tracking is the signature.
+ */
+.eyebrow,
+.silfrun-eyebrow {
+  font: var(--type-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--text-muted);
+  margin: 0;
+  max-width: none;
+}
+
+.eyebrow--accent { color: var(--text-accent); }
+
+/**
+ * Grain overlay. Applied to any large flat fill to keep it from going plastic.
+ * Sits behind content via a negative z-index, so the element must establish its
+ * own stacking context.
+ */
+.silfrun-grain { position: relative; isolation: isolate; }
+
+.silfrun-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain-url);
+  background-size: var(--grain-size);
+  opacity: var(--grain-opacity);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Foil rule — the hairline that reads as polished metal. */
+.silfrun-rule,
+.sf-rule {
+  border: 0;
+  height: 1px;
+  width: 100%;
+  background: var(--edge-hairline);
   margin: 0;
 }
 
-.section--deep .eyebrow { color: var(--accent-line); }
+.sf-rule--foil,
+.silfrun-rule { background: var(--foil-hairline); }
 
-.lead {
-  font-size: var(--step-1);
-  color: var(--ink-soft);
-  line-height: 1.55;
+/* Lozenge rule — a foil hairline broken by a cut gem. Used to close a section. */
+.sf-rule--lozenge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-200);
+  background: none;
+  height: auto;
 }
 
-.section--deep .lead { color: var(--ink-invert); opacity: 0.86; }
+.sf-rule--lozenge::before,
+.sf-rule--lozenge::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--foil-hairline);
+}
 
-.section-head { display: flex; flex-direction: column; gap: var(--space-12); }
+.sf-rule__gem {
+  width: 5px;
+  height: 8px;
+  flex: none;
+  background: var(--silver-300);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
 
 .visually-hidden {
   position: absolute;
-  width: 1px; height: 1px;
-  margin: -1px; padding: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
 }
 
-/* ---------- buttons ---------- */
+/* ══════════════════════════════════════════════════════════════════════════
+   Layout primitives
+   ══════════════════════════════════════════════════════════════════════════ */
 
+.wrap {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--page-margin);
+}
+
+.wrap--narrow { max-width: 46rem; }
+
+@media (min-width: 90rem) {
+  .wrap { padding-inline: var(--space-600); }
+}
+
+/**
+ * Section rhythm. The system says to default one step larger than feels right,
+ * so the base section is 96–160px of vertical air rather than the 48–96 a
+ * conventional marketing page would use. The space is the product.
+ */
+.section { padding-block: clamp(var(--space-800), 9vw, var(--space-2000)); }
+.section--tight { padding-block: clamp(var(--space-600), 6vw, var(--space-1200)); }
+
+.section--sunk {
+  background: var(--surface-sunken);
+  border-block: 1px solid var(--edge-quiet);
+}
+
+/**
+ * The deep section is the closing plate: pure ink, grained, with a foil
+ * hairline thrown across its top edge. It reads as the inside of the case.
+ */
+.section--deep {
+  position: relative;
+  background: var(--basalt-950);
+  isolation: isolate;
+}
+
+.section--deep::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: var(--foil-hairline);
+}
+
+.section--deep::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain-url);
+  background-size: var(--grain-size);
+  opacity: var(--grain-opacity);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.stack { display: flex; flex-direction: column; }
+.stack--16 { gap: var(--space-200); }
+.stack--24 { gap: var(--space-300); }
+.stack--32 { gap: var(--space-400); }
+
+.section-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-200);
+  max-width: var(--measure-wide);
+}
+
+.lead {
+  font: var(--type-subtitle);
+  color: var(--text-secondary);
+  max-width: var(--measure-body);
+}
+
+.prose-measure { max-width: var(--measure-body); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Brand mark
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * The wordmark is type, not artwork: Marcellus caps at 0.34em tracking beside
+ * a cut lozenge. The tracking is what makes it read as a mark rather than as a
+ * word, so it must never be tightened to save space.
+ */
+.sf-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.sf-logo--stacked { flex-direction: column; gap: 0.6em; text-align: center; }
+
+.sf-logo__mark { display: block; width: 1.02em; height: 1.34em; flex: none; }
+.sf-logo__mark svg { width: 100%; height: 100%; display: block; }
+
+.sf-logo__word {
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-monogram);
+  text-transform: uppercase;
+  font-size: 1em;
+  padding-left: 0.34em;
+}
+
+.sf-logo__tagline {
+  display: block;
+  font: var(--type-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 0.55em;
+  padding-left: 0.22em;
+}
+
+.sf-logo--foil .sf-logo__word {
+  background: var(--foil-silver);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Image plates
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * No photography exists yet, and none is invented. Every image position renders
+ * as a hatched plate carrying a note describing the shot to commission — which
+ * is more honest than a stock photograph and, at this weight, looks deliberate.
+ */
+.sf-plate {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  background: var(--basalt-800);
+  border: 1px solid var(--edge-quiet);
+  border-radius: var(--radius-sm);
+}
+
+.sf-plate__fill {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(135deg, rgba(242,244,246,.045) 0 1px, transparent 1px 9px);
+}
+
+.sf-plate__note {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-100);
+  font: var(--type-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--silver-500);
+  text-align: center;
+  padding: var(--space-300);
+  max-width: none;
+}
+
+.sf-plate__scrim { position: absolute; inset: 0; background: var(--scrim-bottom); pointer-events: none; }
+
+.sf-plate__caption {
+  position: absolute;
+  left: var(--space-300);
+  right: var(--space-300);
+  bottom: var(--space-250);
+  color: var(--text-primary);
+  font: var(--type-body-sm);
+}
+
+.sf-plate img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(.82) contrast(1.04);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Controls
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Buttons are micro-caps at 0.14em, never sentence case. Cut edges, thrown
+ * light, no plastic: hover lifts nothing, press pushes 1px. `.btn` is retained
+ * as the site-wide alias so page markup reads naturally.
+ */
+.sf-btn,
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-8);
-  padding: 0.85em 1.6em;
+  gap: var(--space-100);
+  height: var(--control-h);
+  padding: 0 var(--pad-control-x);
   border: 1px solid transparent;
-  border-radius: var(--radius);
-  font-size: var(--step-0);
-  font-weight: var(--weight-semi);
-  line-height: 1.2;
-  text-decoration: none;
+  border-radius: var(--radius-sm);
+  font: var(--type-label);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-button);
+  text-transform: uppercase;
   cursor: pointer;
-  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  background: none;
+  color: var(--text-primary);
+  transition: var(--transition-control);
+  white-space: nowrap;
+  text-decoration: none;
 }
 
+.sf-btn--sm, .btn--sm {
+  height: var(--control-h-sm);
+  padding: 0 var(--pad-control-sm-x);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.16em;
+}
+
+.sf-btn--lg, .btn--lg { height: var(--control-h-lg); padding: 0 var(--space-400); }
+.sf-btn--block, .btn--block { display: flex; width: 100%; }
+
+/* Solid — the default primary. Silver plate on ink. */
+.sf-btn--solid,
 .btn--primary {
-  background: var(--accent);
-  color: #FFFFFF;
+  background: var(--silver-050);
+  color: var(--basalt-900);
+  box-shadow: var(--shadow-100);
 }
 
-:root[data-theme='dark'] .btn--primary,
-:root:not([data-theme='light']) .btn--primary { color: var(--ink-invert); }
+.sf-btn--solid:hover,
+.btn--primary:hover { background: #fff; box-shadow: var(--shadow-200); }
 
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) .btn--primary { color: #FFFFFF; }
+.sf-btn--solid:active,
+.btn--primary:active { background: var(--silver-200); box-shadow: none; transform: translateY(1px); }
+
+/* Foil — brushed metal. One per page at most, and only on the hero action. */
+.sf-btn--foil,
+.btn--foil {
+  background: var(--foil-silver-soft);
+  color: var(--basalt-900);
+  box-shadow: var(--shadow-100), var(--sheen-vellum);
 }
 
-.btn--primary:hover { background: var(--accent-hover); }
+.sf-btn--foil:hover, .btn--foil:hover { filter: brightness(1.08); }
+.sf-btn--foil:active, .btn--foil:active { filter: brightness(.94); transform: translateY(1px); }
 
+.sf-btn--outline,
 .btn--ghost {
-  background: transparent;
-  border-color: var(--line-strong);
-  color: var(--ink);
+  border-color: var(--edge-strong);
+  color: var(--text-primary);
 }
 
-.btn--ghost:hover { border-color: var(--accent); color: var(--accent); }
+.sf-btn--outline:hover,
+.btn--ghost:hover { background: var(--surface-hover); border-color: var(--silver-300); }
 
-.section--deep .btn--ghost { border-color: rgba(255,255,255,.32); color: var(--ink-invert); }
-.section--deep .btn--ghost:hover { border-color: var(--ink-invert); }
+.sf-btn--outline:active,
+.btn--ghost:active { background: var(--surface-active); transform: translateY(1px); }
 
+.sf-btn--ghost { color: var(--text-secondary); padding: 0 var(--space-150); }
+.sf-btn--ghost:hover { color: var(--text-primary); background: var(--surface-hover); }
+.sf-btn--ghost:active { background: var(--surface-active); transform: translateY(1px); }
+
+.sf-btn[disabled], .sf-btn[aria-disabled='true'],
+.btn[disabled], .btn[aria-disabled='true'] { opacity: .34; pointer-events: none; }
+
+.sf-btn__icon { display: inline-flex; width: 16px; height: 16px; }
+.sf-btn__icon > svg { width: 100%; height: 100%; stroke-width: 1.25; }
+
+/**
+ * The arrow link. The rule beneath it is the accent edge; the arrow travels on
+ * hover. Kept because it carries a lot of the site's navigation weight.
+ */
 .link-arrow {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-8);
-  font-weight: var(--weight-semi);
-  color: var(--accent);
+  gap: var(--space-100);
+  font: var(--type-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-primary);
   text-decoration: none;
-  border-bottom: 1px solid var(--accent-line);
-  padding-bottom: 2px;
-  transition: border-color var(--dur) var(--ease);
+  border-bottom: 1px solid var(--edge-accent);
+  padding-bottom: var(--space-075);
+  transition: color var(--dur-fast) var(--ease-glide), border-color var(--dur-fast) var(--ease-glide);
 }
 
-.link-arrow:hover { border-color: var(--accent); }
-.link-arrow::after { content: '→'; transition: transform var(--dur) var(--ease); }
-.link-arrow:hover::after { transform: translateX(3px); }
+.link-arrow:hover { color: var(--text-primary); border-bottom-color: var(--silver-300); }
+.link-arrow::after { content: '→'; transition: transform var(--dur-base) var(--ease-glide); }
+.link-arrow:hover::after { transform: translateX(4px); }
 
-/* ---------- skip link ---------- */
+.sf-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+
+.sf-iconbtn--sm { width: var(--control-h-sm); height: var(--control-h-sm); }
+.sf-iconbtn--outline { border-color: var(--edge-hairline); }
+.sf-iconbtn:hover { color: var(--text-primary); background: var(--surface-hover); border-color: var(--edge-strong); }
+.sf-iconbtn:active { background: var(--surface-active); transform: translateY(1px); }
+.sf-iconbtn[disabled] { opacity: .34; pointer-events: none; }
+.sf-iconbtn svg { width: 18px; height: 18px; stroke-width: 1.25; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Badges, tags, cards
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.sf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-075);
+  height: 22px;
+  padding: 0 var(--space-100);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--edge-hairline);
+  font: var(--type-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  background: var(--surface-inset);
+}
+
+.sf-badge--accent { color: var(--text-accent); border-color: var(--edge-accent); background: transparent; }
+.sf-badge--positive { color: var(--signal-positive); background: var(--signal-positive-surface); border-color: transparent; }
+.sf-badge--caution { color: var(--signal-caution); background: var(--signal-caution-surface); border-color: transparent; }
+.sf-badge--negative { color: var(--signal-negative); background: var(--signal-negative-surface); border-color: transparent; }
+.sf-badge__dot { width: 4px; height: 4px; border-radius: var(--radius-pill); background: currentColor; }
+
+/**
+ * Tag / chip. Used for service and area links. Pill-shaped by exception — it
+ * is the one place in the system where a full radius is permitted, because a
+ * chip reads as a physical token rather than as a surface.
+ */
+.sf-tag,
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-100);
+  height: 32px;
+  padding: 0 var(--space-200);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--edge-hairline);
+  font: var(--type-label);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  color: var(--text-secondary);
+  background: transparent;
+  text-decoration: none;
+  transition: var(--transition-control);
+}
+
+.sf-tag--selected { border-color: var(--edge-strong); color: var(--text-primary); background: var(--surface-inset); }
+.sf-tag--interactive, .chip { cursor: pointer; }
+.sf-tag--interactive:hover,
+.chip:hover { border-color: var(--edge-strong); color: var(--text-primary); background: var(--surface-inset); }
+
+/**
+ * Card. A raised basalt plate with a lit top edge. The sheen is what makes it
+ * read as polished rather than as a flat div with a border.
+ */
+.sf-card {
+  position: relative;
+  background: var(--surface-raised);
+  border: 1px solid var(--edge-hairline);
+  border-radius: var(--radius-sm);
+  padding: var(--pad-card);
+  box-shadow: var(--sheen-top);
+}
+
+.sf-card--plain { background: transparent; box-shadow: none; }
+.sf-card--raised { box-shadow: var(--shadow-200), var(--sheen-top); }
+.sf-card--inset { background: var(--surface-inset); border-color: var(--edge-quiet); box-shadow: none; }
+.sf-card--ink { background: var(--basalt-950); border-color: var(--edge-quiet); }
+.sf-card--pad-lg { padding: var(--pad-card-lg); }
+.sf-card--pad-none { padding: 0; }
+
+.sf-card--interactive {
+  cursor: pointer;
+  transition: transform var(--dur-base) var(--ease-settle), box-shadow var(--dur-base) var(--ease-settle), border-color var(--dur-base) var(--ease-settle);
+}
+
+.sf-card--interactive:hover {
+  transform: translateY(var(--lift-hover));
+  border-color: var(--edge-strong);
+  box-shadow: var(--shadow-300), var(--sheen-top-strong);
+}
+
+.sf-card__grain {
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain-url);
+  background-size: var(--grain-size);
+  opacity: var(--grain-opacity);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.sf-card__eyebrow {
+  font: var(--type-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--space-200);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Ruled lists — the house pattern for anything enumerated
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * A tick is a 14px hairline, not a checkmark glyph. The system has no icon set
+ * yet, and a rule reads as more considered than a tick from a font.
+ */
+.ticks { display: flex; flex-direction: column; gap: var(--space-200); }
+
+.ticks li {
+  position: relative;
+  padding-inline-start: var(--space-400);
+  color: var(--text-secondary);
+  font-size: var(--text-md);
+  max-width: var(--measure-body);
+}
+
+.ticks li::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.72em;
+  width: 16px;
+  height: 1px;
+  background: var(--accent);
+}
+
+/* Definition rows — material name against its note, split by a hairline. */
+.defs { display: flex; flex-direction: column; margin: 0; }
+
+.def {
+  display: grid;
+  grid-template-columns: minmax(9rem, 15rem) 1fr;
+  gap: var(--space-300);
+  padding-block: var(--space-300);
+  border-block-end: 1px solid var(--edge-quiet);
+}
+
+.def:first-child { padding-block-start: 0; }
+.def dt { font-weight: var(--weight-medium); color: var(--text-primary); }
+.def dd { margin: 0; color: var(--text-muted); font-size: var(--text-sm); }
+
+@media (max-width: 34rem) {
+  .def { grid-template-columns: 1fr; gap: var(--space-050); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Disclosure (FAQ)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.faqs { display: flex; flex-direction: column; border-block-start: 1px solid var(--edge-quiet); }
+
+.faq { border-block-end: 1px solid var(--edge-quiet); }
+
+.faq__q {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-300);
+  padding-block: var(--space-300);
+  font-family: var(--font-display);
+  font-size: var(--display-xs);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-display);
+  color: var(--text-primary);
+  cursor: pointer;
+  list-style: none;
+  transition: color var(--dur-fast) var(--ease-glide);
+}
+
+.faq__q:hover { color: var(--text-accent); }
+.faq__q::-webkit-details-marker { display: none; }
+
+.faq__q::after {
+  content: '';
+  flex: none;
+  width: 11px;
+  height: 11px;
+  margin-top: 0.45em;
+  background:
+    linear-gradient(var(--accent), var(--accent)) center / 11px 1px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) center / 1px 11px no-repeat;
+  transition: transform var(--dur-base) var(--ease-settle);
+}
+
+.faq[open] .faq__q::after {
+  background: linear-gradient(var(--accent), var(--accent)) center / 11px 1px no-repeat;
+  transform: rotate(180deg);
+}
+
+.faq__a {
+  padding-block-end: var(--space-400);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  max-width: var(--measure-body);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Form controls — ruled lines and recessed plates, not rounded boxes
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.sf-field { display: flex; flex-direction: column; gap: var(--space-100); width: 100%; }
+
+.sf-field__label {
+  font: var(--type-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.sf-field__hint { font: var(--type-body-sm); font-size: var(--text-xs); color: var(--text-muted); }
+.sf-field__hint--error { color: var(--signal-negative); }
+
+.sf-input, .sf-select {
+  width: 100%;
+  height: var(--control-h);
+  padding: var(--pad-field-y) var(--pad-field-x);
+  background: var(--surface-inset);
+  border: 1px solid var(--edge-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font: var(--type-body);
+  font-size: var(--text-sm);
+  transition: var(--transition-control);
+}
+
+.sf-input::placeholder { color: var(--text-muted); }
+.sf-input:hover, .sf-select:hover { border-color: var(--edge-strong); }
+.sf-input:focus, .sf-select:focus { outline: none; border-color: var(--edge-accent); box-shadow: var(--ring-focus); }
+.sf-input--invalid, .sf-input--invalid:hover { border-color: var(--signal-negative); }
+.sf-input[disabled], .sf-select[disabled] { opacity: .4; pointer-events: none; }
+.sf-input--textarea { height: auto; min-height: 104px; resize: vertical; line-height: var(--leading-body); }
+
+.sf-input--underline {
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--edge-strong);
+  border-radius: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sf-input--underline:focus { box-shadow: none; border-bottom-color: var(--accent); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Skip link
+   ══════════════════════════════════════════════════════════════════════════ */
 
 .skip-link {
   position: absolute;
-  left: var(--space-16);
-  top: -4rem;
+  left: var(--space-200);
+  top: -6rem;
   z-index: 100;
-  padding: var(--space-12) var(--space-16);
-  background: var(--accent);
-  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h);
+  padding: 0 var(--pad-control-x);
+  background: var(--silver-050);
+  color: var(--basalt-900);
+  font: var(--type-label);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-button);
+  text-transform: uppercase;
   text-decoration: none;
-  border-radius: var(--radius);
-  transition: top var(--dur) var(--ease);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-200);
+  transition: top var(--dur-base) var(--ease-settle);
 }
 
-.skip-link:focus { top: var(--space-16); }
+.skip-link:focus { top: var(--space-200); }

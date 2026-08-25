@@ -1,5 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-  <rect width="24" height="24" rx="4" fill="#35555F"/>
-  <path d="M12 4.6 5.6 12 12 19.4 18.4 12Z" stroke="#F6F8F8" stroke-width="1.3" stroke-linejoin="round"/>
-  <path d="M12 8.4 8.6 12 12 15.6 15.4 12Z" fill="#F6F8F8" opacity=".5"/>
+<!--
+  The mark on the basalt ground: a cut lozenge in silver, with the faint inner
+  fill and centre score that make it read as a faceted stone rather than a
+  filled diamond. Geometry matches src/components/Logo.astro.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="3" fill="#0B0D0F"/>
+  <g transform="translate(8.5 3.5) scale(0.3125)">
+    <path d="M24 2 Q16 17 6 32 Q16 47 24 62 Z" fill="#BAC1C8" opacity=".16"/>
+    <path
+      d="M24 2 Q32 17 42 32 Q32 47 24 62 Q16 47 6 32 Q16 17 24 2 Z"
+      fill="none"
+      stroke="#D2D7DC"
+      stroke-width="3.6"
+      stroke-linejoin="round"
+    />
+    <path d="M24 2 V62" stroke="#D2D7DC" stroke-width="2.2" opacity=".45"/>
+  </g>
 </svg>

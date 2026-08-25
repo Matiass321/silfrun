@@ -42,7 +42,8 @@ const faqLd = {
         trail={[{ label: s.nav.services, href: path('services', locale) }, { label: s.services[service].name }]}
       />
       <p class="eyebrow">{s.services.eyebrow}</p>
-      <h1>{s.services[service].name}</h1>
+      <h1 class="page__title">{s.services[service].name}</h1>
+      <div class="silfrun-rule page__rule"></div>
       <p class="lead">{c.lead}</p>
     </div>
   </header>
@@ -102,9 +103,9 @@ const faqLd = {
   <section class="section section--tight">
     <div class="wrap wrap--narrow stack stack--16">
       <h2>{locale === 'is' ? 'Önnur þjónusta' : 'Other services'}</h2>
-      <ul class="others">
+      <ul class="chips">
         {others.map((k) => (
-          <li><a class="other" href={path(k, locale)}>{s.services[k].name}</a></li>
+          <li><a class="chip" href={path(k, locale)}>{s.services[k].name}</a></li>
         ))}
       </ul>
     </div>
@@ -112,100 +113,25 @@ const faqLd = {
 
   <section class="section section--deep">
     <div class="wrap wrap--narrow stack stack--24">
-      <h2>{s.finalCta.title}</h2>
+      <h2 class="final__title">{s.finalCta.title}</h2>
       <p class="lead">{s.finalCta.body}</p>
-      <p><a class="btn btn--primary" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
+      <p class="final__action"><a class="btn btn--foil btn--lg" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
     </div>
   </section>
 </article>
 
 <style>
-  .prose { display: flex; flex-direction: column; gap: var(--space-16); }
-  .prose p { color: var(--ink-soft); }
+  .page__title { max-width: 18ch; }
+  .page__rule { max-width: 7rem; margin-block: var(--space-300); }
 
-  .ticks { display: flex; flex-direction: column; gap: var(--space-12); }
+  .prose { display: flex; flex-direction: column; gap: var(--space-300); }
+  .prose p { color: var(--text-secondary); font-size: var(--text-lg); line-height: var(--leading-loose); }
 
-  .ticks li {
-    position: relative;
-    padding-inline-start: var(--space-32);
-    color: var(--ink-soft);
-    font-size: var(--step-0);
-  }
+  .plain { display: flex; flex-direction: column; gap: var(--space-300); }
+  .plain li { color: var(--text-secondary); max-width: var(--measure-body); }
 
-  .ticks li::before {
-    content: '';
-    position: absolute;
-    inset-inline-start: 0;
-    top: 0.62em;
-    width: 14px;
-    height: 1px;
-    background: var(--accent);
-  }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--space-150); }
 
-  .defs { display: flex; flex-direction: column; gap: var(--space-16); margin: 0; }
-
-  .def {
-    display: grid;
-    grid-template-columns: minmax(9rem, 14rem) 1fr;
-    gap: var(--space-16);
-    padding-block-end: var(--space-16);
-    border-block-end: 1px solid var(--line);
-  }
-
-  .def dt { font-weight: var(--weight-semi); }
-  .def dd { margin: 0; color: var(--muted); font-size: var(--step--1); }
-
-  .plain { display: flex; flex-direction: column; gap: var(--space-16); }
-  .plain li { color: var(--ink-soft); }
-
-  .faqs { display: flex; flex-direction: column; }
-
-  .faq { border-block-end: 1px solid var(--line); }
-
-  .faq__q {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-16);
-    padding-block: var(--space-16);
-    font-weight: var(--weight-semi);
-    cursor: pointer;
-    list-style: none;
-  }
-
-  .faq__q::-webkit-details-marker { display: none; }
-
-  .faq__q::after {
-    content: '+';
-    color: var(--accent);
-    font-size: var(--step-1);
-    line-height: 1;
-    flex-shrink: 0;
-  }
-
-  .faq[open] .faq__q::after { content: '\2212'; }
-
-  .faq__a {
-    padding-block-end: var(--space-24);
-    color: var(--muted);
-    font-size: var(--step--1);
-  }
-
-  .others { display: flex; flex-wrap: wrap; gap: var(--space-12); }
-
-  .other {
-    display: inline-block;
-    padding: var(--space-8) var(--space-16);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    font-size: var(--step--1);
-    text-decoration: none;
-    transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
-  }
-
-  .other:hover { border-color: var(--accent-line); color: var(--accent); }
-
-  @media (max-width: 34rem) {
-    .def { grid-template-columns: 1fr; gap: var(--space-4); }
-  }
+  .final__title { max-width: 16ch; }
+  .final__action { margin-block-start: var(--space-200); }
 </style>

@@ -18,6 +18,7 @@ export const is = {
     menu: 'Valmynd',
     close: 'Loka',
     skip: 'Beint í efni',
+    home: 'Silfrún — forsíða',
     language: 'Tungumál',
   },
 

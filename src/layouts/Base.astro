@@ -1,6 +1,12 @@
 ---
-import '@fontsource-variable/cormorant-garamond';
-import '@fontsource-variable/manrope';
+/**
+ * Marcellus speaks, Archivo works, Plex Mono annotates. Self-hosted rather than
+ * pulled from a CDN so the page still makes zero external requests. Both text
+ * faces cover Icelandic — ÁÐÉÍÓÚÝÞÆÖ.
+ */
+import '@fontsource/marcellus/400.css';
+import '@fontsource-variable/archivo';
+import '@fontsource/ibm-plex-mono/400.css';
 import '~/styles/tokens.css';
 import '~/styles/base.css';
 
@@ -94,13 +100,15 @@ const websiteLd = {
 
     {/* Base-aware: a hardcoded "/favicon.svg" 404s on a subpath deploy. */}
     <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} type="image/svg+xml" />
-    <meta name="theme-color" content="#35555F" />
+    {/* Browser chrome matches the basalt ground, not a mid-tone accent. */}
+    <meta name="theme-color" content="#0B0D0F" />
+    <meta name="color-scheme" content="dark" />
 
     <script type="application/ld+json" is:inline set:html={JSON.stringify(websiteLd)} />
     {jsonLd && <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />}
   </head>
 
-  <body>
+  <body class="silfrun-grain">
     <a class="skip-link" href="#main">{s.nav.skip}</a>
     <slot />
   </body>

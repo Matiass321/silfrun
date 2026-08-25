@@ -1,4 +1,8 @@
 ---
+/* This page does not use the shared layout, so it must load the faces itself. */
+import '@fontsource/marcellus/400.css';
+import '@fontsource-variable/archivo';
+
 import { LOCALES, SITE } from '~/config/site';
 
 /**
@@ -12,6 +16,11 @@ import { LOCALES, SITE } from '~/config/site';
  * reads what comes back — an SEO auditor, and more importantly an AI crawler —
  * would otherwise see nothing and conclude the site is empty. It is excluded
  * from the sitemap and marked noindex, because it is not a content page.
+ *
+ * Styles are inlined rather than imported: this page renders before anything
+ * else on a cold visit, and it is the only page in the site that does not use
+ * the shared layout. Its values are copied from the token file by hand — if
+ * the palette changes, change them here too.
  *
  * If this later moves to a host with edge redirects, replace it with a 302 on
  * Accept-Language and delete this file.
@@ -33,7 +42,11 @@ const LABEL: Record<string, string> = { is: 'Íslenska', en: 'English' };
     <title>{SITE.brand}</title>
     <link rel="canonical" href={`${SITE.url}${target}`} />
     <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} type="image/svg+xml" />
+    <meta name="theme-color" content="#0B0D0F" />
+    <meta name="color-scheme" content="dark" />
     <style>
+      *, *::before, *::after { box-sizing: border-box; }
+
       body {
         margin: 0;
         min-height: 100vh;
@@ -41,18 +54,104 @@ const LABEL: Record<string, string> = { is: 'Íslenska', en: 'English' };
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 1.5rem;
-        background: #F6F8F8;
-        color: #131A1E;
-        font-family: ui-sans-serif, system-ui, sans-serif;
+        gap: 2.5rem;
+        padding: 2rem;
+        background: #0B0D0F;
+        color: #F2F4F6;
+        font-family: 'Archivo Variable', Archivo, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        text-align: center;
       }
-      h1 { font-family: Georgia, serif; font-weight: 500; margin: 0; }
-      ul { display: flex; gap: 1rem; list-style: none; padding: 0; margin: 0; }
-      a { color: #35555F; }
+
+      /* The grain keeps the flat black from reading as plastic. */
+      body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+        background-size: 180px;
+        opacity: 0.32;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .mark { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 1.1rem; }
+
+      .mark svg { width: 34px; height: 45px; display: block; color: #BAC1C8; }
+
+      h1 {
+        margin: 0;
+        font-family: Marcellus, 'Times New Roman', Times, serif;
+        font-weight: 400;
+        font-size: clamp(1.6rem, 1.2rem + 2vw, 2.4rem);
+        letter-spacing: 0.34em;
+        text-transform: uppercase;
+        padding-left: 0.34em;
+        background: linear-gradient(103deg, #5D656E 0%, #BAC1C8 16%, #F2F4F6 31%, #9AA2AA 46%, #E4E8EB 62%, #7B838C 80%, #D2D7DC 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .rule {
+        width: 7rem;
+        height: 1px;
+        border: 0;
+        margin: 0;
+        background: linear-gradient(90deg, rgba(226,232,238,0) 0%, rgba(226,232,238,.55) 30%, rgba(255,255,255,.85) 50%, rgba(226,232,238,.55) 70%, rgba(226,232,238,0) 100%);
+      }
+
+      ul {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.75rem;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      a {
+        display: inline-flex;
+        align-items: center;
+        height: 42px;
+        padding: 0 1.5rem;
+        border: 1px solid rgba(226, 232, 238, .28);
+        border-radius: 2px;
+        color: #F2F4F6;
+        font-size: 12.5px;
+        font-weight: 500;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition: background-color 160ms cubic-bezier(.22,.61,.36,1), border-color 160ms cubic-bezier(.22,.61,.36,1);
+      }
+
+      a:hover { background: rgba(242, 244, 246, .06); border-color: #BAC1C8; }
+
+      @media (prefers-reduced-motion: reduce) {
+        a { transition-duration: 0.01ms; }
+      }
     </style>
   </head>
   <body>
-    <h1>{SITE.brand}</h1>
+    <div class="mark">
+      <svg viewBox="0 0 48 64" fill="none" aria-hidden="true">
+        <path d="M24 2 Q16 17 6 32 Q16 47 24 62 Z" fill="currentColor" opacity=".10" />
+        <path
+          d="M24 2 Q32 17 42 32 Q32 47 24 62 Q16 47 6 32 Q16 17 24 2 Z"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.25"
+          stroke-linejoin="round"
+        />
+        <path d="M24 2 V62" stroke="currentColor" stroke-width=".75" opacity=".45" />
+      </svg>
+      <h1>{SITE.brand}</h1>
+      <hr class="rule" />
+    </div>
     <nav>
       <ul>
         {LOCALES.map((l) => (

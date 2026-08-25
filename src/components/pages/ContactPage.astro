@@ -70,28 +70,29 @@ const dayNames: Record<Locale, string[]> = {
     <div class="wrap wrap--narrow">
       <Breadcrumbs locale={locale} trail={[{ label: heading }]} />
       <p class="eyebrow">{heading}</p>
-      <h1>{heading}</h1>
+      <h1 class="page__title">{heading}</h1>
+      <div class="silfrun-rule page__rule"></div>
       <p class="lead">{isQuote ? copy.lead : copy.contactLead}</p>
     </div>
   </header>
 
   <section class="section section--tight">
     <div class="wrap wrap--narrow contact">
-      <div class="contact__card">
+      <div class="contact__card sf-card">
         <h2 class="contact__title">{s.common.phone}</h2>
         {isPlaceholder(SITE.contact.phone)
           ? <p><Pending label={s.pending.phone} locale={locale} nowrap /></p>
           : <p><a class="contact__link" href={`tel:${SITE.contact.phoneE164}`}>{SITE.contact.phone}</a></p>}
       </div>
 
-      <div class="contact__card">
+      <div class="contact__card sf-card">
         <h2 class="contact__title">{s.common.email}</h2>
         {isPlaceholder(SITE.contact.email)
           ? <p><Pending label={s.pending.email} locale={locale} /></p>
           : <p><a class="contact__link" href={`mailto:${SITE.contact.email}`}>{SITE.contact.email}</a></p>}
       </div>
 
-      <div class="contact__card">
+      <div class="contact__card sf-card">
         <h2 class="contact__title">{copy.hoursTitle}</h2>
         {SITE.hours.map((h) => (
           <p class="contact__hours">
@@ -125,59 +126,52 @@ const dayNames: Record<Locale, string[]> = {
 </article>
 
 <style>
+  .page__title { max-width: 18ch; }
+  .page__rule { max-width: 7rem; margin-block: var(--space-300); }
+
   .contact {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-    gap: var(--space-16);
+    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+    gap: var(--space-300);
   }
 
-  .contact__card {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-8);
-    padding: var(--space-24);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-card);
-  }
+  .contact__card { display: flex; flex-direction: column; gap: var(--space-200); }
 
   .contact__title {
-    font-family: var(--body);
-    font-size: var(--step--1);
-    font-weight: var(--weight-semi);
-    letter-spacing: 0.1em;
+    font-family: var(--font-text);
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  /* Contact values are the point of the card, so they get display scale. */
+  .contact__card p {
+    font-family: var(--font-display);
+    font-size: var(--display-xs);
+    letter-spacing: var(--tracking-display);
+    color: var(--text-primary);
+    margin: 0;
   }
 
   .contact__link {
-    color: var(--ink);
+    color: var(--text-primary);
     text-decoration: none;
-    border-bottom: 1px solid var(--accent-line);
+    border-bottom: 1px solid var(--edge-accent);
+    transition: border-color var(--dur-fast) var(--ease-glide);
   }
 
-  .contact__link:hover { color: var(--accent); }
+  .contact__link:hover { border-bottom-color: var(--silver-300); }
 
-  .contact__hours { font-size: var(--step--1); color: var(--ink-soft); }
-
-  .muted { color: var(--ink-soft); }
-
-  .ticks { display: flex; flex-direction: column; gap: var(--space-12); }
-
-  .ticks li {
-    position: relative;
-    padding-inline-start: var(--space-32);
-    color: var(--ink-soft);
-    font-size: var(--step--1);
+  /* Hours are a specification: mono, tabular, quiet. */
+  .contact__hours {
+    font: var(--type-mono) !important;
+    font-size: var(--text-xs) !important;
+    letter-spacing: 0 !important;
+    color: var(--text-secondary) !important;
+    font-variant-numeric: tabular-nums;
   }
 
-  .ticks li::before {
-    content: '';
-    position: absolute;
-    inset-inline-start: 0;
-    top: 0.62em;
-    width: 14px;
-    height: 1px;
-    background: var(--accent);
-  }
+  .muted { color: var(--text-secondary); }
 </style>

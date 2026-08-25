@@ -32,7 +32,8 @@ const areaPendingNote =
         <div class="wrap wrap--narrow">
           <Breadcrumbs locale={locale} trail={[{ label: s.nav.services }]} />
           <p class="eyebrow">{s.services.eyebrow}</p>
-          <h1>{s.services.title}</h1>
+          <h1 class="page__title">{s.services.title}</h1>
+          <div class="silfrun-rule page__rule"></div>
           <p class="lead">{s.services.lead}</p>
         </div>
       </header>
@@ -40,12 +41,13 @@ const areaPendingNote =
       <section class="section section--tight">
         <div class="wrap stack stack--24">
           <ul class="grid">
-            {SERVICE_KEYS.map((key) => (
+            {SERVICE_KEYS.map((key, i) => (
               <li class="tile">
-                <a class="tile__link" href={path(key, locale)}>
+                <a class="tile__link sf-card sf-card--interactive" href={path(key, locale)}>
+                  <span class="tile__index">{String(i + 1).padStart(2, '0')}</span>
                   <h2 class="tile__title">{s.services[key].name}</h2>
                   <p class="tile__body">{SERVICE_CONTENT[locale][key].lead}</p>
-                  <span class="tile__more" aria-hidden="true">&rarr;</span>
+                  <span class="tile__more" aria-hidden="true">→</span>
                 </a>
               </li>
             ))}
@@ -61,7 +63,8 @@ const areaPendingNote =
         <div class="wrap wrap--narrow">
           <Breadcrumbs locale={locale} trail={[{ label: s.nav.areas }]} />
           <p class="eyebrow">{s.areas.eyebrow}</p>
-          <h1>{s.areas.title}</h1>
+          <h1 class="page__title">{s.areas.title}</h1>
+          <div class="silfrun-rule page__rule"></div>
           <p class="lead">{s.areas.lead}</p>
         </div>
       </header>
@@ -99,7 +102,8 @@ const areaPendingNote =
             trail={[{ label: s.nav.areas, href: path('areas', locale) }, { label: area.name }]}
           />
           <p class="eyebrow">{s.areas.eyebrow}</p>
-          <h1>{s.areas.inArea} {area.name}</h1>
+          <h1 class="page__title">{s.areas.inArea} {area.name}</h1>
+          <div class="silfrun-rule page__rule"></div>
           <p class="lead">
             {locale === 'is'
               ? `Við hreinsum sófa, áklæði, teppi og gólfteppi í ${area.name}. Unnið er á staðnum og efnið metið áður en nokkuð er borið á.`
@@ -137,18 +141,21 @@ const areaPendingNote =
 
   <section class="section section--deep">
     <div class="wrap wrap--narrow stack stack--24">
-      <h2>{s.finalCta.title}</h2>
+      <h2 class="final__title">{s.finalCta.title}</h2>
       <p class="lead">{s.finalCta.body}</p>
-      <p><a class="btn btn--primary" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
+      <p class="final__action"><a class="btn btn--foil btn--lg" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
     </div>
   </section>
 </article>
 
 <style>
+  .page__title { max-width: 18ch; }
+  .page__rule { max-width: 7rem; margin-block: var(--space-300); }
+
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-    gap: var(--space-16);
+    grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+    gap: var(--space-300);
   }
 
   .tile { display: flex; }
@@ -156,40 +163,35 @@ const areaPendingNote =
   .tile__link {
     display: flex;
     flex-direction: column;
-    gap: var(--space-12);
+    gap: var(--space-150);
     width: 100%;
-    padding: var(--space-32) var(--space-24) var(--space-24);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-card);
     text-decoration: none;
-    transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+    color: inherit;
   }
 
-  .tile__link:hover {
-    border-color: var(--accent-line);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lift);
+  /* A catalogue number, set in mono — the system reserves mono for specification. */
+  .tile__index {
+    font: var(--type-mono);
+    font-size: 10.5px;
+    color: var(--silver-500);
+    margin-block-end: var(--space-200);
   }
 
-  .tile__title { font-size: var(--step-1); }
-  .tile__body { font-size: var(--step--1); color: var(--muted); flex: 1; }
-  .tile__more { color: var(--accent); }
+  .tile__title { font-size: var(--display-xs); }
+  .tile__body { font-size: var(--text-sm); color: var(--text-muted); flex: 1; }
 
-  .chips { display: flex; flex-wrap: wrap; gap: var(--space-12); }
-
-  .chip {
-    display: inline-block;
-    padding: var(--space-8) var(--space-16);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    font-size: var(--step--1);
-    text-decoration: none;
-    transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  .tile__more {
+    color: var(--text-accent);
+    margin-block-start: var(--space-200);
+    transition: transform var(--dur-base) var(--ease-glide);
   }
 
-  .chip:hover { border-color: var(--accent-line); color: var(--accent); }
+  .tile__link:hover .tile__more { transform: translateX(4px); }
 
-  .area-note { font-size: var(--step--1); }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--space-150); }
+
+  .area-note { font: var(--type-mono); color: var(--text-muted); max-width: 60ch; }
+
+  .final__title { max-width: 16ch; }
+  .final__action { margin-block-start: var(--space-200); }
 </style>

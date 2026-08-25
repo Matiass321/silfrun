@@ -45,6 +45,49 @@ npx wrangler pages deploy ./dist --project-name silfrun
 `build:ci` skips `astro check` so a type warning never blocks a deploy; the
 full check runs locally.
 
+## Design system
+
+The site runs the Silfrún system, "cold light on black stone". Clean is read
+from brightness and cool hue — which is why every mass-market cleaning brand is
+cyan on white, and why they all read as hygiene rather than luxury. Expensive is
+read from dark values, few hues, real material and unearned space.
+
+| | |
+| --- | --- |
+| Ground | Basalt `#0B0D0F` — the colour of the uniform |
+| Light | Silver and glacier, achromatic and cold |
+| Paper | Warm limestone (`[data-theme="vellum"]`), because cold white reads as a dental practice |
+| Accent | Kelp, the single saturated tone. It only ever confirms |
+| Proportion | 75% basalt · 15% silver · 7% stone · 3% kelp |
+
+Marcellus speaks (display, **one weight only**), Archivo works (UI, body),
+IBM Plex Mono annotates specifications and never prose. All three are
+self-hosted through `@fontsource`, so the page still makes zero external
+requests, and all three cover Icelandic (ð þ æ ö á í).
+
+Rules that are not negotiable:
+
+- **1px is the only border weight.** Only its colour changes.
+- **Nothing is rounded.** 2px is the house default, 8px the absolute maximum.
+  The pill radius exists only for chips, which read as physical tokens.
+- **The wordmark's 0.34em tracking is never tightened.** On narrow screens the
+  type size comes down instead.
+- **Nothing bounces or springs.** Glide and settle, opacity and 4–16px
+  translation only. Hover lifts 1px, press pushes 1px.
+- **Voice: sentence case, no exclamation marks, no emoji, no superlatives.**
+  The word "luxury" never appears in copy. Figures as numerals.
+- **Foil is used once per view at most** — the hero action, the wordmark, a
+  section edge. Foil everywhere is foil nowhere.
+
+Marcellus and Archivo are stand-ins proxying a licensed pairing (an
+inscriptional display face and a neutral grotesque). Swap the `@fontsource`
+imports in `src/layouts/Base.astro` and `src/pages/index.astro` when the
+licences are bought.
+
+No photography exists, so every image position renders as a hatched plate
+carrying the brief for the shot to commission — a shot list a photographer can
+work from, rather than a stock photograph.
+
 ## Where things live
 
 | Path | What |
@@ -55,7 +98,8 @@ full check runs locally.
 | `src/i18n/meta.ts` | Titles and descriptions, one entry per page per language |
 | `src/data/services.ts` | Per-service page content |
 | `src/data/content.ts` | FAQ, prose pages and draft legal text |
-| `src/styles/tokens.css` | Design tokens — colour, type scale, spacing |
+| `src/styles/tokens.css` | Design tokens — colour ramps, type, space, material, motion |
+| `src/styles/base.css` | Base layer plus the `sf-*` components and layout primitives |
 
 Contact details, hours and service areas are read from `site.ts` and nowhere
 else. Never hardcode them into a page or a translation string.

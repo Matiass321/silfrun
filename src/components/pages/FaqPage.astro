@@ -50,7 +50,8 @@ const pendingLabel = locale === 'is' ? 'Svar væntanlegt' : 'Answer pending';
     <div class="wrap wrap--narrow">
       <Breadcrumbs locale={locale} trail={[{ label: heading }]} />
       <p class="eyebrow">{heading}</p>
-      <h1>{heading}</h1>
+      <h1 class="page__title">{heading}</h1>
+      <div class="silfrun-rule page__rule"></div>
       <p class="lead">{lead}</p>
     </div>
   </header>
@@ -75,44 +76,17 @@ const pendingLabel = locale === 'is' ? 'Svar væntanlegt' : 'Answer pending';
 
   <section class="section section--deep">
     <div class="wrap wrap--narrow stack stack--24">
-      <h2>{s.finalCta.title}</h2>
+      <h2 class="final__title">{s.finalCta.title}</h2>
       <p class="lead">{s.finalCta.body}</p>
-      <p><a class="btn btn--primary" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
+      <p class="final__action"><a class="btn btn--foil btn--lg" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
     </div>
   </section>
 </article>
 
 <style>
-  .faqs { display: flex; flex-direction: column; }
+  .page__title { max-width: 20ch; }
+  .page__rule { max-width: 7rem; margin-block: var(--space-300); }
 
-  .faq { border-block-end: 1px solid var(--line); }
-
-  .faq__q {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-16);
-    padding-block: var(--space-16);
-    font-weight: var(--weight-semi);
-    cursor: pointer;
-    list-style: none;
-  }
-
-  .faq__q::-webkit-details-marker { display: none; }
-
-  .faq__q::after {
-    content: '+';
-    color: var(--accent);
-    font-size: var(--step-1);
-    line-height: 1;
-    flex-shrink: 0;
-  }
-
-  .faq[open] .faq__q::after { content: '\2212'; }
-
-  .faq__a {
-    padding-block-end: var(--space-24);
-    color: var(--muted);
-    font-size: var(--step--1);
-  }
+  .final__title { max-width: 16ch; }
+  .final__action { margin-block-start: var(--space-200); }
 </style>

@@ -16,6 +16,30 @@ const alt = alternates('home', locale);
 
 /** Step numbers are written out here so the markup stays declarative. */
 const steps = s.process.steps.map((step, i) => ({ ...step, num: String(i + 1).padStart(2, '0') }));
+
+/**
+ * Image positions.
+ *
+ * No photography exists and none is invented, so each position renders as a
+ * hatched plate carrying the brief for the shot to commission. This is more
+ * useful than a stock photograph — it is a shot list a photographer can work
+ * from — and at this weight it reads as deliberate rather than as a gap.
+ */
+const PLATES: Record<Locale, { ratio: string; note: string }[]> = {
+  is: [
+    { ratio: '4 / 5', note: 'Ullarsófi · fyrir og eftir · sama birta, sami rammi' },
+    { ratio: '4 / 5', note: 'Handhnýtt teppi · nærmynd af trefjum' },
+    { ratio: '4 / 5', note: 'Blettameðferð · smáatriði í dagsbirtu' },
+  ],
+  en: [
+    { ratio: '4 / 5', note: 'Wool sofa · before and after · matched light and frame' },
+    { ratio: '4 / 5', note: 'Hand-knotted rug · fibre close-up' },
+    { ratio: '4 / 5', note: 'Stain treatment · detail in daylight' },
+  ],
+};
+
+const plates = PLATES[locale];
+const shotBrief = locale === 'is' ? 'Mynd í bið' : 'Shot pending';
 ---
 
 <Marketing
@@ -31,19 +55,20 @@ const steps = s.process.steps.map((step, i) => ({ ...step, num: String(i + 1).pa
   <section class="hero">
     <div class="wrap hero__inner">
       <p class="eyebrow">{s.hero.eyebrow}</p>
-      <h1>{s.hero.title}</h1>
+      <h1 class="hero__title">{s.hero.title}</h1>
+      <div class="silfrun-rule hero__rule"></div>
       <p class="lead hero__lead">{s.hero.lead}</p>
 
       <div class="hero__actions">
-        <a class="btn btn--primary" href={path('quote', locale)}>{s.hero.ctaPrimary}</a>
-        <a class="btn btn--ghost" href={path('services', locale)}>{s.hero.ctaSecondary}</a>
+        <a class="btn btn--foil btn--lg" href={path('quote', locale)}>{s.hero.ctaPrimary}</a>
+        <a class="btn btn--ghost btn--lg" href={path('services', locale)}>{s.hero.ctaSecondary}</a>
       </div>
 
       <p class="hero__note">{s.hero.note}</p>
     </div>
   </section>
 
-  <section class="section section--tight trust">
+  <section class="trust">
     <div class="wrap trust__grid">
       <div class="trust__item">
         <h2 class="trust__title">{s.trust.equipmentTitle}</h2>
@@ -69,12 +94,13 @@ const steps = s.process.steps.map((step, i) => ({ ...step, num: String(i + 1).pa
       </header>
 
       <ul class="cards">
-        {SERVICE_KEYS.map((key) => (
+        {SERVICE_KEYS.map((key, i) => (
           <li class="card">
-            <a class="card__link" href={path(key, locale)}>
+            <a class="card__link sf-card sf-card--interactive" href={path(key, locale)}>
+              <span class="card__index">{String(i + 1).padStart(2, '0')}</span>
               <h3 class="card__title">{s.services[key].name}</h3>
               <p class="card__body">{s.services[key].body}</p>
-              <span class="card__more" aria-hidden="true">&rarr;</span>
+              <span class="card__more" aria-hidden="true">→</span>
             </a>
           </li>
         ))}
@@ -121,18 +147,35 @@ const steps = s.process.steps.map((step, i) => ({ ...step, num: String(i + 1).pa
   </section>
 
   <section class="section">
-    <div class="wrap stack stack--24">
+    <div class="wrap stack stack--32">
       <header class="section-head">
         <p class="eyebrow">{s.work.eyebrow}</p>
         <h2>{s.work.title}</h2>
         <p class="lead">{s.work.lead}</p>
       </header>
-      <p class="placeholder-note"><Pending label={s.work.pending} locale={locale} /></p>
+
+      {/* Briefs for the shots to commission — never stock imagery. */}
+      <ul class="plates">
+        {plates.map((plate) => (
+          <li>
+            <div class="sf-plate plates__plate" style={`aspect-ratio:${plate.ratio}`}>
+              <span class="sf-plate__fill"></span>
+              <span class="sf-plate__note">
+                <span class="plates__label">{shotBrief}</span>
+                <span class="plates__brief">{plate.note}</span>
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {/* Still a placeholder value, so it keeps the screen-reader marker. */}
+      <p class="plates__caption"><Pending label={s.work.pending} locale={locale} /></p>
     </div>
   </section>
 
   <section class="section section--sunk">
-    <div class="wrap stack stack--24">
+    <div class="wrap stack stack--32">
       <header class="section-head">
         <p class="eyebrow">{s.areas.eyebrow}</p>
         <h2>{s.areas.title}</h2>
@@ -141,7 +184,7 @@ const steps = s.process.steps.map((step, i) => ({ ...step, num: String(i + 1).pa
 
       <ul class="areas">
         {SITE.areas.map((area) => (
-          <li><a class="area" href={areaPath(area.slug, locale)}>{area.name}</a></li>
+          <li><a class="chip" href={areaPath(area.slug, locale)}>{area.name}</a></li>
         ))}
       </ul>
 
@@ -150,45 +193,98 @@ const steps = s.process.steps.map((step, i) => ({ ...step, num: String(i + 1).pa
   </section>
 
   <section class="section section--deep">
-    <div class="wrap stack stack--24 final">
-      <h2>{s.finalCta.title}</h2>
-      <p class="lead">{s.finalCta.body}</p>
-      <p><a class="btn btn--primary" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
+    <div class="wrap final">
+      <h2 class="final__title">{s.finalCta.title}</h2>
+      <p class="lead final__lead">{s.finalCta.body}</p>
+      <p><a class="btn btn--foil btn--lg" href={path('quote', locale)}>{s.finalCta.cta}</a></p>
     </div>
   </section>
 </Marketing>
 
 <style>
-  .hero { padding-block: clamp(var(--space-64), 11vw, 9rem); }
-  .hero__inner { display: flex; flex-direction: column; gap: var(--space-24); }
-  .hero__inner h1 { max-width: 18ch; }
-  .hero__lead { max-width: 52ch; }
+  /* ---------- hero ---------- */
+
+  /**
+   * The hero is mostly air. The display face is given the full 3xl step and a
+   * 15ch measure so it breaks into three or four short lines — a wide single
+   * line reads as a banner, and a banner is not what an expensive service
+   * looks like.
+   */
+  .hero { padding-block: clamp(var(--space-1000), 13vw, var(--space-2600)) clamp(var(--space-800), 9vw, var(--space-1600)); }
+
+  .hero__inner { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-300); }
+
+  .hero__title {
+    font-size: var(--display-2xl);
+    letter-spacing: var(--tracking-display-tight);
+    line-height: var(--leading-display);
+    max-width: 15ch;
+    margin-block-start: var(--space-100);
+  }
+
+  .hero__rule { max-width: 8rem; margin-block: var(--space-200); }
+
+  .hero__lead { max-width: 46ch; }
 
   .hero__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-16);
-    margin-block-start: var(--space-8);
+    gap: var(--space-200);
+    margin-block-start: var(--space-300);
   }
 
-  .hero__note { font-size: var(--step--1); color: var(--muted); max-width: 46ch; }
+  /* The note is mono because it is a condition of service, not prose. */
+  .hero__note {
+    font: var(--type-mono);
+    color: var(--text-muted);
+    max-width: 52ch;
+    margin-block-start: var(--space-300);
+  }
 
-  .trust { border-block: 1px solid var(--line); }
+  /* ---------- trust strip ---------- */
+
+  /**
+   * Three claims on a single ruled band. Hairlines between them rather than
+   * cards — the band should read as one instrument panel, not three boxes.
+   */
+  .trust { padding-block: var(--space-800); border-block: 1px solid var(--edge-quiet); }
 
   .trust__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-    gap: var(--space-32);
+    grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+    gap: var(--space-600);
   }
 
-  .trust__item { display: flex; flex-direction: column; gap: var(--space-8); }
-  .trust__title { font-family: var(--body); font-size: var(--step-0); font-weight: var(--weight-semi); }
-  .trust__body { font-size: var(--step--1); color: var(--muted); }
+  .trust__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-150);
+    padding-inline-start: var(--space-400);
+    border-inline-start: 1px solid var(--edge-hairline);
+  }
+
+  .trust__title {
+    font-family: var(--font-text);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    line-height: 1.2;
+    color: var(--text-primary);
+  }
+
+  .trust__body { font-size: var(--text-sm); color: var(--text-muted); max-width: 34ch; }
+
+  @media (max-width: 34rem) {
+    .trust__item { padding-inline-start: var(--space-300); }
+  }
+
+  /* ---------- service cards ---------- */
 
   .cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-    gap: var(--space-16);
+    grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
+    gap: var(--space-300);
   }
 
   .card { display: flex; }
@@ -196,76 +292,130 @@ const steps = s.process.steps.map((step, i) => ({ ...step, num: String(i + 1).pa
   .card__link {
     display: flex;
     flex-direction: column;
-    gap: var(--space-8);
+    gap: var(--space-150);
     width: 100%;
-    padding: var(--space-32) var(--space-24) var(--space-24);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-card);
     text-decoration: none;
-    transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+    color: inherit;
   }
 
-  .card__link:hover {
-    border-color: var(--accent-line);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lift);
+  /* The index is mono — a catalogue number, not decoration. */
+  .card__index {
+    font: var(--type-mono);
+    font-size: 10.5px;
+    color: var(--silver-500);
+    margin-block-end: var(--space-200);
   }
 
-  .card__title { font-size: var(--step-1); }
-  .card__body { font-size: var(--step--1); color: var(--muted); flex: 1; }
-  .card__more { color: var(--accent); font-size: var(--step-0); }
+  .card__title { font-size: var(--display-xs); }
+  .card__body { font-size: var(--text-sm); color: var(--text-muted); flex: 1; }
+
+  .card__more {
+    color: var(--text-accent);
+    font-size: var(--text-md);
+    margin-block-start: var(--space-200);
+    transition: transform var(--dur-base) var(--ease-glide);
+  }
+
+  .card__link:hover .card__more { transform: translateX(4px); }
+
+  /* ---------- process ---------- */
 
   .steps {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-    gap: var(--space-32);
+    grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+    gap: var(--space-600) var(--space-500);
   }
 
-  .step { display: flex; flex-direction: column; gap: var(--space-8); }
+  .step {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-150);
+    padding-block-start: var(--space-300);
+    border-block-start: 1px solid var(--edge-hairline);
+  }
 
+  /**
+   * Step numerals are Marcellus at display size in a quiet silver — large
+   * enough to structure the row, quiet enough not to compete with the headings.
+   */
   .step__num {
-    font-family: var(--display);
-    font-size: var(--step-2);
-    color: var(--accent-line);
+    font-family: var(--font-display);
+    font-size: var(--display-md);
     line-height: 1;
+    color: var(--silver-600);
+    letter-spacing: var(--tracking-display);
+    margin-block-end: var(--space-150);
   }
 
-  .step__title { font-family: var(--body); font-size: var(--step-0); font-weight: var(--weight-semi); }
-  .step__body { font-size: var(--step--1); color: var(--muted); }
+  .step__title {
+    font-family: var(--font-text);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    line-height: 1.2;
+    color: var(--text-primary);
+  }
+
+  .step__body { font-size: var(--text-sm); color: var(--text-muted); }
+
+  /* ---------- why ---------- */
 
   .whys {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-    gap: var(--space-32);
+    grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+    gap: var(--space-600) var(--space-500);
   }
 
   .why {
     display: flex;
     flex-direction: column;
-    gap: var(--space-8);
-    padding-block-start: var(--space-16);
-    border-block-start: 1px solid var(--line-strong);
+    gap: var(--space-150);
+    padding-block-start: var(--space-300);
+    border-block-start: 1px solid var(--edge-hairline);
   }
 
-  .why__title { font-family: var(--body); font-size: var(--step-0); font-weight: var(--weight-semi); }
-  .why__body { font-size: var(--step--1); color: var(--muted); }
+  .why__title { font-size: var(--display-xs); }
+  .why__body { font-size: var(--text-sm); color: var(--text-muted); }
 
-  .areas { display: flex; flex-wrap: wrap; gap: var(--space-12); }
+  /* ---------- work plates ---------- */
 
-  .area {
-    display: inline-block;
-    padding: var(--space-8) var(--space-16);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    font-size: var(--step--1);
-    text-decoration: none;
-    transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+  .plates {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+    gap: var(--space-300);
   }
 
-  .area:hover { border-color: var(--accent-line); color: var(--accent); }
+  .plates__plate { height: 100%; }
 
-  .placeholder-note { font-size: var(--step--1); }
-  .final { align-items: flex-start; }
+  .plates__label { color: var(--silver-500); }
+
+  .plates__brief {
+    font: var(--type-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--silver-500);
+    max-width: 26ch;
+    line-height: 1.6;
+  }
+
+  .plates__caption { font: var(--type-mono); color: var(--text-muted); max-width: 56ch; }
+
+  /* ---------- areas ---------- */
+
+  .areas { display: flex; flex-wrap: wrap; gap: var(--space-150); }
+
+  /* ---------- closing plate ---------- */
+
+  .final {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-300);
+  }
+
+  .final__title { font-size: var(--display-xl); max-width: 16ch; }
+  .final__lead { max-width: 48ch; }
+  .final p:last-child { margin-block-start: var(--space-200); }
 </style>

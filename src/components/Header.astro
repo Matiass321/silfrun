@@ -29,14 +29,22 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
 
 <header class="head">
   <div class="wrap head__inner">
-    <a class="head__brand" href={path('home', locale)} aria-label={`${s.nav.skip}`}>
-      <Logo />
+    <a class="head__brand" href={path('home', locale)} aria-label={s.nav.home}>
+      <Logo foil />
     </a>
 
     <nav class="head__nav" aria-label={s.nav.menu}>
       <ul class="head__list">
         {links.map((l) => (
-          <li><a class="head__link" href={path(l.key, locale)}>{l.label}</a></li>
+          <li>
+            <a
+              class:list={['head__link', { 'head__link--current': l.key === pageKey }]}
+              href={path(l.key, locale)}
+              aria-current={l.key === pageKey ? 'page' : undefined}
+            >
+              {l.label}
+            </a>
+          </li>
         ))}
       </ul>
     </nav>
@@ -45,90 +53,139 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
       <ul class="head__langs" aria-label={s.nav.language}>
         {others.map((l) => (
           <li>
-            <a class="head__lang" href={path(pageKey, l)} lang={l}>
-              {LABEL[l]}
-            </a>
+            <a class="head__lang" href={path(pageKey, l)} lang={l}>{LABEL[l]}</a>
           </li>
         ))}
       </ul>
-      <a class="btn btn--primary head__cta" href={path('quote', locale)}>{s.nav.quote}</a>
+      <a class="btn btn--primary btn--sm head__cta" href={path('quote', locale)}>{s.nav.quote}</a>
     </div>
   </div>
 </header>
 
 <style>
+  /**
+   * The bar floats over the content on a blurred veil rather than sitting on an
+   * opaque band, so the grain of the page reads through it. The bottom edge is
+   * a foil hairline — the one place the metal appears without being asked for.
+   */
   .head {
     position: sticky;
     top: 0;
     z-index: 50;
-    background: color-mix(in srgb, var(--paper) 88%, transparent);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--line);
+    background: var(--veil-dark);
+    backdrop-filter: var(--blur-veil);
+    -webkit-backdrop-filter: var(--blur-veil);
+  }
+
+  .head::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 1px;
+    background: var(--foil-hairline);
+    opacity: 0.6;
   }
 
   .head__inner {
     display: flex;
     align-items: center;
-    gap: var(--space-32);
-    min-height: 4.5rem;
+    gap: var(--space-500);
+    min-height: 5.25rem;
   }
 
-  .head__brand { text-decoration: none; flex-shrink: 0; }
+  .head__brand { text-decoration: none; flex-shrink: 0; font-size: 20px; }
 
   .head__nav { margin-inline-start: auto; }
 
   .head__list {
     display: flex;
     align-items: center;
-    gap: var(--space-24);
+    gap: var(--space-400);
   }
 
+  /**
+   * Nav items are micro-caps, and the active state is a 1px lit rule that
+   * scales in from the left — never a filled tab or a colour swap.
+   */
   .head__link {
-    font-size: var(--step--1);
-    font-weight: var(--weight-medium);
-    letter-spacing: 0.02em;
-    color: var(--ink-soft);
+    position: relative;
+    display: inline-block;
+    padding-block: var(--space-100);
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-muted);
     text-decoration: none;
-    padding-block: var(--space-8);
-    border-bottom: 1px solid transparent;
-    transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+    transition: color var(--dur-fast) var(--ease-glide);
   }
 
-  .head__link:hover { color: var(--accent); border-color: var(--accent-line); }
+  .head__link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--silver-050);
+    opacity: 0;
+    transform: scaleX(.4);
+    transform-origin: left;
+    transition: opacity var(--dur-base) var(--ease-settle), transform var(--dur-base) var(--ease-settle);
+  }
+
+  .head__link:hover { color: var(--text-primary); }
+  .head__link:hover::after { opacity: .55; transform: scaleX(1); }
+
+  .head__link--current { color: var(--text-primary); }
+  .head__link--current::after { opacity: 1; transform: scaleX(1); }
 
   .head__end {
     display: flex;
     align-items: center;
-    gap: var(--space-16);
+    gap: var(--space-300);
     flex-shrink: 0;
   }
 
-  .head__langs { display: flex; gap: var(--space-8); }
-
-  .head__lang {
-    font-size: var(--step--1);
-    font-weight: var(--weight-semi);
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    text-decoration: none;
-    padding: var(--space-4) var(--space-8);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  .head__langs {
+    display: flex;
+    align-items: center;
+    gap: var(--space-150);
   }
 
-  .head__lang:hover { color: var(--accent); border-color: var(--accent-line); }
+  .head__lang {
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: var(--space-050) var(--space-075);
+    border-bottom: 1px solid transparent;
+    transition: color var(--dur-fast) var(--ease-glide), border-color var(--dur-fast) var(--ease-glide);
+  }
 
-  .head__cta { padding: 0.6em 1.2em; font-size: var(--step--1); }
+  .head__lang:hover { color: var(--text-primary); border-bottom-color: var(--edge-accent); }
 
-  /* The nav collapses to the CTA on small screens. A hamburger for five links
+  /* The nav collapses to the CTA on small screens. A hamburger for six links
      costs more than it saves; the links all live in the footer as well. */
-  @media (max-width: 60rem) {
+  @media (max-width: 64rem) {
     .head__nav { display: none; }
     .head__end { margin-inline-start: auto; }
+    .head__inner { min-height: 4.5rem; gap: var(--space-200); }
+  }
+
+  /**
+   * Below 34rem the brand and the action have to share roughly 300px. The
+   * wordmark's 0.34em tracking is the signature and is never tightened, so the
+   * type size comes down instead and the control loses padding.
+   */
+  @media (max-width: 34rem) {
+    .head__brand { font-size: 15px; }
+    .head__cta { padding-inline: var(--space-150); letter-spacing: 0.1em; }
   }
 
   @media (max-width: 26rem) {
     .head__langs { display: none; }
+    .head__brand { font-size: 13px; }
+    .head__cta { padding-inline: var(--space-100); font-size: 10px; letter-spacing: 0.08em; }
   }
 </style>

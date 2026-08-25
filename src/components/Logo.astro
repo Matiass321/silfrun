@@ -1,37 +1,45 @@
 ---
 import { SITE } from '~/config/site';
 
-interface Props { class?: string }
-const { class: className = '' } = Astro.props;
+interface Props {
+  class?: string;
+  /** Fill the wordmark with brushed silver. Reserved for the header and the
+      closing plate — foil everywhere is foil nowhere. */
+  foil?: boolean;
+  /** Show the discipline line beneath the wordmark. Footer and chooser only. */
+  tagline?: string;
+  /** Mark and word stacked rather than set side by side. */
+  stacked?: boolean;
+}
+
+const { class: className = '', foil = false, tagline, stacked = false } = Astro.props;
 
 /**
- * The wordmark carries the accent, so the brand stays legible when the mark
- * is not. The accented form is always used in display — silfrun.is is the
- * domain, Silfrún is the name.
+ * The wordmark is type, not artwork: Marcellus caps at 0.34em tracking beside a
+ * cut lozenge. The lozenge is drawn as an outline with a faint inner fill and a
+ * centre score, so it reads as a faceted stone rather than as a filled diamond.
+ *
+ * The accented form is always used in display — silfrun.is is the domain,
+ * Silfrún is the name.
  */
 ---
 
-<span class:list={['logo', className]}>
-  <svg class="logo__mark" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none">
-    <path d="M12 2.5 4.2 12 12 21.5 19.8 12Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
-    <path d="M12 6.8 7.6 12 12 17.2 16.4 12Z" fill="currentColor" opacity=".22" />
-  </svg>
-  <span class="logo__word">{SITE.brand}</span>
+<span class:list={['sf-logo', { 'sf-logo--foil': foil, 'sf-logo--stacked': stacked }, className]}>
+  <span class="sf-logo__mark" aria-hidden="true">
+    <svg viewBox="0 0 48 64" fill="none">
+      <path d="M24 2 Q16 17 6 32 Q16 47 24 62 Z" fill="currentColor" opacity=".10" />
+      <path
+        d="M24 2 Q32 17 42 32 Q32 47 24 62 Q16 47 6 32 Q16 17 24 2 Z"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.25"
+        stroke-linejoin="round"
+      />
+      <path d="M24 2 V62" stroke="currentColor" stroke-width=".75" opacity=".45" />
+    </svg>
+  </span>
+  <span>
+    <span class="sf-logo__word">{SITE.brand}</span>
+    {tagline && <span class="sf-logo__tagline">{tagline}</span>}
+  </span>
 </span>
-
-<style>
-  .logo {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-8);
-    font-family: var(--display);
-    font-size: var(--step-1);
-    font-weight: var(--weight-semi);
-    letter-spacing: 0.01em;
-    line-height: 1;
-    color: var(--ink);
-    text-decoration: none;
-  }
-  .logo__mark { color: var(--accent); flex-shrink: 0; }
-  .logo__word { padding-top: 2px; }
-</style>
