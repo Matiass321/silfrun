@@ -17,7 +17,6 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-const HOST = 'silfrun.com';
 const ENDPOINT = 'https://api.indexnow.org/IndexNow';
 
 /* The key is whichever <32-hex>.txt sits in public/. */
@@ -41,12 +40,25 @@ if (!fs.existsSync(sitemapPath)) {
 }
 
 const xml = fs.readFileSync(sitemapPath, 'utf8');
-const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)]
-  .map((m) => m[1])
-  .filter((u) => u.includes(HOST));
+const urls = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 
 if (!urls.length) {
-  console.error(`No URLs for ${HOST} in the sitemap. Is SITE.url still correct?`);
+  console.error('No URLs found in the sitemap.');
+  process.exit(1);
+}
+
+/**
+ * The host is read off the sitemap rather than written here.
+ *
+ * IndexNow rejects a submission whose host does not match the URLs, so a
+ * hardcoded constant turns into a silent failure the day the primary domain
+ * changes — which is exactly what happened moving from .com to .is.
+ */
+const HOST = new URL(urls[0]).host;
+
+const foreign = urls.filter((u) => new URL(u).host !== HOST);
+if (foreign.length) {
+  console.error(`Sitemap mixes hosts: ${foreign.length} URLs are not on ${HOST}.`);
   process.exit(1);
 }
 

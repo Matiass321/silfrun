@@ -5,7 +5,7 @@ Specialist upholstery, rug and carpet care in the Reykjavík capital area.
 Astro + TypeScript, deployed to Cloudflare Pages. Every page is prerendered to
 static HTML and ships no external JavaScript.
 
-**Live at https://silfrun.com.** `silfrun.is` is attached to the same Pages
+**Live at https://silfrun.is.** `silfrun.com` is attached to the same Pages
 project and serves the same pages; every page canonicalises to `.com`, so the
 two consolidate rather than compete. If `.is` should become primary — a good
 argument for an Icelandic business, since a local TLD carries weight in local
@@ -186,5 +186,5 @@ Still outstanding, in the order they cost the most:
   only when the brand changes.
 
 After DNS changes settle, add the site to Google Search Console and Bing
-Webmaster Tools and submit `https://silfrun.com/sitemap-index.xml`. Submitting
+Webmaster Tools and submit `https://silfrun.is/sitemap-index.xml`. Submitting
 the sitemap is what triggers the first crawl; without it discovery takes weeks.

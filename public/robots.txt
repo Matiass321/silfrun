@@ -44,6 +44,6 @@ User-agent: Bingbot
 Allow: /
 
 # A plain-language map of the site, generated from the same tables that build
-# the pages, so it cannot drift: https://silfrun.com/llms.txt
+# the pages, so it cannot drift: https://silfrun.is/llms.txt
 
-Sitemap: https://silfrun.com/sitemap-index.xml
+Sitemap: https://silfrun.is/sitemap-index.xml

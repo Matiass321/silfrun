@@ -48,12 +48,17 @@ export const SITE = {
    * entry, structured-data @id and the llms.txt map are built from this, so it
    * is the only place the live domain is written.
    *
-   * silfrun.is is also an active zone. If the .is becomes the primary domain
-   * later, change this line, redeploy, and add a redirect from .com to .is —
-   * both serving the same pages without one canonicalising to the other is
-   * what splits a site's ranking between two domains.
+   * .is rather than .com, deliberately. A ccTLD is an unambiguous geotargeting
+   * signal for Iceland, and since Google retired the International Targeting
+   * setting in Search Console there is no longer any way to tell it that a .com
+   * targets a particular country — it can only infer it from language, address
+   * and local signals.
+   *
+   * silfrun.com stays live and must 301 here. Two domains serving the same
+   * pages without one redirecting to the other is what splits a site's ranking
+   * across both.
    */
-  url: 'https://silfrun.com',
+  url: 'https://silfrun.is',
 
   /**
    * Iceland does not observe daylight saving and sits on UTC year round, but
