@@ -1,0 +1,347 @@
+---
+import Admin from '~/layouts/Admin.astro';
+import { requireAdmin, env } from '~/lib/admin-guard';
+import { listAll, SLOTS, mediaUrl, MAX_BYTES, type MediaRow } from '~/lib/media';
+import { ADMIN_ICONS } from '~/data/admin-icons';
+
+export const prerender = false;
+
+const gate = await requireAdmin(Astro);
+if (gate) return gate;
+
+const { DB } = env(Astro);
+
+const saved = Astro.url.searchParams.get('saved') === '1';
+const err = Astro.url.searchParams.get('e');
+const editing = Number(Astro.url.searchParams.get('edit')) || null;
+
+const MESSAGES: Record<string, string> = {
+  nofile: 'Engin skrá valin.',
+  type: 'Þetta skráarsnið er ekki stutt. Notaðu JPEG, PNG, WebP, AVIF, MP4 eða WebM.',
+  big: 'Skráin er of stór. Hámark er 25 MB.',
+  dupe: 'Þessi skrá er þegar til í safninu.',
+  alt: 'Myndir sem birtast á vefnum verða að hafa íslenskan lýsingartexta.',
+  nokv: 'Myndageymslan er ekki tengd.',
+  bad: 'Ógild beiðni.',
+};
+
+let items: MediaRow[] = [];
+let dbError: string | null = null;
+
+if (!DB) {
+  dbError = 'Gagnagrunnurinn er ekki tengdur.';
+} else {
+  try {
+    items = await listAll(DB);
+  } catch (e) {
+    dbError = `Myndasafnið er ekki tilbúið. Keyrðu færslu 0002. (${String(e).slice(0, 90)})`;
+  }
+}
+
+const placed = items.filter((m) => m.slot).length;
+const totalMb = (items.reduce((n, m) => n + m.bytes, 0) / 1048576).toFixed(1);
+const current = editing ? items.find((m) => m.id === editing) : null;
+
+/** Which slots still have nothing in them — the actual to-do list. */
+const filledSlots = new Set(items.map((m) => m.slot).filter(Boolean));
+const emptySlots = SLOTS.filter((s) => !filledSlots.has(s.key));
+
+const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.round(n / 1024) + ' kB');
+---
+
+<Admin title="Myndir" current="media">
+  <div class="a-wrap">
+    <header class="a-head">
+      <div>
+        <h1 class="a-h1">Myndir</h1>
+        <p class="a-sub">{items.length} skrár · {placed} birtast · {totalMb} MB</p>
+      </div>
+    </header>
+
+    {dbError && <p class="a-msg a-msg--err">{dbError}</p>}
+    {saved && <p class="a-msg a-msg--ok">Vistað.</p>}
+    {err && MESSAGES[err] && <p class="a-msg a-msg--err">{MESSAGES[err]}</p>}
+
+    {/* ── Upload ──────────────────────────────────────────────────── */}
+    <section class="a-card md__up">
+      <h2 class="a-sec__h" style="margin-top:0">Hlaða upp</h2>
+
+      <form method="POST" action="/api/admin/media" enctype="multipart/form-data" class="a-form">
+        <input type="hidden" name="action" value="upload" />
+
+        {/*
+          capture is deliberately NOT set. On a phone, omitting it lets the
+          system offer both the camera and the library; setting capture forces
+          the camera and hides every photograph already taken.
+        */}
+        <label class="md__drop">
+          <input class="md__file" type="file" name="file"
+                 accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm"
+                 required />
+          <span class="md__dropicon" set:html={ADMIN_ICONS.plus} />
+          <span class="md__droptext">Veldu mynd eða myndband</span>
+          <span class="md__drophint">JPEG · PNG · WebP · AVIF · MP4 · WebM — hámark 25 MB</span>
+        </label>
+
+        <button class="a-btn a-btn--primary" type="submit" disabled={!DB}>Hlaða upp</button>
+      </form>
+    </section>
+
+    {/* ── Editing one item ────────────────────────────────────────── */}
+    {current && (
+      <section class="a-card md__edit">
+        <div class="a-row__top">
+          <h2 class="a-sec__h" style="margin:0">Breyta</h2>
+          <a class="a-btn a-btn--quiet a-btn--sm" href="/admin/media/">Loka</a>
+        </div>
+
+        <div class="md__editgrid">
+          <div class="md__preview">
+            {current.kind === 'video' ? (
+              <video src={mediaUrl(current.key)} muted loop playsinline controls></video>
+            ) : (
+              <img src={mediaUrl(current.key)} alt={current.alt_is ?? ''} />
+            )}
+            <p class="md__meta">
+              {current.width && current.height ? `${current.width}×${current.height} · ` : ''}
+              {kb(current.bytes)} · {current.mime}
+            </p>
+          </div>
+
+          <form class="a-form" method="POST" action="/api/admin/media">
+            <input type="hidden" name="action" value="update" />
+            <input type="hidden" name="id" value={current.id} />
+
+            <label class="a-field">
+              <span class="a-label">Hvar birtist hún</span>
+              <select class="a-in" name="slot">
+                <option value="">Hvergi — bara í safninu</option>
+                {SLOTS.filter((s) => s.kinds.includes(current.kind)).map((s) => (
+                  <option value={s.key} selected={s.key === current.slot}>{s.label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label class="a-field">
+              <span class="a-label">Lýsing á íslensku <span class="a-req">*</span></span>
+              <input class="a-in" type="text" name="alt_is" value={current.alt_is ?? ''}
+                     placeholder="Þriggja sæta ullarsófi, dökkur á frambrún sessa" />
+              <span class="a-hint">
+                Nauðsynleg fyrir myndir sem birtast. Lýstu því sem sést, ekki „mynd af sófa“.
+              </span>
+            </label>
+
+            <label class="a-field">
+              <span class="a-label">Lýsing á ensku</span>
+              <input class="a-in" type="text" name="alt_en" value={current.alt_en ?? ''} />
+            </label>
+
+            <div class="a-two">
+              <label class="a-field">
+                <span class="a-label">Myndatexti (ís)</span>
+                <input class="a-in" type="text" name="caption_is" value={current.caption_is ?? ''} />
+              </label>
+              <label class="a-field">
+                <span class="a-label">Myndatexti (en)</span>
+                <input class="a-in" type="text" name="caption_en" value={current.caption_en ?? ''} />
+              </label>
+            </div>
+
+            <div class="a-two">
+              <label class="a-field">
+                <span class="a-label">Fyrir eða eftir</span>
+                <select class="a-in" name="pair_role">
+                  <option value="">—</option>
+                  <option value="before" selected={current.pair_role === 'before'}>Fyrir</option>
+                  <option value="after" selected={current.pair_role === 'after'}>Eftir</option>
+                </select>
+              </label>
+              <label class="a-field">
+                <span class="a-label">Röð</span>
+                <input class="a-in" type="number" name="position" min="0" value={current.position} />
+                <span class="a-hint">Lægri tala birtist framar.</span>
+              </label>
+            </div>
+
+            <div class="a-acts">
+              <button class="a-btn a-btn--primary" type="submit">
+                <span set:html={ADMIN_ICONS.check} />
+                Vista
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <form method="POST" action="/api/admin/media" class="md__del">
+          <input type="hidden" name="action" value="delete" />
+          <input type="hidden" name="id" value={current.id} />
+          <button class="a-btn a-btn--danger a-btn--sm" type="submit">Eyða varanlega</button>
+        </form>
+      </section>
+    )}
+
+    {/* ── The library ─────────────────────────────────────────────── */}
+    <section class="a-sec">
+      <h2 class="a-sec__h">Safnið</h2>
+
+      {items.length === 0 ? (
+        <p class="a-empty">Engar myndir enn. Hlaðið upp fyrstu myndinni að ofan.</p>
+      ) : (
+        <ul class="md__grid">
+          {items.map((m) => (
+            <li>
+              <a class="md__item" href={`/admin/media/?edit=${m.id}`}>
+                <span class="md__thumb">
+                  {m.kind === 'video' ? (
+                    <video src={mediaUrl(m.key)} muted playsinline preload="metadata"></video>
+                  ) : (
+                    <img src={mediaUrl(m.key)} alt={m.alt_is ?? ''} loading="lazy" decoding="async" />
+                  )}
+                  {m.kind === 'video' && <span class="md__vid">Myndband</span>}
+                </span>
+
+                <span class="md__foot">
+                  <span class:list={['a-pill', m.slot ? 'a-pill--scheduled' : 'a-pill--done']}>
+                    {m.slot ? SLOTS.find((s) => s.key === m.slot)?.label ?? m.slot : 'Óbirt'}
+                  </span>
+                  {m.slot && !m.alt_is && <span class="a-pill a-pill--quoted">Vantar lýsingu</span>}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+
+    {/* ── What is still missing ───────────────────────────────────── */}
+    {emptySlots.length > 0 && (
+      <section class="a-sec">
+        <h2 class="a-sec__h">
+          Tóm pláss
+          <span class="a-badge">{emptySlots.length}</span>
+        </h2>
+        <p class="md__note">
+          Þessi pláss eru enn tóm og sýna merkta reiti á vefnum. Sjá
+          <code>docs/photography.md</code> fyrir hvernig myndirnar eiga að vera teknar.
+        </p>
+        <ul class="md__slots">
+          {emptySlots.map((s) => (
+            <li class="md__slot">
+              <span class="md__slotname">{s.label}</span>
+              <span class="md__slotratio">{s.ratio.replace(' / ', ':')}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </div>
+</Admin>
+
+<style>
+  .md__up { margin-bottom: 18px; }
+
+  /* A big target, because the common case is a thumb on a phone. */
+  .md__drop {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 132px;
+    padding: 18px;
+    border: 1px dashed var(--a-line-2);
+    border-radius: var(--a-r);
+    background: var(--a-inset);
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .md__drop:focus-within { border-color: var(--a-accent); box-shadow: 0 0 0 3px var(--a-accent-soft); }
+
+  .md__file { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .md__dropicon { display: flex; width: 26px; height: 26px; color: var(--a-ink-3); }
+  .md__dropicon :global(svg) { width: 100%; height: 100%; }
+  .md__droptext { font-size: 15px; font-weight: 600; }
+  .md__drophint { font-size: 12px; color: var(--a-ink-3); }
+
+  /* ---- edit panel ---- */
+
+  .md__edit { margin-bottom: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .md__editgrid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+
+  .md__preview img,
+  .md__preview video {
+    width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    background: var(--a-sunken);
+    border-radius: var(--a-r-sm);
+    display: block;
+  }
+
+  .md__meta { margin-top: 6px; font-family: var(--a-mono); font-size: 11.5px; color: var(--a-ink-3); }
+  .md__del { border-top: 1px solid var(--a-line); padding-top: 13px; }
+
+  @media (min-width: 52rem) {
+    .md__editgrid { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
+  }
+
+  /* ---- library grid ---- */
+
+  .md__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  @media (min-width: 40rem) { .md__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (min-width: 64rem) { .md__grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+
+  .md__item { display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; }
+
+  .md__thumb {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 5;
+    border-radius: var(--a-r-sm);
+    overflow: hidden;
+    background: var(--a-sunken);
+    border: 1px solid var(--a-line);
+  }
+
+  .md__thumb img,
+  .md__thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .md__vid {
+    position: absolute;
+    left: 6px; bottom: 6px;
+    padding: 2px 7px;
+    border-radius: var(--a-r-pill);
+    background: rgba(20, 24, 28, .78);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .md__foot { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  /* ---- empty slots ---- */
+
+  .md__note { font-size: 13.5px; color: var(--a-ink-2); line-height: 1.55; margin-bottom: 10px; }
+  .md__note code { font-family: var(--a-mono); font-size: 12.5px; color: var(--a-accent); }
+
+  .md__slots { display: flex; flex-direction: column; gap: 1px; background: var(--a-line); border-radius: var(--a-r); overflow: hidden; }
+
+  .md__slot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 11px 13px;
+    background: var(--a-surface);
+  }
+
+  .md__slotname { font-size: 14px; }
+  .md__slotratio { font-family: var(--a-mono); font-size: 11.5px; color: var(--a-ink-3); }
+</style>

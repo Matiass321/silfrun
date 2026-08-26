@@ -1,0 +1,116 @@
+---
+import '@fontsource/marcellus/400.css';
+import '@fontsource-variable/archivo';
+import '@fontsource/ibm-plex-mono/400.css';
+import '~/styles/tokens.css';
+import '~/styles/base.css';
+
+import { SITE } from '~/config/site';
+
+/**
+ * 404.
+ *
+ * Cloudflare Pages serves dist/404.html with a real 404 status when a static
+ * asset is missing. Without this file it fell back to the language chooser
+ * with status 200 — so every mistyped URL, every link to a page that has since
+ * been removed, and every crawler probing for /wp-admin got a successful
+ * response containing real content.
+ *
+ * That is a soft 404, and it is worse than it sounds: Google keeps such URLs
+ * in the index because the server says they are fine, so a page deleted from
+ * the site never actually leaves search results.
+ *
+ * Self-contained rather than using the Marketing layout: this page must render
+ * for a URL in either language or neither, so it cannot assume a locale, and
+ * it must not carry a nav whose links are built from a page key it does not
+ * have.
+ */
+const links = [
+  { href: '/is/', label: 'Forsíða', lang: 'is' },
+  { href: '/en/', label: 'Home', lang: 'en' },
+];
+---
+
+<!doctype html>
+<html lang="is">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Síðan fannst ekki · {SITE.brand}</title>
+    <meta name="robots" content="noindex, follow" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FBF9F5" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0B0D0F" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+
+  <body class="nf">
+    <main class="nf__inner">
+      <svg class="nf__mark" viewBox="0 0 48 64" fill="none" aria-hidden="true">
+        <path d="M24 2 Q16 17 6 32 Q16 47 24 62 Z" fill="currentColor" opacity=".10" />
+        <path d="M24 2 Q32 17 42 32 Q32 47 24 62 Q16 47 6 32 Q16 17 24 2 Z"
+              stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" />
+        <path d="M24 2 V62" stroke="currentColor" stroke-width=".75" opacity=".45" />
+      </svg>
+
+      <p class="nf__code">404</p>
+      <h1 class="nf__title">Síðan fannst ekki</h1>
+      <div class="silfrun-rule nf__rule"></div>
+
+      <p class="nf__body">
+        Slóðin er ekki til, eða síðan hefur verið fjarlægð.
+      </p>
+      <p class="nf__body nf__body--en" lang="en">
+        This address does not exist, or the page has been removed.
+      </p>
+
+      <nav class="nf__links" aria-label="Silfrun">
+        <ul>
+          {links.map((l) => (
+            <li><a class="btn btn--ghost" href={l.href} lang={l.lang}>{l.label}</a></li>
+          ))}
+        </ul>
+      </nav>
+    </main>
+  </body>
+</html>
+
+<style>
+  body.nf {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-500) var(--space-400);
+    background: var(--surface-page);
+    color: var(--text-primary);
+  }
+
+  .nf__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-250);
+    text-align: center;
+    max-width: 34rem;
+  }
+
+  .nf__mark { width: 30px; height: 40px; color: var(--text-muted); }
+
+  .nf__code {
+    font: var(--type-mono);
+    letter-spacing: var(--tracking-eyebrow);
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .nf__title { font-size: var(--display-md); margin: 0; }
+  .nf__rule { width: 5rem; }
+
+  .nf__body { color: var(--text-secondary); margin: 0; max-width: 42ch; }
+  .nf__body--en { color: var(--text-muted); font-size: var(--text-sm); }
+
+  .nf__links { margin-block-start: var(--space-300); }
+  .nf__links ul { display: flex; gap: var(--space-200); list-style: none; padding: 0; margin: 0; flex-wrap: wrap; justify-content: center; }
+</style>

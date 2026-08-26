@@ -68,16 +68,13 @@ const hoursSpec = SITE.hours.map((h) => ({
 const sameAs = Object.values(SITE.social).filter((v) => !isPlaceholder(v)) as string[];
 
 /**
- * priceRange from the published figures rather than a guessed "$".
+ * No priceRange.
  *
- * Google reads this for the local panel, and a hardcoded dollar-sign band is
- * exactly the kind of invented value the rest of this file refuses. If no
- * amount is set yet the field is omitted entirely.
+ * The business does not publish figures any more, and priceRange in
+ * structured data is a published figure — a "27.000–48.000 ISK" band in the
+ * local panel is exactly the number the site has decided not to state. An
+ * omitted field says nothing; a guessed "$" would be invented.
  */
-const amounts = SITE.pricing.items.map((i) => i.from).filter((n): n is number => n !== null);
-const priceRange = amounts.length
-  ? `${Math.min(...amounts)}–${Math.max(...amounts)} ${SITE.pricing.currency}`
-  : null;
 
 /** Absolute URL for the social card. Cloudflare serves it from the site root. */
 const ogImageUrl = new URL(ogImage ?? '/og.png', SITE.url).href;
@@ -137,7 +134,6 @@ const businessLd = {
           ? { postalCode: SITE.address.postalCode } : {}),
       },
       openingHoursSpecification: hoursSpec,
-      ...(priceRange ? { priceRange } : {}),
       ...(sameAs.length ? { sameAs } : {}),
       ...(isPlaceholder(SITE.contact.phoneE164) ? {} : { telephone: SITE.contact.phoneE164 }),
       ...(isPlaceholder(SITE.contact.email) ? {} : { email: SITE.contact.email }),

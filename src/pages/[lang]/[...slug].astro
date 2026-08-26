@@ -5,28 +5,16 @@ import ProsePage from '~/components/pages/ProsePage.astro';
 import FaqPage from '~/components/pages/FaqPage.astro';
 import ListPage from '~/components/pages/ListPage.astro';
 import ContactPage from '~/components/pages/ContactPage.astro';
-import PricesPage from '~/components/pages/PricesPage.astro';
+import ProcessPage from '~/components/pages/ProcessPage.astro';
 
 import { LOCALES, SITE, type Locale } from '~/config/site';
 import { SLUGS, SERVICE_KEYS, type PageKey, type ServiceKey } from '~/i18n/routes';
 
-/**
- * Which published rate represents each service page.
- *
- * A service covers several line items — the sofa page covers two-seat, three-
- * seat and corner — so the Offer quotes the lowest, which is what a "from"
- * price means. Written out rather than inferred so a new price key cannot
- * silently attach itself to the wrong page.
- */
-const SERVICE_PRICE_KEY: Record<ServiceKey, string> = {
-  sofa: 'sofa2',
-  rug: 'rug',
-  carpet: 'carpet',
-  stains: 'odour',
-};
 import { t, alternates, areaAlternates } from '~/i18n';
 import { PAGE_META, AREA_META } from '~/i18n/meta';
 import { CONTENT } from '~/data/content';
+import { slotMap, type MediaRow } from '~/lib/media';
+import { env } from '~/lib/admin-guard';
 
 /**
  * Resolves every translated slug to the page that owns it.
@@ -49,7 +37,6 @@ export function getStaticPaths() {
     'about',
     'faq',
     'quote',
-    'prices',
     'contact',
     'privacy',
     'terms',
@@ -86,6 +73,7 @@ const { locale, pageKey, area } = Astro.props as {
 
 const s = t(locale);
 const c = CONTENT[locale];
+
 const isService = (SERVICE_KEYS as readonly PageKey[]).includes(pageKey);
 
 /**
@@ -112,6 +100,30 @@ if (area) {
   title = meta.title;
   description = meta.description;
   alt = alternates(pageKey, locale);
+}
+
+/**
+ * Media for this page, resolved in a single query.
+ *
+ * Only the slots this page can actually show are asked for. A page requesting
+ * every slot would read the whole library to render four frames.
+ *
+ * Prerendered pages have no runtime binding, so this is empty at build time
+ * and the slots render their marked plates — which is the correct state until
+ * photographs exist. Once they do, the page is rebuilt and they appear.
+ */
+const wantedSlots = isService
+  ? [pageKey]
+  : pageKey === 'process'
+    ? ['process-1', 'process-2', 'process-3', 'process-4']
+    : pageKey === 'about'
+      ? ['about']
+      : [];
+
+let media: Record<string, MediaRow | undefined> = {};
+if (wantedSlots.length) {
+  const { DB } = env(Astro);
+  if (DB) { try { media = await slotMap(DB, wantedSlots); } catch { /* plates */ } }
 }
 
 /**
@@ -142,7 +154,6 @@ const pageLd: object[] = [];
 
 if (isService) {
   const key = pageKey as ServiceKey;
-  const item = SITE.pricing.items.find((i) => i.key === SERVICE_PRICE_KEY[key]);
   pageLd.push({
     '@context': 'https://schema.org',
     '@type': 'Service',
@@ -160,22 +171,6 @@ if (isService) {
         { '@type': 'Language', name: 'English', alternateName: 'en' },
       ],
     },
-    ...(item && item.from !== null
-      ? {
-          offers: {
-            '@type': 'Offer',
-            priceCurrency: SITE.pricing.currency,
-            price: item.from,
-            priceSpecification: {
-              '@type': 'PriceSpecification',
-              minPrice: item.from,
-              priceCurrency: SITE.pricing.currency,
-              valueAddedTaxIncluded: SITE.pricing.includesVsk,
-            },
-            availableAtOrFrom: { '@id': `${SITE.url}/#business` },
-          },
-        }
-      : {}),
   });
 }
 
@@ -243,11 +238,8 @@ if (area) {
   {pageKey === 'quote' && <ContactPage locale={locale} variant="quote" />}
   {pageKey === 'contact' && <ContactPage locale={locale} variant="contact" />}
 
-  {pageKey === 'prices' && <PricesPage locale={locale} />}
 
-  {pageKey === 'process' && (
-    <ProsePage locale={locale} heading={s.process.title} eyebrow={s.process.eyebrow} page={c.process} />
-  )}
+  {pageKey === 'process' && <ProcessPage locale={locale} media={media} />}
   {pageKey === 'results' && (
     <ProsePage locale={locale} heading={s.work.title} eyebrow={s.work.eyebrow} page={c.results} />
   )}

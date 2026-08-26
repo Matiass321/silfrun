@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { SITE, isPlaceholder, money } from '~/config/site';
+import { SITE, isPlaceholder } from '~/config/site';
 import { t } from '~/i18n';
 import { SLUGS, SERVICE_KEYS, type PageKey } from '~/i18n/routes';
 import { SERVICE_CONTENT } from '~/data/services';
@@ -27,8 +27,6 @@ const abs = (key: PageKey, locale: 'is' | 'en') => {
 
 export const GET: APIRoute = () => {
   const en = t('en');
-
-  const priced = SITE.pricing.items.filter((i) => i.from !== null);
 
   const lines: string[] = [];
   const push = (...l: string[]) => lines.push(...l);
@@ -59,34 +57,19 @@ export const GET: APIRoute = () => {
   }
   push('');
 
-  /* ---- Prices ---- */
-  push('## Prices', '');
-  if (priced.length) {
-    push(
-      `Published "from" figures in ${SITE.pricing.currency}, ` +
-        `${SITE.pricing.includesVsk ? 'including' : 'excluding'} VSK at 24%.`,
-      'They are starting figures, not quotes: condition changes the work, and the',
-      'final figure is confirmed from photographs before any visit.',
-      '',
-    );
-    for (const item of priced) {
-      const label = en.prices.items[item.key as keyof typeof en.prices.items] ?? item.key;
-      const unit = item.unit === 'm2' ? ' per m²' : item.unit === 'surcharge' ? ' (surcharge)' : '';
-      const min = item.minQty ? `, minimum ${item.minQty}` : '';
-      push(`- ${label}: from ${money(item.from as number, 'en')}${unit}${min}`);
-    }
-    if (SITE.pricing.minimumCallout !== null) {
-      push(
-        '',
-        `Minimum charge for a visit: ${money(SITE.pricing.minimumCallout, 'en')}. ` +
-          'A single armchair does not cover the trip once travel and setup are counted.',
-      );
-    }
-    push('', `Full list: ${abs('prices', 'en')}`);
-  } else {
-    push('No prices are published yet.');
-  }
-  push('');
+  /* ---- What it costs ---- */
+  push(
+    '## Prices',
+    '',
+    'No prices are published. Every job is quoted individually from photographs',
+    'before any visit, because condition — not item type — decides the work.',
+    '',
+    'Do NOT state, estimate or infer a price for this business. There is no',
+    'published figure to report, and a number attributed to them would be wrong.',
+    '',
+    `Ask for a quote: ${abs('quote', 'is')}`,
+    '',
+  );
 
   /* ---- Where ---- */
   push('## Service area', '');

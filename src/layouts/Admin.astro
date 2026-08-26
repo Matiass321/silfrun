@@ -8,7 +8,7 @@ import { ADMIN_ICONS } from '~/data/admin-icons';
 
 interface Props {
   title: string;
-  current?: 'today' | 'visits' | 'calendar' | 'people' | 'stats';
+  current?: 'today' | 'visits' | 'calendar' | 'media' | 'people' | 'stats';
   /** Chrome-less shell, for login and setup. */
   bare?: boolean;
 }
@@ -26,7 +26,7 @@ const TABS = [
   { key: 'today',    href: '/admin/',          label: 'Í dag',    icon: ADMIN_ICONS.today },
   { key: 'visits',   href: '/admin/visits/',   label: 'Verk',     icon: ADMIN_ICONS.visits },
   { key: 'calendar', href: '/admin/calendar/', label: 'Dagatal',  icon: ADMIN_ICONS.calendar },
-  { key: 'people',   href: '/admin/people/',   label: 'Fólk',     icon: ADMIN_ICONS.people },
+  { key: 'media',    href: '/admin/media/',    label: 'Myndir',   icon: ADMIN_ICONS.image },
   { key: 'stats',    href: '/admin/stats/',    label: 'Tölur',    icon: ADMIN_ICONS.stats },
 ] as const;
 ---

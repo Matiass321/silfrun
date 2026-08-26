@@ -1,0 +1,221 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import ClosingCta from '~/components/ClosingCta.astro';
+import MediaSlot from '~/components/MediaSlot.astro';
+import { type Locale } from '~/config/site';
+import type { MediaRow } from '~/lib/media';
+import { CONTENT } from '~/data/content';
+import { t } from '~/i18n';
+
+interface Props {
+  locale: Locale;
+  /** Media rows, keyed by slot, resolved by the page. */
+  media?: Record<string, MediaRow | undefined>;
+}
+
+const { locale, media = {} } = Astro.props;
+const s = t(locale);
+const page = CONTENT[locale].process;
+
+/**
+ * The process page, as an actual sequence.
+ *
+ * It was rendered by the generic prose template: an h1 reading "Fjögur skref"
+ * — four steps — followed by four unnumbered blocks that looked like any other
+ * article. The page promised a shape it never showed, and the doubled section
+ * padding left a screen of dead space under the heading before the first word.
+ *
+ * Numbering is used here and almost nowhere else on the site, because this
+ * content genuinely IS ordered: the photographs come before the assessment,
+ * the assessment before anything is applied. That order is the argument.
+ */
+const steps = page.sections;
+
+/** One line per step, naming what the customer does or gets at that point. */
+const OUTCOME: Record<Locale, string[]> = {
+  is: [
+    'Þú sendir myndir. Við svörum með verði.',
+    'Við mætum og skoðum efnið áður en nokkuð er borið á.',
+    'Hreinsað á staðnum, með stýrðum raka.',
+    'Þú færð stykkið aftur og veist hvenær það er þurrt.',
+  ],
+  en: [
+    'You send photographs. We reply with a price.',
+    'We arrive and read the material before anything is applied.',
+    'Cleaned on site, with controlled moisture.',
+    'You get the piece back, and know when it will be dry.',
+  ],
+};
+
+const outcomes = OUTCOME[locale];
+---
+
+<article class="pr">
+  {/* ── Header. One section, not two — the gap was doubled padding. ── */}
+  <header class="section section--tight">
+    <div class="wrap wrap--narrow">
+      <Breadcrumbs locale={locale} trail={[{ label: s.process.title }]} />
+      <p class="eyebrow">{s.process.eyebrow}</p>
+      <h1 class="page__title pr__title">{s.process.title}</h1>
+      <div class="silfrun-rule page__rule"></div>
+      <p class="lead pr__lead">{page.lead}</p>
+    </div>
+  </header>
+
+  {/* ── The sequence ── */}
+  <section class="pr__steps">
+    <div class="wrap">
+      <ol class="pr__list">
+        {steps.map((sec, i) => (
+          <li class="pr__step">
+            <div class="pr__num" aria-hidden="true">
+              <span>{String(i + 1).padStart(2, '0')}</span>
+            </div>
+
+            <div class="pr__body">
+              <h2 class="pr__h">{sec.heading}</h2>
+              <p class="pr__out">{outcomes[i]}</p>
+
+              <div class="pr__prose">
+                {sec.paragraphs.map((para) => <p>{para}</p>)}
+                {sec.points && (
+                  <ul class="ticks pr__points">
+                    {sec.points.map((pt) => <li>{pt}</li>)}
+                  </ul>
+                )}
+              </div>
+            </div>
+
+            {/*
+              One image per step. Empty, the frame is a marked plate rather
+              than a blank gap — the page has to look deliberate before any
+              photograph exists, not merely complete afterwards.
+            */}
+            <div class="pr__media">
+              <MediaSlot
+                slot={`process-${i + 1}`}
+                locale={locale}
+                media={media[`process-${i + 1}`]}
+                ratio="4 / 5"
+                label={`${String(i + 1).padStart(2, '0')} · ${sec.heading}`}
+              />
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <ClosingCta locale={locale} narrow />
+</article>
+
+<style>
+  .pr__title { max-width: 12ch; }
+  .pr__lead { max-width: 46ch; }
+
+  /* The steps section carries its own top rule instead of a second block of
+     padding, so the header runs into it rather than floating above a void. */
+  .pr__steps {
+    position: relative;
+    padding-block: var(--space-600) var(--space-1000);
+  }
+
+  .pr__list { display: flex; flex-direction: column; gap: var(--space-800); }
+
+  .pr__step {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-300);
+  }
+
+  /* ---- the number ---- */
+
+  .pr__num {
+    display: flex;
+    align-items: center;
+    gap: var(--space-250);
+    font-family: var(--font-display);
+    font-size: var(--display-sm);
+    line-height: 1;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A rule running out of the number, so the sequence reads as a line. */
+  .pr__num::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--foil-hairline);
+    opacity: .7;
+  }
+
+  .pr__h {
+    font-size: var(--display-xs);
+    margin-block-end: var(--space-150);
+    max-width: 22ch;
+  }
+
+  /* The outcome line is the one the visitor actually reads if they read
+     nothing else, so it takes the accent and sits above the prose. */
+  .pr__out {
+    font-size: var(--text-lg);
+    color: var(--text-accent);
+    max-width: 40ch;
+    margin-block-end: var(--space-250);
+  }
+
+  .pr__prose { display: flex; flex-direction: column; gap: var(--space-250); }
+  .pr__prose p { color: var(--text-secondary); max-width: var(--measure-body); }
+  .pr__points { margin-block-start: var(--space-100); }
+
+  .pr__media { margin-block-start: var(--space-200); }
+
+  /* ------------------------------------------------------------------ *
+   * Desktop is a different layout, not the same one stretched.
+   *
+   * Phone: number, then text, then image — a single reading column, because
+   * a phone has no room for anything to sit beside anything else.
+   *
+   * Desktop: the number becomes a margin marker in its own column, and the
+   * image sits beside the prose, alternating side each step so the eye is
+   * pulled down the sequence instead of scanning a static two-column grid.
+   * ------------------------------------------------------------------ */
+  @media (min-width: 60rem) {
+    .pr__list { gap: var(--space-1000); }
+
+    .pr__step {
+      grid-template-columns: 5rem minmax(0, 1fr) minmax(0, 0.85fr);
+      gap: var(--space-500);
+      align-items: start;
+    }
+
+    .pr__num {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-200);
+      font-size: var(--display-md);
+      padding-block-start: .1em;
+    }
+
+    .pr__num::after {
+      flex: none;
+      width: 1px;
+      height: 3.5rem;
+      background: var(--foil-hairline);
+    }
+
+    .pr__media { margin-block-start: 0; }
+
+    /* Alternate the image side. :nth-child on the grid children rather than a
+       reversed flex row, so the DOM order — and therefore the reading order
+       for a screen reader — stays number, text, image on every step. */
+    .pr__step:nth-child(even) .pr__body { grid-column: 3; grid-row: 1; }
+    .pr__step:nth-child(even) .pr__media { grid-column: 2; grid-row: 1; }
+  }
+
+  @media (min-width: 90rem) {
+    .pr__step { grid-template-columns: 6rem minmax(0, 1fr) minmax(0, 0.8fr); }
+  }
+</style>

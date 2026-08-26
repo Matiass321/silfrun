@@ -56,6 +56,7 @@ export default defineConfig({
         // and the booking confirmation exists for one visitor at one moment.
         if (path === '/') return false;
         if (path.startsWith('/booking-received')) return false;
+        if (path === '/404' || path === '/404/') return false;
         return !path.startsWith('/admin');
       },
     }),

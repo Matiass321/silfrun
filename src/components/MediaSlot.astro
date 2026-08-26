@@ -1,0 +1,187 @@
+---
+import { mediaUrl, altFor, captionFor, slotMeta, type MediaRow } from '~/lib/media';
+import type { Locale } from '~/config/site';
+
+interface Props {
+  slot: string;
+  locale: Locale;
+  media?: MediaRow | { url: string; alt: string; kind: string };
+  /** CSS aspect-ratio. Falls back to the slot's declared ratio. */
+  ratio?: string;
+  /** Shown on the empty plate so the brief is visible where the shot goes. */
+  label?: string;
+  /** The first image on a page should not be lazy — it is the LCP element. */
+  priority?: boolean;
+  class?: string;
+}
+
+const {
+  slot, locale, media, ratio, label, priority = false, class: className = '',
+} = Astro.props;
+
+const declared = slotMeta(slot)?.ratio;
+const aspect = ratio ?? declared ?? '4 / 5';
+
+/* Accepts either a MediaRow from the database or an already-resolved shape. */
+const row = media as MediaRow | undefined;
+const url = row?.key ? mediaUrl(row.key) : (media as { url?: string } | undefined)?.url;
+const alt = row?.key ? altFor(row, locale) : (media as { alt?: string } | undefined)?.alt ?? '';
+const caption = row?.key ? captionFor(row, locale) : '';
+const kind = row?.kind ?? (media as { kind?: string } | undefined)?.kind ?? 'image';
+
+const filled = Boolean(url);
+
+const EMPTY: Record<Locale, string> = { is: 'Mynd í bið', en: 'Shot pending' };
+---
+
+<figure
+  class:list={['ms', { 'ms--empty': !filled }, className]}
+  style={`--ms-ratio: ${aspect}`}
+>
+  {filled ? (
+    kind === 'video' ? (
+      /*
+       * muted + playsinline + loop is what lets a clip autoplay on iOS at all;
+       * without muted, Safari refuses and shows a still frame with a play
+       * button over it. No controls: this is atmosphere, not media the visitor
+       * is asked to operate.
+       */
+      <video
+        class="ms__el"
+        src={url}
+        autoplay
+        muted
+        loop
+        playsinline
+        preload={priority ? 'auto' : 'metadata'}
+        aria-label={alt}
+      ></video>
+    ) : (
+      <img
+        class="ms__el"
+        src={url}
+        alt={alt}
+        width={row?.width ?? undefined}
+        height={row?.height ?? undefined}
+        loading={priority ? 'eager' : 'lazy'}
+        fetchpriority={priority ? 'high' : 'auto'}
+        decoding="async"
+      />
+    )
+  ) : (
+    /*
+     * The empty state.
+     *
+     * A hatched plate with the brief printed on it, not a grey box and not a
+     * hidden element. Two reasons: the page has to look deliberate before any
+     * photograph exists rather than merely complete afterwards, and the person
+     * commissioning the shot can see exactly what is wanted and at what crop
+     * while standing in the room.
+     */
+    <div class="ms__plate" role="img" aria-label={EMPTY[locale]}>
+      <div class="ms__hatch" aria-hidden="true"></div>
+      <div class="ms__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z" />
+          <circle cx="12" cy="13" r="3" />
+        </svg>
+      </div>
+      {label && <p class="ms__label">{label}</p>}
+      <p class="ms__pending">{EMPTY[locale]}</p>
+    </div>
+  )}
+
+  {filled && caption && <figcaption class="ms__cap">{caption}</figcaption>}
+</figure>
+
+<style>
+  .ms {
+    position: relative;
+    margin: 0;
+    width: 100%;
+  }
+
+  .ms__el {
+    display: block;
+    width: 100%;
+    aspect-ratio: var(--ms-ratio);
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    /* The same hairline the cards carry, so a photograph sits in the system
+       rather than floating on top of it. */
+    border: 1px solid var(--edge-quiet);
+    background: var(--surface-sunken);
+  }
+
+  .ms__cap {
+    margin-block-start: var(--space-150);
+    font: var(--type-mono);
+    color: var(--text-muted);
+    max-width: 46ch;
+  }
+
+  /* ---- empty plate ---- */
+
+  .ms__plate {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-150);
+    aspect-ratio: var(--ms-ratio);
+    padding: var(--space-300);
+    border: 1px dashed var(--edge-hairline);
+    border-radius: var(--radius-sm);
+    background: var(--surface-inset);
+    overflow: hidden;
+    text-align: center;
+  }
+
+  /* A fine diagonal hatch — the drafting convention for "material goes here",
+     which reads as intentional where a flat grey fill reads as broken. */
+  .ms__hatch {
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      -45deg,
+      transparent 0 7px,
+      var(--edge-quiet) 7px 8px
+    );
+    opacity: .55;
+    pointer-events: none;
+  }
+
+  .ms__mark {
+    position: relative;
+    width: 26px;
+    height: 26px;
+    color: var(--text-muted);
+    opacity: .75;
+  }
+
+  .ms__mark svg { width: 100%; height: 100%; display: block; }
+
+  .ms__label {
+    position: relative;
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    max-width: 26ch;
+  }
+
+  .ms__pending {
+    position: relative;
+    font: var(--type-mono);
+    color: var(--text-muted);
+  }
+
+  /* On a phone a 4:5 plate can eat most of the screen for something that is
+     not there yet, so empty plates cap their height. A filled one keeps its
+     real ratio, because that is the photograph. */
+  @media (max-width: 40rem) {
+    .ms__plate { aspect-ratio: auto; min-height: 11rem; }
+  }
+</style>
