@@ -2,6 +2,7 @@
 import Admin from '~/layouts/Admin.astro';
 import { requireAdmin, env } from '~/lib/admin-guard';
 import { getSetting } from '~/lib/auth';
+import { EMAIL_KEY } from '~/lib/admin-guard';
 import { SITE, isPlaceholder, whatsappUrl } from '~/config/site';
 
 export const prerender = false;
@@ -34,10 +35,12 @@ if (DB) {
 }
 
 const passwordInD1 = DB ? Boolean(await getSetting(DB, 'admin_password_hash')) : false;
+const adminEmail = DB ? await getSetting(DB, EMAIL_KEY) : null;
 
 const checks = [
   { label: 'D1 gagnagrunnur', ok: dbOk, detail: dbDetail },
   { label: 'ADMIN_SESSION_SECRET', ok: Boolean(ADMIN_SESSION_SECRET), detail: ADMIN_SESSION_SECRET ? 'Sett' : 'Vantar — innskráning virkar ekki' },
+  { label: 'Innskráningarnetfang', ok: Boolean(adminEmail), detail: adminEmail ?? 'Ekki sett' },
   { label: 'Lykilorð', ok: passwordInD1 || Boolean(ADMIN_PASSWORD_HASH), detail: passwordInD1 ? 'Geymt í D1' : ADMIN_PASSWORD_HASH ? 'Geymt sem leyndarmál' : 'Ekki sett' },
   { label: 'WhatsApp', ok: whatsappUrl() !== null, detail: whatsappUrl() ? SITE.contact.phone : 'Ekki stillt í site.ts' },
   { label: 'Netfang', ok: !isPlaceholder(SITE.contact.email), detail: isPlaceholder(SITE.contact.email) ? 'Ekki stillt í site.ts' : String(SITE.contact.email) },

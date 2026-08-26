@@ -24,7 +24,7 @@ export const PAGE_META: MetaTable = {
     home: {
       title: 'Sérhæfð hreinsun á sófum og teppum',
       description:
-        'Silfrún sérhæfir sig í djúphreinsun á sófum, áklæðum, teppum og gólfteppum á höfuðborgarsvæðinu. Hvert efni metið áður en nokkuð er borið á.',
+        'Silfrun sérhæfir sig í djúphreinsun á sófum, áklæðum, teppum og gólfteppum á höfuðborgarsvæðinu. Hvert efni metið áður en nokkuð er borið á.',
     },
     services: {
       title: 'Þjónusta: áklæði, teppi og blettir',
@@ -67,7 +67,7 @@ export const PAGE_META: MetaTable = {
         'Við vinnum í Reykjavík, Kópavogi, Garðabæ, Hafnarfirði, Seltjarnarnesi og Mosfellsbæ. Sé staðurinn þinn ekki á listanum, hafðu samband.',
     },
     about: {
-      title: 'Um Silfrúnu: sérhæfing í textílumhirðu',
+      title: 'Um Silfrunu: sérhæfing í textílumhirðu',
       description:
         'Hverjir við erum, hvernig við vinnum og hvers vegna hvert efni er metið áður en það er meðhöndlað.',
     },
@@ -87,7 +87,7 @@ export const PAGE_META: MetaTable = {
         "Byrjunarverð fyrir hreinsun á sófum, áklæðum, teppum og gólfteppum. Endanlegt verð staðfest út frá myndum áður en við komum.",
     },
     contact: {
-      title: 'Hafa samband við Silfrúnu',
+      title: 'Hafa samband við Silfrunu',
       description: 'Sími, netfang og opnunartími. Við svörum fyrirspurnum á íslensku og ensku.',
     },
     privacy: {
@@ -149,7 +149,7 @@ export const PAGE_META: MetaTable = {
         'We work in Reykjavík, Kópavogur, Garðabær, Hafnarfjörður, Seltjarnarnes and Mosfellsbær. If your area is not listed, get in touch.',
     },
     about: {
-      title: 'About Silfrún: textile care specialists',
+      title: 'About Silfrun: textile care specialists',
       description:
         'Who we are, how we work, and why every material is assessed before it is treated.',
     },
@@ -169,7 +169,7 @@ export const PAGE_META: MetaTable = {
         'Starting prices for cleaning sofas, upholstery, rugs and fitted carpet. The final figure is confirmed from photographs before we come.',
     },
     contact: {
-      title: 'Contact Silfrún',
+      title: 'Contact Silfrun',
       description: 'Phone, email and opening hours. We answer enquiries in Icelandic and English.',
     },
     privacy: {

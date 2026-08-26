@@ -1,5 +1,5 @@
 /**
- * Silfrún base layer — reset, document defaults, and the components the brand
+ * Silfrun base layer — reset, document defaults, and the components the brand
  * needs. Element-level and system-level only; anything that belongs to a
  * single page lives with that page so the two never fight over specificity.
  *

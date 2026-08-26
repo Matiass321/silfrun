@@ -122,7 +122,7 @@ export const CONTENT: Record<Locale, LocaleContent> = {
         {
           heading: 'Hvernig við vinnum',
           paragraphs: [
-            'Silfrún sérhæfir sig í einu: að hreinsa textíl án þess að skemma hann. Það hljómar einfalt en er það ekki, því flest tjón á áklæði og teppum verður ekki af óhreinindum heldur af rangri meðferð — of miklu vatni, röngu sýrustigi eða efni sem prófað var í fyrsta sinn á sýnilegum stað.',
+            'Silfrun sérhæfir sig í einu: að hreinsa textíl án þess að skemma hann. Það hljómar einfalt en er það ekki, því flest tjón á áklæði og teppum verður ekki af óhreinindum heldur af rangri meðferð — of miklu vatni, röngu sýrustigi eða efni sem prófað var í fyrsta sinn á sýnilegum stað.',
             'Þess vegna byrjar hvert verk á mati og hverju mati lýkur á hreinskilinni umsögn. Ef við teljum að stykki sé betur komið í annarri meðferð en okkar segjum við það, líka þegar það þýðir að við fáum ekki verkið.',
           ],
         },
@@ -305,7 +305,7 @@ export const CONTENT: Record<Locale, LocaleContent> = {
         {
           heading: 'How we work',
           paragraphs: [
-            'Silfrún specialises in one thing: cleaning textiles without damaging them. That sounds simple and is not, because most damage to upholstery and rugs comes not from soil but from wrong treatment — too much water, the wrong pH, or a product tried for the first time somewhere visible.',
+            'Silfrun specialises in one thing: cleaning textiles without damaging them. That sounds simple and is not, because most damage to upholstery and rugs comes not from soil but from wrong treatment — too much water, the wrong pH, or a product tried for the first time somewhere visible.',
             'So every job begins with an assessment and every assessment ends with an honest opinion. If we think a piece is better served by a different treatment than ours, we say so, including when that means we do not get the work.',
           ],
         },

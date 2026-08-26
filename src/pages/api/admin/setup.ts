@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { env, resolvePasswordHash, PASSWORD_KEY } from '~/lib/admin-guard';
+import { env, resolvePasswordHash, PASSWORD_KEY, EMAIL_KEY, normaliseEmail } from '~/lib/admin-guard';
 import { hashPassword, setSetting, createSession, sessionCookie } from '~/lib/auth';
 
 export const prerender = false;
@@ -25,12 +25,15 @@ export const POST: APIRoute = async (context) => {
   if (existing) return fail('taken');
 
   const form = await context.request.formData();
+  const email = normaliseEmail(String(form.get('email') ?? ''));
   const password = String(form.get('password') ?? '');
   const confirm = String(form.get('confirm') ?? '');
 
+  if (!email || !email.includes('@') || email.length > 200) return fail('email');
   if (password.length < MIN_LENGTH) return fail('short');
   if (password !== confirm) return fail('mismatch');
 
+  await setSetting(DB, EMAIL_KEY, email);
   await setSetting(DB, PASSWORD_KEY, await hashPassword(password));
 
   /* Sign them straight in — they have just proved who they are. */

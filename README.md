@@ -1,4 +1,4 @@
-# Silfrún
+# Silfrun
 
 Specialist upholstery, rug and carpet care in the Reykjavík capital area.
 
@@ -56,7 +56,7 @@ full check runs locally.
 
 ## Design system
 
-The site runs the Silfrún system, "cold light on black stone". Clean is read
+The site runs the Silfrun system, "cold light on black stone". Clean is read
 from brightness and cool hue — which is why every mass-market cleaning brand is
 cyan on white, and why they all read as hygiene rather than luxury. Expensive is
 read from dark values, few hues, real material and unearned space.

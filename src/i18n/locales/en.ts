@@ -22,7 +22,7 @@ export const en: typeof is = {
     menu: 'Menu',
     close: 'Close',
     skip: 'Skip to content',
-    home: 'Silfrún — home',
+    home: 'Silfrun — home',
     language: 'Language',
   },
 
@@ -30,7 +30,7 @@ export const en: typeof is = {
     home: {
       title: 'Specialist sofa and rug cleaning',
       description:
-        'Silfrún specialises in deep cleaning sofas, upholstery, rugs and fitted carpets across the Reykjavík capital area. Every material assessed before anything is applied.',
+        'Silfrun specialises in deep cleaning sofas, upholstery, rugs and fitted carpets across the Reykjavík capital area. Every material assessed before anything is applied.',
     },
   },
 
@@ -75,7 +75,7 @@ export const en: typeof is = {
   },
 
   why: {
-    eyebrow: 'Why Silfrún',
+    eyebrow: 'Why Silfrun',
     title: 'Care for the things worth keeping.',
     lead: 'Competence shows in the work, not in the adjectives.',
     points: [
@@ -174,10 +174,10 @@ export const en: typeof is = {
     channelsTitle: 'Reach us whichever way suits you',
     channelsLead: 'Same-day reply on working days. Send photographs and we will assess the work.',
     replyNote: 'We normally reply within one working day.',
-    prefillGeneral: 'Hello Silfrún. I would like an assessment for cleaning.',
-    prefillQuote: 'Hello Silfrún. I have photographs of a piece that needs cleaning and would like a price.',
-    prefillService: 'Hello Silfrún. I would like to ask about {service}.',
-    prefillArea: 'Hello Silfrún. I am in {area} and would like an assessment.',
+    prefillGeneral: 'Hello Silfrun. I would like an assessment for cleaning.',
+    prefillQuote: 'Hello Silfrun. I have photographs of a piece that needs cleaning and would like a price.',
+    prefillService: 'Hello Silfrun. I would like to ask about {service}.',
+    prefillArea: 'Hello Silfrun. I am in {area} and would like an assessment.',
     stickyPrompt: 'Get your piece assessed',
   },
 

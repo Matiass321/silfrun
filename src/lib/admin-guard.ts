@@ -2,7 +2,33 @@ import type { APIContext } from 'astro';
 import { SESSION_COOKIE, verifySession, getSetting } from './auth';
 
 export const PASSWORD_KEY = 'admin_password_hash';
+export const EMAIL_KEY = 'admin_email';
 export const SETUP_TOKEN_KEY = 'setup_token_hash';
+
+/**
+ * The address allowed to sign in.
+ *
+ * D1 wins over the environment for the same reason the password hash does:
+ * the browser setup page can write to D1, and a Worker cannot write its own
+ * Cloudflare secrets.
+ *
+ * Returns null when no address has been set, which means "do not check the
+ * address" rather than "let anyone in" — the password is still required. An
+ * install created before this existed keeps working.
+ */
+export async function resolveAdminEmail(
+  db: D1Database | undefined,
+  envEmail: string | undefined
+): Promise<string | null> {
+  if (db) {
+    const stored = await getSetting(db, EMAIL_KEY);
+    if (stored) return stored;
+  }
+  return envEmail ?? null;
+}
+
+/** Addresses are compared case-insensitively and without surrounding space. */
+export const normaliseEmail = (v: string): string => (v ?? '').trim().toLowerCase();
 
 /**
  * The active password hash.

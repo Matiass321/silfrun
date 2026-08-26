@@ -28,9 +28,9 @@ const configured = Boolean(ADMIN_SESSION_SECRET);
 /* Surfaced from the API redirect; never echoes what was typed. */
 const err = Astro.url.searchParams.get('e');
 const MESSAGES: Record<string, string> = {
-  bad: 'Rangt lykilorð.',
+  bad: 'Netfang eða lykilorð er rangt.',
   rate: 'Of margar tilraunir. Reyndu aftur eftir nokkrar mínútur.',
-  missing: 'Sláðu inn lykilorð.',
+  missing: 'Sláðu inn netfang og lykilorð.',
 };
 ---
 
@@ -58,6 +58,18 @@ const MESSAGES: Record<string, string> = {
 
     <form class="log__form" method="POST" action="/api/admin/login">
       <label class="sf-field">
+        <span class="sf-field__label">Netfang</span>
+        <input
+          class="sf-input"
+          type="email"
+          name="email"
+          autocomplete="username"
+          required
+          autofocus
+        />
+      </label>
+
+      <label class="sf-field">
         <span class="sf-field__label">Lykilorð</span>
         <input
           class="sf-input"
@@ -65,7 +77,6 @@ const MESSAGES: Record<string, string> = {
           name="password"
           autocomplete="current-password"
           required
-          autofocus
         />
       </label>
 

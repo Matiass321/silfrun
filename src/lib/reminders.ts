@@ -45,7 +45,7 @@ export const KIND_VISIT_TOMORROW = 'visit_tomorrow';
 function tomorrowBody(name: string, whenIso: string, at: number): string {
   const first = (name ?? '').trim().split(/\s+/)[0] || '';
   return [
-    `Sæl${first ? ' ' + first : ''}, þetta er Silfrún.`,
+    `Sæl${first ? ' ' + first : ''}, þetta er Silfrun.`,
     '',
     `Við komum á morgun, ${longDate(whenIso, 'is')}, klukkan ${clock(at)}.`,
     '',

@@ -21,6 +21,7 @@ const ready = Boolean(DB) && Boolean(ADMIN_SESSION_SECRET);
 
 const err = Astro.url.searchParams.get('e');
 const MESSAGES: Record<string, string> = {
+  email: 'Sláðu inn gilt netfang.',
   short: 'Lykilorðið þarf að vera minnst 12 stafir.',
   mismatch: 'Lykilorðin stemma ekki.',
   taken: 'Lykilorð hefur þegar verið sett.',
@@ -34,8 +35,9 @@ const MESSAGES: Record<string, string> = {
     <div class="silfrun-rule set__rule"></div>
 
     <p class="set__lead">
-      Veldu lykilorð fyrir stjórnborðið. Það er geymt sem PBKDF2-hash — aldrei
-      sem texti — og verður ekki hægt að opna þessa síðu aftur eftir á.
+      Veldu netfang og lykilorð fyrir stjórnborðið. Lykilorðið er geymt sem
+      PBKDF2-hash — aldrei sem texti — og ekki verður hægt að opna þessa síðu
+      aftur eftir á.
     </p>
 
     {!DB && (
@@ -56,6 +58,13 @@ const MESSAGES: Record<string, string> = {
     {err && MESSAGES[err] && <p class="adm__msg adm__msg--err">{MESSAGES[err]}</p>}
 
     <form class="set__form" method="POST" action="/api/admin/setup">
+      <label class="sf-field">
+        <span class="sf-field__label">Netfang</span>
+        <input class="sf-input" type="email" name="email" autocomplete="username"
+               required disabled={!ready} />
+        <span class="sf-field__hint">Notað til að skrá inn. Birtist hvergi á vefnum.</span>
+      </label>
+
       <label class="sf-field">
         <span class="sf-field__label">Lykilorð</span>
         <input class="sf-input" type="password" name="password" minlength="12"

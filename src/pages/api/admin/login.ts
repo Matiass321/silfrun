@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { env, resolvePasswordHash } from '~/lib/admin-guard';
+import { env, resolvePasswordHash, resolveAdminEmail, normaliseEmail } from '~/lib/admin-guard';
 import {
   verifyPassword, createSession, sessionCookie,
   checkThrottle, clearThrottle,
@@ -15,7 +15,7 @@ export const prerender = false;
  * a short code in the query string and never echoes what was typed.
  */
 export const POST: APIRoute = async (context) => {
-  const { DB, ADMIN_PASSWORD_HASH, ADMIN_SESSION_SECRET } = env(context);
+  const { DB, ADMIN_EMAIL, ADMIN_PASSWORD_HASH, ADMIN_SESSION_SECRET } = env(context);
 
   const fail = (code: string) =>
     context.redirect(`/admin/login/?e=${code}`, 303);
@@ -28,6 +28,7 @@ export const POST: APIRoute = async (context) => {
   }
 
   const form = await context.request.formData();
+  const email = normaliseEmail(String(form.get('email') ?? ''));
   const password = String(form.get('password') ?? '');
   if (!password) return fail('missing');
 
@@ -51,7 +52,21 @@ export const POST: APIRoute = async (context) => {
   const hash = await resolvePasswordHash(DB, ADMIN_PASSWORD_HASH);
   if (!hash) return context.redirect('/admin/setup/', 303);
 
-  if (!(await verifyPassword(password, hash))) return fail('bad');
+  /**
+   * Address and password are checked together and reported as one failure.
+   *
+   * Saying which half was wrong would confirm to a stranger that a given
+   * address is the one that owns this admin, and the throttle above counts
+   * both against the same budget either way.
+   *
+   * The password is still verified even when the address is already wrong, so
+   * a bad address does not return measurably faster than a bad password.
+   */
+  const expectedEmail = await resolveAdminEmail(DB, ADMIN_EMAIL);
+  const passwordOk = await verifyPassword(password, hash);
+  const emailOk = expectedEmail === null || normaliseEmail(expectedEmail) === email;
+
+  if (!passwordOk || !emailOk) return fail('bad');
 
   if (DB) await clearThrottle(DB, `login:${ip}`);
 

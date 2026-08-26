@@ -18,7 +18,7 @@ export const is = {
     menu: 'Valmynd',
     close: 'Loka',
     skip: 'Beint í efni',
-    home: 'Silfrún — forsíða',
+    home: 'Silfrun — forsíða',
     language: 'Tungumál',
   },
 
@@ -26,7 +26,7 @@ export const is = {
     home: {
       title: 'Sérhæfð hreinsun á sófum og teppum',
       description:
-        'Silfrún sérhæfir sig í djúphreinsun á sófum, áklæðum, teppum og gólfteppum á höfuðborgarsvæðinu. Hvert efni metið áður en nokkuð er borið á.',
+        'Silfrun sérhæfir sig í djúphreinsun á sófum, áklæðum, teppum og gólfteppum á höfuðborgarsvæðinu. Hvert efni metið áður en nokkuð er borið á.',
     },
   },
 
@@ -71,7 +71,7 @@ export const is = {
   },
 
   why: {
-    eyebrow: 'Af hverju Silfrún',
+    eyebrow: 'Af hverju Silfrun',
     title: 'Umhyggja fyrir því sem er þess virði að eiga áfram.',
     lead: 'Fagmennska sést á verkinu, ekki á lýsingarorðunum.',
     points: [
@@ -176,10 +176,10 @@ export const is = {
     channelsTitle: 'Hafðu samband á þann hátt sem hentar',
     channelsLead: 'Svar samdægurs á virkum dögum. Sendu myndir og við metum verkið.',
     replyNote: 'Við svörum að jafnaði innan vinnudags.',
-    prefillGeneral: 'Halló Silfrún. Mig langar að fá mat á hreinsun.',
-    prefillQuote: 'Halló Silfrún. Ég er með myndir af stykki sem þarf að hreinsa og vil fá verðmat.',
-    prefillService: 'Halló Silfrún. Mig langar að spyrja um {service}.',
-    prefillArea: 'Halló Silfrún. Ég er í {area} og vil fá mat á hreinsun.',
+    prefillGeneral: 'Halló Silfrun. Mig langar að fá mat á hreinsun.',
+    prefillQuote: 'Halló Silfrun. Ég er með myndir af stykki sem þarf að hreinsa og vil fá verðmat.',
+    prefillService: 'Halló Silfrun. Mig langar að spyrja um {service}.',
+    prefillArea: 'Halló Silfrun. Ég er í {area} og vil fá mat á hreinsun.',
     stickyPrompt: 'Fáðu mat á verkinu',
   },
 

@@ -1,19 +1,66 @@
+# Security headers.
+#
+# Cloudflare Pages applies these to matching paths. Rules are matched in order
+# and the most specific match wins, so the site-wide block comes first and the
+# admin tightens it afterwards.
+
 /*
-  X-Content-Type-Options: nosniff
-  X-Frame-Options: DENY
-  Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: geolocation=(), microphone=(), camera=()
+  # Force HTTPS for two years, on every subdomain, and declare the site
+  # eligible for the browser preload list. Note what preload means: once
+  # submitted and shipped in a browser release, it cannot be quickly undone.
+  # Only ever set this on a domain that will always serve HTTPS.
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
 
-  # The site is indexable. The X-Robots-Tag noindex that used to sit here has
-  # been removed deliberately — note that robots.txt alone would not have
-  # lifted it, which is why both had to change together.
+  # The public site executes no JavaScript at all — the only <script> on any
+  # page is a JSON-LD data block, which is not executable and so is not subject
+  # to script-src. 'none' therefore costs nothing and means an injected inline
+  # script has nothing to run under.
   #
-  # One consequence worth knowing: the *.pages.dev preview domain is indexable
-  # too, and serves the same content as silfrun.com. It is not a ranking
-  # problem — every page canonicalises to silfrun.com, so the preview host
-  # consolidates into it rather than competing with it.
+  # style-src needs 'unsafe-inline': Astro inlines small scoped stylesheets and
+  # a few elements carry style attributes. That is a real weakening, but with
+  # script-src 'none' there is no scripting context for a style-based attack to
+  # escalate out of.
+  #
+  # form-action 'self' is what stops an injected <form> posting a visitor's
+  # details to somebody else's server.
+  Content-Security-Policy: default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; manifest-src 'self'; upgrade-insecure-requests
 
+  # frame-ancestors above already covers this for modern browsers; kept for
+  # older ones that never implemented it.
+  X-Frame-Options: DENY
+
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+  # Nothing here uses any of these. Denying them means a compromised page
+  # cannot quietly ask for them either.
+  Permissions-Policy: accelerometer=(), autoplay=(), camera=(), clipboard-read=(), display-capture=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), interest-cohort=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), screen-wake-lock=(), sync-xhr=(), usb=(), xr-spatial-tracking=()
+
+  # Isolate the browsing context so a page opened from here cannot reach back
+  # through window.opener, and so cross-origin documents cannot embed ours.
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-site
+
+  # Cross-Origin-Embedder-Policy: require-corp is deliberately NOT set.
+  #
+  # Its real benefit is unlocking SharedArrayBuffer and high-resolution timers,
+  # neither of which a site with no JavaScript can use. What it would do is
+  # break the first cross-origin image, font or embed anyone adds later, with a
+  # failure that looks like a broken asset rather than a policy error. That is
+  # fragility bought with no security gained.
+
+# The social card is fetched by scrapers on other origins — WhatsApp, Facebook,
+# Slack, X. It must stay readable cross-origin or link previews break.
+/og.png
+  Cross-Origin-Resource-Policy: cross-origin
+  Cache-Control: public, max-age=604800
+
+# Content-hashed, so it can be cached forever and never revalidated.
 /_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Fonts are same-origin and content-hashed by the build.
+/fonts/*
   Cache-Control: public, max-age=31536000, immutable
 
 # Generated fresh on every build from the route table and site config.
@@ -21,5 +68,29 @@
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=3600
 
-/og.png
-  Cache-Control: public, max-age=604800
+# ---------------------------------------------------------------------------
+# Admin.
+#
+# noindex here as well as in the page's own meta tag: robots.txt only asks a
+# crawler not to fetch, and does nothing about a URL that leaked into a link
+# somewhere. The header is what actually removes it from an index.
+#
+# no-store rather than no-cache — customer names, telephone numbers and home
+# addresses must not sit in a browser's disk cache or in an intermediate proxy
+# after somebody signs out.
+# ---------------------------------------------------------------------------
+/admin/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cache-Control: no-store, max-age=0, must-revalidate
+  Pragma: no-cache
+  Content-Security-Policy: default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; upgrade-insecure-requests
+
+/api/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cache-Control: no-store, max-age=0, must-revalidate
+
+# The booking confirmation carries a reference number and is rendered for one
+# visitor at one moment. It must never be cached or indexed.
+/booking-received*
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cache-Control: no-store, max-age=0, must-revalidate

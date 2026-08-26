@@ -62,7 +62,7 @@ export const SITE = {
    */
   timezone: 'Atlantic/Reykjavik',
 
-  brand: 'Silfrún',
+  brand: 'Silfrun',
   /** ASCII form, for places that cannot carry the accent (domains, handles). */
   brandAscii: 'Silfrun',
 
