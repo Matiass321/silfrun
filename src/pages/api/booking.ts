@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { env } from '~/lib/admin-guard';
 import { checkThrottle } from '~/lib/auth';
+import { record } from '~/lib/analytics';
 import { upsertCustomer, createVisit, normalisePhone, VISIT_WINDOWS, type VisitWindow } from '~/lib/visits';
 import { SITE } from '~/config/site';
 
@@ -52,9 +53,21 @@ export const POST: APIRoute = async (context) => {
     context.request.headers.get('x-forwarded-for') ??
     'unknown';
 
-  /* Five enquiries an hour from one address is far above genuine use. */
-  const { allowed } = await checkThrottle(DB, `booking:${ip}`, 5, 3600);
-  if (!allowed) return back('rate');
+  /**
+   * Five enquiries an hour from one address is far above genuine use.
+   *
+   * Wrapped, because checkThrottle issues a CREATE TABLE and two statements of
+   * its own. It sat outside the try below, so a D1 hiccup here returned a bare
+   * 500 instead of the page that tells the visitor to use WhatsApp. Losing an
+   * enquiry is worse than serving one extra bot, so a throttle that cannot be
+   * read lets the request through.
+   */
+  try {
+    const { allowed } = await checkThrottle(DB, `booking:${ip}`, 5, 3600);
+    if (!allowed) return back('rate');
+  } catch {
+    /* fall through */
+  }
 
   const name = String(form.get('name') ?? '').trim();
   const phone = normalisePhone(String(form.get('phone') ?? ''));
@@ -100,6 +113,10 @@ export const POST: APIRoute = async (context) => {
       notes: notes || null,
       locale,
     });
+
+    /* The funnel's final step. Without this the stats page reports zero
+       bookings for ever, because nothing else ever records this kind. */
+    await record(DB, context.request, { kind: 'booking', path: `/${locale}/`, locale });
 
     return context.redirect(`/booking-received/?lang=${locale}&ref=${encodeURIComponent(ref)}`, 303);
   } catch {

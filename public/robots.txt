@@ -7,6 +7,13 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 
+# The click tracker and the view beacon are live endpoints, not pages. A
+# crawler following every /go/ link on every page registers as a visitor
+# pressing "message us on WhatsApp" a few hundred times, which would make the
+# only conversion number on the stats page meaningless.
+Disallow: /go/
+Disallow: /px.gif
+
 # The site ships no JavaScript, so nothing here needs a rendering budget.
 # Crawl-delay is deliberately absent: 45 static pages do not warrant one, and
 # Google ignores it in any case.

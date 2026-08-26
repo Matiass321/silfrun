@@ -123,7 +123,7 @@ const anyLive = channels.some((ch) => ch.live);
             ]}
             href={ch.href}
             {...(ch.id === 'whatsapp' || ch.id === 'messenger'
-              ? { target: '_blank', rel: 'noopener' }
+              ? { target: '_blank', rel: 'noopener nofollow' }
               : {})}
           >
             <span class="channels__icon" aria-hidden="true" set:html={ICONS[ch.id]} />

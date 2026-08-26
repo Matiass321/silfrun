@@ -54,22 +54,17 @@ const SELECT_JOINED = `
 `;
 
 /**
- * The next reference, as S-0001.
+ * References are derived from the row's own id, never from a prior read.
  *
- * Derived from the highest existing number rather than from a count, because a
- * deleted row would otherwise make the next reference collide with one already
- * issued. References appear on messages to customers, so they must never be
- * reused.
+ * The old version did SELECT-max-then-INSERT with nothing holding a lock
+ * between them, against a column declared UNIQUE. Two submissions in flight at
+ * once — two visitors, or one person double-tapping a slow button — both read
+ * the same last ref and the second insert threw, which the booking endpoint
+ * turned into "something went wrong" for an enquiry that was otherwise valid.
+ *
+ * The id is allocated by SQLite itself, so it cannot collide.
  */
-export async function nextRef(db: D1Database): Promise<string> {
-  const row = await db
-    .prepare(`SELECT ref FROM visits ORDER BY id DESC LIMIT 1`)
-    .first<{ ref: string }>();
-
-  const last = row?.ref?.match(/(\d+)$/)?.[1];
-  const n = last ? Number(last) + 1 : 1;
-  return `S-${String(n).padStart(4, '0')}`;
-}
+export const refFromId = (id: number): string => `S-${String(id).padStart(4, '0')}`;
 
 /** Finds a customer by phone, or creates one. Phone is the identity. */
 export async function upsertCustomer(
@@ -144,16 +139,18 @@ export async function createVisit(
     locale?: string | null;
   }
 ): Promise<string> {
-  const ref = await nextRef(db);
+  /* A placeholder unique enough to survive the insert, replaced immediately
+     with the id-derived reference. crypto.randomUUID is available in Workers. */
+  const placeholder = `tmp-${crypto.randomUUID()}`;
 
-  await db
+  const res = await db
     .prepare(
       `INSERT INTO visits
          (ref, customer_id, preferred_date, window, items, address, area, notes, status, quote_isk, locale)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
-      ref,
+      placeholder,
       input.customer_id,
       input.preferred_date,
       input.window,
@@ -166,6 +163,11 @@ export async function createVisit(
       input.locale ?? null
     )
     .run();
+
+  const id = Number(res.meta.last_row_id);
+  const ref = refFromId(id);
+
+  await db.prepare('UPDATE visits SET ref = ? WHERE id = ?').bind(ref, id).run();
 
   return ref;
 }

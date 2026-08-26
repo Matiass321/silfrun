@@ -98,6 +98,14 @@ export const GET: APIRoute = () => {
     '',
   );
 
+  /* ---- Who they are ---- */
+  const company: string[] = [];
+  if (!isPlaceholder(SITE.legalName)) company.push(`- Registered name: ${SITE.legalName}`);
+  if (!isPlaceholder(SITE.kennitala)) company.push(`- Kennitala: ${SITE.kennitala}`);
+  if (company.length) {
+    push('## Company', '', ...company, `- Website: ${SITE.url}/is/`, '');
+  }
+
   /* ---- How to reach them ---- */
   push('## Contact', '');
   const contactBits: string[] = [];
@@ -131,8 +139,12 @@ export const GET: APIRoute = () => {
   /* ---- Everything else ---- */
   push('## Other pages', '');
   const other: PageKey[] = ['process', 'about', 'faq', 'results', 'privacy', 'terms'];
+  /* Both languages. The file states Icelandic is canonical, then listed
+     English-only URLs for most page types, which reads as a contradiction to
+     the engine it is written for. */
   for (const key of other) {
-    push(`- ${abs(key, 'en')}`);
+    push(`- ${abs(key, 'is')}`);
+    push(`  English: ${abs(key, 'en')}`);
   }
   push('');
 

@@ -68,7 +68,7 @@ const show = primary !== null || secondary !== null;
           <a
             class="btn btn--foil sticky__action"
             href={primary.href}
-            {...(primary.external ? { target: '_blank', rel: 'noopener' } : {})}
+            {...(primary.external ? { target: '_blank', rel: 'noopener nofollow' } : {})}
           >
             <span class="sticky__icon" aria-hidden="true" set:html={primary.icon} />
             <span>{primary.label}</span>

@@ -21,7 +21,17 @@ export const POST: APIRoute = async (context) => {
 
   if (!DB) return fail('nodb');
 
-  const existing = await resolvePasswordHash(DB, ADMIN_PASSWORD_HASH);
+  /**
+   * Fail CLOSED. If we cannot establish whether a password already exists, we
+   * must assume it does — the alternative is letting a database hiccup reopen
+   * an unauthenticated endpoint that sets the admin password.
+   */
+  let existing: string | null;
+  try {
+    existing = await resolvePasswordHash(DB, ADMIN_PASSWORD_HASH);
+  } catch {
+    return fail('nodb');
+  }
   if (existing) return fail('taken');
 
   const form = await context.request.formData();

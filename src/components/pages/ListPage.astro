@@ -11,7 +11,7 @@ interface Props {
   locale: Locale;
   variant: 'services' | 'areas' | 'area';
   /** Present only when variant is 'area'. */
-  area?: { slug: string; name: string; primary: boolean };
+  area?: { slug: string; name: string; dative: string; prep: string; primary: boolean };
 }
 
 const { locale, variant, area } = Astro.props;
@@ -103,7 +103,7 @@ const areaPendingNote =
             trail={[{ label: s.nav.areas, href: path('areas', locale) }, { label: area.name }]}
           />
           <p class="eyebrow">{s.areas.eyebrow}</p>
-          <h1 class="page__title">{s.areas.inArea} {area.name}</h1>
+          <h1 class="page__title">{s.areas.inArea} {locale === 'is' ? `${area.prep} ${area.dative}` : `in ${area.name}`}</h1>
           <div class="silfrun-rule page__rule"></div>
           <p class="lead">
             {locale === 'is'

@@ -34,6 +34,7 @@ const COPY = {
     addressHint: 'Valfrjálst á þessu stigi.',
     what: 'Hvað þarf að hreinsa',
     date: 'Óskadagur',
+    dateHint: 'Veldu dag sem hentar þér. Við staðfestum tímann eftir að við höfum séð myndirnar.',
     window: 'Tímabil',
     windows: { morning: 'Fyrir hádegi', afternoon: 'Eftir hádegi', either: 'Hvort sem er' },
     notes: 'Lýsing',
@@ -65,6 +66,7 @@ const COPY = {
     addressHint: 'Optional at this stage.',
     what: 'What needs cleaning',
     date: 'Preferred day',
+    dateHint: 'Pick a day that suits you. We confirm the time once we have seen the photographs.',
     window: 'Time of day',
     windows: { morning: 'Morning', afternoon: 'Afternoon', either: 'Either' },
     notes: 'Description',
@@ -85,7 +87,20 @@ const COPY = {
 } as const;
 
 const c = COPY[locale];
-const todayIso = new Date().toISOString().slice(0, 10);
+
+/**
+ * There is deliberately no default date and no `min` here.
+ *
+ * This page is prerendered, so anything derived from the clock is frozen at
+ * build time: the field shipped `value="2026-08-26" min="2026-08-26"`, which
+ * from the following day onwards pre-filled a date the server then rejected as
+ * past. Every enquiry would have failed with "choose a date in the future" on
+ * a value the visitor never chose.
+ *
+ * The server is the only date authority (src/pages/api/booking.ts rejects past
+ * dates and says so), so the field starts empty and the hint says what is
+ * wanted. A prerendered page must never state today's date.
+ */
 ---
 
 <div class="bk" id="form">
@@ -147,7 +162,8 @@ const todayIso = new Date().toISOString().slice(0, 10);
         <div class="bk__row">
           <label class="sf-field">
             <span class="sf-field__label">{c.date} <span class="bk__req">*</span></span>
-            <input class="sf-input" type="date" name="preferred_date" required min={todayIso} value={todayIso} />
+            <input class="sf-input" type="date" name="preferred_date" required />
+            <span class="sf-field__hint">{c.dateHint}</span>
           </label>
 
           <label class="sf-field">
@@ -261,6 +277,6 @@ const todayIso = new Date().toISOString().slice(0, 10);
   .bk__okicon :global(svg) { width: 100%; height: 100%; display: block; }
 
   @media (max-width: 34rem) {
-    .bk { padding: var(--space-350); }
+    .bk { padding: var(--space-300); }
   }
 </style>

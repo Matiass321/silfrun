@@ -1,7 +1,7 @@
 ---
 import Admin from '~/layouts/Admin.astro';
 import { requireAdmin, env, EMAIL_KEY } from '~/lib/admin-guard';
-import { getSetting } from '~/lib/auth';
+import { getSettingOrNull } from '~/lib/auth';
 import { SITE, isPlaceholder, whatsappUrl } from '~/config/site';
 import { ADMIN_ICONS } from '~/data/admin-icons';
 
@@ -40,8 +40,8 @@ try {
   if (DB) { await DB.prepare('SELECT 1 FROM events LIMIT 1').first(); statsOk = true; }
 } catch { /* migration 0001 not applied */ }
 
-const adminEmail = DB ? await getSetting(DB, EMAIL_KEY) : null;
-const passwordInD1 = DB ? Boolean(await getSetting(DB, 'admin_password_hash')) : false;
+const adminEmail = DB ? await getSettingOrNull(DB, EMAIL_KEY) : null;
+const passwordInD1 = DB ? Boolean(await getSettingOrNull(DB, 'admin_password_hash')) : false;
 
 let tokens: { token: string; label: string | null; last_used_at: number | null }[] = [];
 try {

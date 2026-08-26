@@ -76,7 +76,7 @@ export function getStaticPaths() {
   return paths;
 }
 
-type AreaProp = { slug: string; name: string; primary: boolean } | null;
+type AreaProp = { slug: string; name: string; dative: string; prep: string; primary: boolean } | null;
 
 const { locale, pageKey, area } = Astro.props as {
   locale: Locale;
@@ -98,8 +98,14 @@ let description: string;
 let alt: ReturnType<typeof alternates>;
 
 if (area) {
-  title = AREA_META[locale].title.replace('{area}', area.name);
-  description = AREA_META[locale].description.replace('{area}', area.name);
+  /**
+   * Icelandic inflects after a preposition, so the placeholder is filled with
+   * the whole prepositional phrase — "í Kópavogi", "á Seltjarnarnesi" — not
+   * the bare name. English has no case and keeps "in " + the plain name.
+   */
+  const placed = locale === 'is' ? `${area.prep} ${area.dative}` : area.name;
+  title = AREA_META[locale].title.replace('{area}', placed);
+  description = AREA_META[locale].description.replace('{area}', placed);
   alt = areaAlternates(area.slug, locale);
 } else {
   const meta = PAGE_META[locale][pageKey];
@@ -117,7 +123,7 @@ if (area) {
  * enquiry's first line of context, not decoration.
  */
 const prefill = area
-  ? s.contact.prefillArea.replace('{area}', area.name)
+  ? s.contact.prefillArea.replace('{area}', locale === 'is' ? `${area.prep} ${area.dative}` : area.name)
   : isService
     ? s.contact.prefillService.replace('{service}', s.services[pageKey as ServiceKey].name.toLowerCase())
     : pageKey === 'quote'

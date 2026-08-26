@@ -40,7 +40,14 @@ const LABEL: Record<string, string> = { is: 'Íslenska', en: 'English' };
     <meta http-equiv="refresh" content={`0; url=${target}`} />
     <meta name="robots" content="noindex, follow" />
     <title>{SITE.brand}</title>
-    <link rel="canonical" href={`${SITE.url}${target}`} />
+      {/*
+        No canonical here.
+
+        The page is noindex, and Google documents noindex + canonical as
+        contradictory — one says drop this URL, the other says fold it into
+        another — with the noindex capable of propagating to the target. The
+        chooser is not content; it is a fork.
+      */}
     <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} type="image/svg+xml" />
     <meta name="theme-color" content="#FBF9F5" media="(prefers-color-scheme: light)" />
       <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0B0D0F" />

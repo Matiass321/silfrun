@@ -27,10 +27,11 @@ interface Props {
 }
 
 const { locale, pageKey, prefill, ...meta } = Astro.props;
+const { alternates } = meta;
 ---
 
 <Base locale={locale} {...meta}>
-  <Header locale={locale} pageKey={pageKey} />
+  <Header locale={locale} pageKey={pageKey} alternates={alternates} />
   <main id="main" class="main"><slot /></main>
   <Footer locale={locale} />
   <StickyContact locale={locale} prefill={prefill} />

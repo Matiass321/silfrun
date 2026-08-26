@@ -38,7 +38,7 @@ export const SERVICE_CONTENT: Table = {
       includedTitle: 'Hvað felst í heimsókninni',
       included: [
         'Mat á efni, merkingum og litheldni áður en nokkuð er borið á',
-        'Ryksuga með tilliti til lausra óhreininda og hára',
+        'Ryksugun fyrir laus óhreinindi og hár',
         'Formeðhöndlun bletta þar sem það á við',
         'Djúphreinsun með úðaútdrætti',
         'Aukaútdráttur til að stytta þurrktímann',
@@ -50,7 +50,7 @@ export const SERVICE_CONTENT: Table = {
         { name: 'Flauel', note: 'Þarf rakastýringu og bursta í rétta átt svo ekki komi flet eða för.' },
         { name: 'Viskósa', note: 'Veikist þegar hún blotnar og getur fengið hringi. Unnin með mun minni raka.' },
         { name: 'Ull', note: 'Sterk en pH-viðkvæm. Sterk basísk efni skemma hana og geta breytt lit.' },
-        { name: 'Leður og líkileður', note: 'Ekki hreinsað með úðaútdrætti — þarf aðra vöru og aðra aðferð.' },
+        { name: 'Leður og leðurlíki', note: 'Ekki hreinsað með úðaútdrætti — þarf aðra vöru og aðra aðferð.' },
       ],
       expectTitle: 'Hverju má búast við',
       expect: [
@@ -106,14 +106,14 @@ export const SERVICE_CONTENT: Table = {
     carpet: {
       lead: 'Fastlögð gólfteppi á heimilum, í sumarbústöðum og í atvinnuhúsnæði.',
       body: [
-        'Fastlagt gólfteppi slitnar ójafnt. Gangvegir — inn um dyr, að stiga, kringum skrifborð — taka við margfalt meira álagi en gólfið undir húsgögnum, og þar sest óhreinindin dýpst. Munurinn á þessum svæðum er oft það sem sést best eftir hreinsun.',
+        'Fastlagt gólfteppi slitnar ójafnt. Gangvegir — inn um dyr, að stiga, kringum skrifborð — taka við margfalt meira álagi en gólfið undir húsgögnum, og þar setjast óhreinindin dýpst. Munurinn á þessum svæðum er oft það sem sést best eftir hreinsun.',
         'Rakastýring skiptir öllu í fastlögðu teppi. Undir því er undirlag og lím, og of mikill vökvi kemst niður í hvort tveggja þar sem hann þornar hægt. Þess vegna er unnið með stýrðu magni og auknum útdrætti frekar en að metta teppið.',
         'Í atvinnuhúsnæði skipuleggjum við verkið eftir opnunartíma þannig að rýmið sé tilbúið þegar það er tekið í notkun aftur. Fyrir stærri fleti metum við aðstæður á staðnum áður en verð er gefið.',
       ],
       includedTitle: 'Hvað felst í heimsókninni',
       included: [
         'Mat á gerð teppis, undirlagi og ástandi',
-        'Ryksuga á lausum óhreinindum',
+        'Ryksugun lausra óhreininda',
         'Sérstök meðferð á gangvegum og álagssvæðum',
         'Djúphreinsun með stýrðum raka',
         'Aukaútdráttur til að stytta þurrktímann',

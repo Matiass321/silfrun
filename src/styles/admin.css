@@ -96,6 +96,34 @@ body.adm {
   border-radius: 3px;
 }
 
+/**
+ * Skip link. Written in the admin palette, not copied from base.css — Admin
+ * imports only this file, so a rule built on the public tokens would render
+ * unstyled and effectively invisible.
+ *
+ * position: fixed because .a-top is sticky; absolute would scroll away.
+ */
+.a-skip {
+  position: fixed;
+  left: 14px;
+  top: calc(env(safe-area-inset-top, 0px) - 6rem);
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--a-tap);
+  padding: 0 14px;
+  background: var(--a-ink);
+  color: var(--a-surface);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--a-r-sm);
+  box-shadow: var(--a-shadow-lift);
+  transition: top .12s ease;
+}
+
+.a-skip:focus { top: calc(env(safe-area-inset-top, 0px) + 8px); }
+
 .a-hide {
   position: absolute; width: 1px; height: 1px;
   padding: 0; margin: -1px; overflow: hidden;

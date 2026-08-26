@@ -44,6 +44,18 @@ export async function record(
 
   try {
     const ua = request.headers.get('user-agent') ?? '';
+
+    /**
+     * Bots are dropped before the insert.
+     *
+     * robots.txt asks crawlers not to fetch /go/ and /px.gif, but a Disallow is
+     * a request, not a control — and the ones that ignore it are exactly the
+     * ones that would inflate the conversion numbers this table exists to
+     * report. A missed real visit costs a row; a counted crawler costs trust in
+     * every figure on the stats page.
+     */
+    if (/bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|monitor|preview|scrape/i.test(ua)) return;
+
     const device = /Mobi|Android|iPhone|iPad|iPod/i.test(ua) ? 'mobile' : 'desktop';
 
     /* Host only. A full referrer URL can carry a search query, which is

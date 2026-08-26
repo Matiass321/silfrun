@@ -31,8 +31,8 @@ export const is = {
   },
 
   hero: {
-    eyebrow: 'Sérhæfð umhirða áklæða og teppa · Ísland',
-    title: 'Umhirða fyrir húsgögn sem eiga að endast.',
+    eyebrow: 'Sérhæfð umhirða áklæða og teppa',
+    title: 'Umhirða húsgagna sem eiga að endast.',
     lead: 'Djúphreinsun á sófum, áklæðum, lausteppum og gólfteppum. Við metum efnið áður en nokkuð er borið á — og segjum fyrirfram hverju má búast við.',
     ctaPrimary: 'Fá tilboð',
     ctaSecondary: 'Sjá þjónustuna',
@@ -101,7 +101,9 @@ export const is = {
     title: 'Hvar við vinnum.',
     lead: 'Við þjónustum höfuðborgarsvæðið. Sé staðurinn þinn ekki á listanum, hafðu samband.',
     cta: 'Sjá öll svæði',
-    inArea: 'Hreinsun áklæða og teppa í',
+    /* No trailing preposition — it now comes from the area itself, because
+       Seltjarnarnes takes 'á' where the rest take 'í'. */
+    inArea: 'Hreinsun áklæða og teppa',
   },
 
   finalCta: {
@@ -179,7 +181,7 @@ export const is = {
     prefillGeneral: 'Halló Silfrun. Mig langar að fá mat á hreinsun.',
     prefillQuote: 'Halló Silfrun. Ég er með myndir af stykki sem þarf að hreinsa og vil fá verðmat.',
     prefillService: 'Halló Silfrun. Mig langar að spyrja um {service}.',
-    prefillArea: 'Halló Silfrun. Ég er í {area} og vil fá mat á hreinsun.',
+    prefillArea: 'Halló Silfrun. Ég er {area} og vil fá mat á hreinsun.',
     stickyPrompt: 'Fáðu mat á verkinu',
   },
 

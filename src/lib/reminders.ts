@@ -108,11 +108,22 @@ export async function generateTomorrowReminders(
 export async function pendingReminders(db: D1Database): Promise<ReminderRow[]> {
   const res = await db
     .prepare(
+      /*
+       * Joined to the LIVE visit, and filtered on its current state.
+       *
+       * The body text is frozen at generation and INSERT OR IGNORE means it can
+       * never be rewritten, so a visit that was rescheduled or cancelled after
+       * the reminder was created would otherwise still offer a prepared message
+       * quoting the old time — to a customer who is no longer expecting anyone.
+       * Those rows now drop out of the list entirely.
+       */
       `SELECT r.*, c.name, c.phone, v.scheduled_at
          FROM reminders r
     LEFT JOIN customers c ON c.id = r.customer_id
-    LEFT JOIN visits v ON v.ref = r.subject
+         JOIN visits v ON v.ref = r.subject
         WHERE r.sent_at IS NULL AND r.dismissed_at IS NULL
+          AND v.status = 'scheduled'
+          AND v.scheduled_at IS NOT NULL
      ORDER BY r.due_at ASC
         LIMIT 50`
     )

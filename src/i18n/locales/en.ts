@@ -35,7 +35,7 @@ export const en: typeof is = {
   },
 
   hero: {
-    eyebrow: 'Specialist upholstery and rug care · Iceland',
+    eyebrow: 'Specialist upholstery and rug care',
     title: 'Care for furniture meant to last.',
     lead: 'Deep cleaning for sofas, upholstery, rugs and fitted carpets. We assess the material before anything is applied — and tell you what to expect before we start.',
     ctaPrimary: 'Request a quote',

@@ -188,9 +188,9 @@ export const PAGE_META: MetaTable = {
 /** Pattern for a service-area page description, filled with the area name. */
 export const AREA_META: Record<Locale, { title: string; description: string }> = {
   is: {
-    title: 'Hreinsun áklæða og teppa í {area}',
+    title: 'Hreinsun áklæða og teppa {area}',
     description:
-      'Sérhæfð djúphreinsun á sófum, áklæðum og teppum í {area}. Unnið á staðnum, með mati á efni áður en nokkuð er borið á.',
+      'Sérhæfð djúphreinsun á sófum, áklæðum og teppum {area}. Unnið á staðnum, með mati á efni áður en nokkuð er borið á.',
   },
   en: {
     title: 'Upholstery and rug cleaning in {area}',

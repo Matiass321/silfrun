@@ -64,6 +64,12 @@ const TABS = [
   </head>
 
   <body class="adm">
+    {/*
+      Rendered only with the chrome. login and setup pass `bare` and have no
+      nav at all, where a skip link would just be a dead first tab stop.
+    */}
+    {!bare && <a class="a-skip" href="#a-main">Beint í efni</a>}
+
     {!bare && (
       <header class="a-top">
         <div class="a-top__in">
@@ -98,7 +104,9 @@ const TABS = [
       </header>
     )}
 
-    <main class:list={['a-main', { 'a-main--bare': bare }]}>
+    {/* tabindex=-1 because Safari will not move focus to a non-focusable
+        element on fragment navigation, so the skip link would do nothing. */}
+    <main id="a-main" tabindex="-1" class:list={['a-main', { 'a-main--bare': bare }]}>
       <slot />
     </main>
   </body>

@@ -748,7 +748,11 @@ strong { font-weight: var(--weight-medium); }
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   font: var(--type-body);
-  font-size: var(--text-sm);
+  /* 16px minimum, never smaller. Below that iOS Safari zooms the viewport the
+     moment a field is focused and leaves the visitor scrolled sideways in the
+     middle of the only form on the site. Step DOWN at a desktop breakpoint if
+     14px is ever wanted — never up from it. */
+  font-size: var(--text-md);
   transition: var(--transition-control);
 }
 
@@ -796,3 +800,70 @@ strong { font-weight: var(--weight-medium); }
 }
 
 .skip-link:focus { top: var(--space-200); }
+
+
+/**
+ * Checkbox. The markup existed in the quote form but no rule ever did, so it
+ * rendered as a bare 13px OS control with no label association and no touch
+ * target — on the site's only conversion form.
+ *
+ * The native input is kept in the accessibility tree and focusable, moved
+ * behind the drawn box rather than display:none, which would remove it.
+ */
+.sf-check {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-150);
+  min-height: var(--control-h);
+  padding: 0 var(--space-200);
+  border: 1px solid var(--edge-hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+  cursor: pointer;
+  transition: var(--transition-control);
+}
+
+.sf-check:hover { border-color: var(--edge-strong); }
+
+.sf-check input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+}
+
+.sf-check__box {
+  position: relative;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-xs);
+  background: var(--surface-page);
+  transition: var(--transition-control);
+}
+
+.sf-check__box::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  background: var(--text-primary);
+  clip-path: polygon(14% 46%, 0 60%, 39% 100%, 100% 22%, 86% 8%, 39% 72%);
+  opacity: 0;
+  transform: scale(.6);
+  transition: opacity var(--dur-fast) var(--ease-glide), transform var(--dur-fast) var(--ease-settle);
+}
+
+.sf-check input:checked + .sf-check__box { border-color: var(--text-primary); }
+.sf-check input:checked + .sf-check__box::after { opacity: 1; transform: scale(1); }
+
+/* The ring goes on the drawn box, because the real input is not visible. */
+.sf-check input:focus-visible + .sf-check__box {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.sf-check__text { font-size: var(--text-sm); color: var(--text-secondary); }
+.sf-check input:checked ~ .sf-check__text { color: var(--text-primary); }

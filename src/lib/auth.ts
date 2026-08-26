@@ -199,13 +199,29 @@ export async function clearThrottle(db: D1Database, key: string): Promise<void> 
  * secrets, so a terminal would otherwise be the only way in.
  * ------------------------------------------------------------------ */
 
+/**
+ * Reads one setting. Throws if the read FAILS.
+ *
+ * It used to catch everything and return null, which collapsed "no such row"
+ * and "the database did not answer" into the same value. That mattered in one
+ * specific place: resolvePasswordHash treats null as "no password set", and
+ * the setup page treats no-password as "first run, let anyone choose one". A
+ * transient D1 error was therefore enough to re-open an unauthenticated
+ * endpoint that overwrites the admin password.
+ *
+ * Callers that genuinely do not care can use getSettingOrNull.
+ */
 export async function getSetting(db: D1Database, key: string): Promise<string | null> {
-  try {
-    const row = await db.prepare('SELECT value FROM settings WHERE key = ?').bind(key).first<{ value: string }>();
-    return row?.value ?? null;
-  } catch {
-    return null;
-  }
+  const row = await db
+    .prepare('SELECT value FROM settings WHERE key = ?')
+    .bind(key)
+    .first<{ value: string }>();
+  return row?.value ?? null;
+}
+
+/** For display only — never for an authorisation decision. */
+export async function getSettingOrNull(db: D1Database, key: string): Promise<string | null> {
+  try { return await getSetting(db, key); } catch { return null; }
 }
 
 export async function setSetting(db: D1Database, key: string, value: string): Promise<void> {

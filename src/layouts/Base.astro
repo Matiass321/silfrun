@@ -12,6 +12,7 @@ import '~/styles/base.css';
 
 import { SITE, isPlaceholder, type Locale } from '~/config/site';
 import { t } from '~/i18n';
+import { PAGE_META } from '~/i18n/meta';
 import type { Alternate } from '~/i18n';
 
 interface Props {
@@ -81,8 +82,19 @@ const priceRange = amounts.length
 /** Absolute URL for the social card. Cloudflare serves it from the site root. */
 const ogImageUrl = new URL(ogImage ?? '/og.png', SITE.url).href;
 
-const businessLd = business
-  ? {
+/**
+ * The business node is emitted on EVERY page, not just the home page.
+ *
+ * Service nodes carry provider: {'@id': '…/#business'} and Offers carry
+ * availableAtOrFrom pointing at the same id. With the node present on only two
+ * of forty-four pages, those references dangled everywhere else — a graph that
+ * points at nothing is worse than one that says less, because a validator
+ * reads it as a broken entity rather than an absent one.
+ *
+ * `business` now only decides whether the page claims the entity as its
+ * primary subject via WebPage.about, which is still the home page alone.
+ */
+const businessLd = {
       '@context': 'https://schema.org',
       '@type': ['LocalBusiness', 'HomeAndConstructionBusiness'],
       '@id': `${SITE.url}/#business`,
@@ -94,7 +106,11 @@ const businessLd = business
       logo: new URL('/favicon.svg', SITE.url).href,
       knowsLanguage: ['is', 'en'],
       currenciesAccepted: SITE.pricing.currency,
-      areaServed: SITE.areas.map((a) => ({ '@type': 'City', name: a.name })),
+      areaServed: SITE.areas.map((a) => ({
+        '@type': 'City',
+        name: a.name,
+        containedInPlace: { '@type': 'Country', name: 'Iceland' },
+      })),
       /**
        * The street is emitted only when the address is marked public.
        *
@@ -108,7 +124,12 @@ const businessLd = business
        */
       address: {
         '@type': 'PostalAddress',
-        addressLocality: SITE.address.public ? SITE.address.city : 'Reykjavík',
+        /* When the address is withheld, the locality is omitted rather than
+           replaced. It previously hardcoded 'Reykjavík' while site.ts records
+           Mosfellsbær, publishing a city the business is not in as
+           machine-readable fact. areaServed carries the geography instead —
+           that is what it is for on a service-area business. */
+        ...(SITE.address.public ? { addressLocality: SITE.address.city } : {}),
         addressCountry: SITE.address.country,
         ...(SITE.address.public && !isPlaceholder(SITE.address.street)
           ? { streetAddress: SITE.address.street } : {}),
@@ -125,22 +146,30 @@ const businessLd = business
       ...(SITE.address.public && SITE.address.latitude !== null && SITE.address.longitude !== null
         ? { geo: { '@type': 'GeoCoordinates', latitude: SITE.address.latitude, longitude: SITE.address.longitude } }
         : {}),
-      /**
-       * No aggregateRating until genuine reviews exist. Self-serving review
-       * markup is both a manual-action risk and a lie.
-       */
-    }
-  : null;
+  /**
+   * No aggregateRating until genuine reviews exist. Self-serving review
+   * markup is both a manual-action risk and a lie.
+   */
+};
 
+/**
+ * The WebSite node describes the SITE, so it must be identical on every page.
+ *
+ * It previously took the current page's description and locale, which meant
+ * one @id was published forty-four different ways — the English sofa page
+ * described the whole site as "Hot-water extraction cleaning for sofas", and
+ * inLanguage flipped between is-IS and en-GB depending on which page a crawler
+ * happened to fetch first.
+ */
 const websiteLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   '@id': `${SITE.url}/#website`,
   url: `${SITE.url}/`,
   name: SITE.brand,
-  description,
-  inLanguage: LOCALE_TAGS[locale],
-  ...(business ? { publisher: { '@id': `${SITE.url}/#business` } } : {}),
+  description: PAGE_META[SITE.defaultLocale].home.description,
+  inLanguage: ['is-IS', 'en-GB'],
+  publisher: { '@id': `${SITE.url}/#business` },
 };
 
 /**
@@ -168,7 +197,7 @@ const webPageLd = {
 /** Page-supplied schema, normalised to an array so a page may pass either. */
 const extraLd = pageLd ? (Array.isArray(pageLd) ? pageLd : [pageLd]) : [];
 
-const graph = [websiteLd, webPageLd, ...(businessLd ? [businessLd] : []), ...extraLd];
+const graph = [websiteLd, webPageLd, businessLd, ...extraLd];
 ---
 
 <!doctype html>
@@ -259,8 +288,14 @@ const graph = [websiteLd, webPageLd, ...(businessLd ? [businessLd] : []), ...ext
       smallest request that does, and unlike a script it works with JavaScript
       disabled — which is most of the point on a site that ships none.
 
-      Last in the body and lazy, so it never competes with content for the
-      connection. Nothing identifying is recorded; see src/lib/analytics.ts.
+      Last in the body so it never competes with content for the connection.
+      Nothing identifying is recorded; see src/lib/analytics.ts.
+
+      Deliberately NOT loading="lazy". A lazy image is only fetched once it
+      nears the viewport, and on pages several thousand pixels tall that meant
+      a view was counted only for visitors who scrolled all the way down.
+      fetchpriority="low" yields to real content without deferring the request
+      out of existence.
     */}
     {!noindex && (
       <img
@@ -268,7 +303,7 @@ const graph = [websiteLd, webPageLd, ...(businessLd ? [businessLd] : []), ...ext
         alt=""
         width="1"
         height="1"
-        loading="lazy"
+        fetchpriority="low"
         decoding="async"
         aria-hidden="true"
         style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"

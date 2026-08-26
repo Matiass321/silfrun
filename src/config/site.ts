@@ -158,16 +158,26 @@ export const SITE = {
   },
 
   /**
-   * Service areas on the caputal region. Only list places genuinely covered —
+   * Service areas in the capital region.
+   *
+   * Each carries its DATIVE form and its preposition, because Icelandic
+   * inflects after a preposition and every page here reads "cleaning in
+   * <place>". Interpolating the nominative produced "í Kópavogur" instead of
+   * "í Kópavogi" — on the H1, the title, the meta description and the
+   * prefilled WhatsApp message of all twelve area pages. Neither the ending
+   * nor the preposition is derivable from the name, so both are recorded
+   * rather than computed. Only list places genuinely covered —
    * each gets a real page with local detail, never a name-swapped template.
    */
   areas: [
-    { slug: 'reykjavik', name: 'Reykjavík', primary: true },
-    { slug: 'kopavogur', name: 'Kópavogur', primary: true },
-    { slug: 'gardabaer', name: 'Garðabær', primary: true },
-    { slug: 'hafnarfjordur', name: 'Hafnarfjörður', primary: true },
-    { slug: 'seltjarnarnes', name: 'Seltjarnarnes', primary: false },
-    { slug: 'mosfellsbaer', name: 'Mosfellsbær', primary: false },
+    { slug: 'reykjavik',     name: 'Reykjavík',      dative: 'Reykjavík',      prep: 'í', primary: true },
+    { slug: 'kopavogur',     name: 'Kópavogur',      dative: 'Kópavogi',       prep: 'í', primary: true },
+    { slug: 'gardabaer',     name: 'Garðabær',       dative: 'Garðabæ',        prep: 'í', primary: true },
+    { slug: 'hafnarfjordur', name: 'Hafnarfjörður',  dative: 'Hafnarfirði',    prep: 'í', primary: true },
+    /* Seltjarnarnes takes 'á', not 'í' — Icelandic place prepositions are
+       lexical, not derivable from the word, so each one is recorded. */
+    { slug: 'seltjarnarnes', name: 'Seltjarnarnes',  dative: 'Seltjarnarnesi', prep: 'á', primary: false },
+    { slug: 'mosfellsbaer',  name: 'Mosfellsbær',    dative: 'Mosfellsbæ',     prep: 'í', primary: false },
   ],
 
   /**

@@ -86,7 +86,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
 
   <rect x="240" y="392" width="176" height="1" fill="url(#hair)"/>
 
-  <text class="line" x="240" y="466">Umhirða fyrir húsgögn</text>
+  <text class="line" x="240" y="466">Umhirða húsgagna</text>
   <text class="line" x="240" y="516">sem eiga að endast.</text>
 
   <rect x="0" y="${H - 1}" width="${W}" height="1" fill="url(#hair)" opacity="0.5"/>
