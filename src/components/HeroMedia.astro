@@ -1,0 +1,156 @@
+---
+import { mediaUrl, altFor, type MediaRow } from '~/lib/media';
+import type { Locale } from '~/config/site';
+
+interface Props {
+  locale: Locale;
+  /** Landscape frame, shown from 48rem up. */
+  desktop?: MediaRow;
+  /** Portrait frame, shown below 48rem. */
+  mobile?: MediaRow;
+  /** Where the scrim darkens, so the copy over it stays readable. */
+  scrim?: 'bottom' | 'left' | 'none';
+}
+
+const { locale, desktop, mobile, scrim = 'bottom' } = Astro.props;
+
+/**
+ * The hero image.
+ *
+ * Two genuinely different photographs, chosen by media query rather than one
+ * cropped by CSS. A landscape frame squeezed onto a phone either letterboxes
+ * or centre-crops away the part worth photographing; on a wide screen a
+ * portrait frame leaves two empty thirds. `<picture>` with a `media` attribute
+ * is the one mechanism that picks between them BEFORE the fetch, so the phone
+ * never downloads the desktop file.
+ *
+ * If only one is uploaded it is used at both sizes — a half-configured hero
+ * has to keep working.
+ */
+const both = desktop && mobile;
+const only = desktop ?? mobile;
+
+const kind = (only?.kind ?? 'image') as 'image' | 'video';
+const alt = altFor(only, locale);
+
+/* The breakpoint the layout already uses for one-column vs two. */
+const MQ = '(min-width: 48rem)';
+
+const has = Boolean(only);
+---
+
+{has && (
+  <div class:list={['hm', `hm--${scrim}`]}>
+    {kind === 'video' ? (
+      /*
+       * A single source: <picture> does not apply to <video>, and swapping a
+       * video per breakpoint would need JS. The desktop file wins if both are
+       * uploaded, because a video hero is a desktop gesture — on a phone it
+       * costs battery and data for something seen for two seconds.
+       */
+      <video
+        class="hm__el"
+        src={mediaUrl((desktop ?? mobile)!.key)}
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+        aria-label={alt}
+      ></video>
+    ) : both ? (
+      <picture>
+        <source media={MQ} srcset={mediaUrl(desktop!.key)} width={desktop!.width ?? undefined} height={desktop!.height ?? undefined} />
+        <img
+          class="hm__el"
+          src={mediaUrl(mobile!.key)}
+          alt={alt}
+          width={mobile!.width ?? undefined}
+          height={mobile!.height ?? undefined}
+          fetchpriority="high"
+          decoding="async"
+        />
+      </picture>
+    ) : (
+      <img
+        class="hm__el"
+        src={mediaUrl(only!.key)}
+        alt={alt}
+        width={only!.width ?? undefined}
+        height={only!.height ?? undefined}
+        fetchpriority="high"
+        decoding="async"
+      />
+    )}
+
+    {scrim !== 'none' && <div class="hm__scrim" aria-hidden="true"></div>}
+    <div class="hm__grain" aria-hidden="true"></div>
+  </div>
+)}
+
+<style>
+  .hm {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .hm :global(picture) { display: block; width: 100%; height: 100%; }
+
+  .hm__el {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Slightly above centre: in a room photograph the interesting third is
+       usually upper-middle, and dead centre crops to the floor. */
+    object-position: 50% 42%;
+    display: block;
+  }
+
+  /**
+   * The scrim is a gradient, never a flat wash.
+   *
+   * A flat overlay dulls the whole photograph to protect text that only sits
+   * in one corner. A gradient keeps the image at full strength where nothing
+   * is written over it.
+   */
+  .hm__scrim {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .hm--bottom .hm__scrim { background: var(--scrim-bottom); }
+
+  .hm--left .hm__scrim {
+    background: linear-gradient(
+      to right,
+      rgba(7, 8, 10, .88) 0%,
+      rgba(7, 8, 10, .62) 34%,
+      rgba(7, 8, 10, 0) 72%
+    );
+  }
+
+  /* The same tooth the flat surfaces carry, so a photograph belongs to the
+     page rather than sitting on top of it. */
+  .hm__grain {
+    position: absolute;
+    inset: 0;
+    background-image: var(--grain-url);
+    background-size: var(--grain-size);
+    opacity: calc(var(--grain-opacity) * 0.6);
+    pointer-events: none;
+    mix-blend-mode: overlay;
+  }
+
+  /* On a phone the copy sits over the lower half, so the scrim rises further. */
+  @media (max-width: 48rem) {
+    .hm--left .hm__scrim { background: var(--scrim-bottom); }
+    .hm__el { object-position: 50% 38%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hm__el { animation: none; }
+  }
+</style>

@@ -43,7 +43,17 @@ export interface MediaRow {
  * a slot that is simply empty.
  */
 export const SLOTS: { key: string; label: string; ratio: string; kinds: MediaKind[] }[] = [
-  { key: 'hero',       label: 'Forsíða — aðalmynd',        ratio: '3 / 2',  kinds: ['image', 'video'] },
+  /**
+   * The hero is TWO slots, not one image scaled.
+   *
+   * A landscape 3:2 frame cropped to a phone either shows a letterboxed strip
+   * or centre-crops away whatever made the shot worth taking. The subject of a
+   * sofa photograph is usually wide; the subject of the same scene on a phone
+   * is a detail of it. Those are different photographs, so they are different
+   * slots and the page picks between them with a media query.
+   */
+  { key: 'hero',        label: 'Forsíða — aðalmynd (tölva)', ratio: '16 / 9', kinds: ['image', 'video'] },
+  { key: 'hero-mobile', label: 'Forsíða — aðalmynd (sími)',  ratio: '4 / 5',  kinds: ['image', 'video'] },
   { key: 'home-1',     label: 'Forsíða — plata 1',          ratio: '4 / 5',  kinds: ['image'] },
   { key: 'home-2',     label: 'Forsíða — plata 2',          ratio: '4 / 5',  kinds: ['image'] },
   { key: 'home-3',     label: 'Forsíða — plata 3',          ratio: '4 / 5',  kinds: ['image'] },

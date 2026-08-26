@@ -3,10 +3,14 @@ import Marketing from '~/layouts/Marketing.astro';
 import Pending from '~/components/Pending.astro';
 import ContactChannels from '~/components/ContactChannels.astro';
 import ClosingCta from '~/components/ClosingCta.astro';
+import HeroMedia from '~/components/HeroMedia.astro';
+import MediaSlot from '~/components/MediaSlot.astro';
 
 import { LOCALES, SITE, hasInstantChannel, type Locale } from '~/config/site';
 import { t, alternates } from '~/i18n';
 import { path, areaPath, SERVICE_KEYS } from '~/i18n/routes';
+import { slotMap, type MediaRow } from '~/lib/media';
+import { env } from '~/lib/admin-guard';
 
 export function getStaticPaths() {
   return LOCALES.map((locale) => ({ params: { lang: locale }, props: { locale } }));
@@ -15,6 +19,27 @@ export function getStaticPaths() {
 const { locale } = Astro.props as { locale: Locale };
 const s = t(locale);
 const alt = alternates('home', locale);
+
+/**
+ * Homepage media, in one query.
+ *
+ * Prerendered, so at build time there is no binding and every slot renders its
+ * marked plate — which is the correct state until photographs exist. A rebuild
+ * after uploading is what puts them on the page.
+ */
+let media: Record<string, MediaRow | undefined> = {};
+{
+  const { DB } = env(Astro);
+  if (DB) {
+    try {
+      media = await slotMap(DB, ['hero', 'hero-mobile', 'home-1', 'home-2', 'home-3']);
+    } catch { /* marked plates */ }
+  }
+}
+
+const heroDesktop = media['hero'];
+const heroMobile = media['hero-mobile'];
+const hasHeroImage = Boolean(heroDesktop || heroMobile);
 
 /** Step numbers are written out here so the markup stays declarative. */
 const steps = s.process.steps.map((step, i) => ({ ...step, num: String(i + 1).padStart(2, '0') }));
@@ -41,7 +66,6 @@ const PLATES: Record<Locale, { ratio: string; note: string }[]> = {
 };
 
 const plates = PLATES[locale];
-const shotBrief = locale === 'is' ? 'Mynd í bið' : 'Shot pending';
 
 /**
  * When messaging is live it becomes the hero action, because sending a
@@ -62,7 +86,9 @@ const instant = hasInstantChannel();
   xDefault={alt.xDefault}
   business
 >
-  <section class="hero">
+  <section class:list={['hero', { 'hero--shot': hasHeroImage }]}>
+    <HeroMedia locale={locale} desktop={heroDesktop} mobile={heroMobile} scrim="left" />
+
     <div class="wrap hero__inner">
       <p class="eyebrow">{s.hero.eyebrow}</p>
       <h1 class="hero__title">{s.hero.title}</h1>
@@ -173,23 +199,29 @@ const instant = hasInstantChannel();
         <p class="lead">{s.work.lead}</p>
       </header>
 
-      {/* Briefs for the shots to commission — never stock imagery. */}
+      {/*
+        Real slots. Empty, each carries the brief for the shot to commission;
+        filled, it becomes the photograph at the crop the brief asked for.
+        Uploading in the admin is the only step.
+      */}
       <ul class="plates">
-        {plates.map((plate) => (
+        {plates.map((plate, i) => (
           <li>
-            <div class="sf-plate plates__plate" style={`aspect-ratio:${plate.ratio}`}>
-              <span class="sf-plate__fill"></span>
-              <span class="sf-plate__note">
-                <span class="plates__label">{shotBrief}</span>
-                <span class="plates__brief">{plate.note}</span>
-              </span>
-            </div>
+            <MediaSlot
+              slot={`home-${i + 1}`}
+              locale={locale}
+              media={media[`home-${i + 1}`]}
+              ratio={plate.ratio}
+              label={plate.note}
+            />
           </li>
         ))}
       </ul>
 
-      {/* Still a placeholder value, so it keeps the screen-reader marker. */}
-      <p class="plates__caption"><Pending label={s.work.pending} locale={locale} /></p>
+      {/* Marked pending only while nothing has actually been placed. */}
+      {!media['home-1'] && !media['home-2'] && !media['home-3'] && (
+        <p class="plates__caption"><Pending label={s.work.pending} locale={locale} /></p>
+      )}
     </div>
   </section>
 
@@ -223,7 +255,54 @@ const instant = hasInstantChannel();
    * line reads as a banner, and a banner is not what an expensive service
    * looks like.
    */
-  .hero { padding-block: clamp(var(--space-1000), 13vw, var(--space-2600)) clamp(var(--space-800), 9vw, var(--space-1600)); }
+  .hero {
+    position: relative;
+    isolation: isolate;
+    padding-block: clamp(var(--space-1000), 13vw, var(--space-2600)) clamp(var(--space-800), 9vw, var(--space-1600));
+  }
+
+  .hero__inner { position: relative; z-index: 1; }
+
+  /**
+   * With a photograph behind it the hero becomes a stage rather than a block
+   * of type on the page ground.
+   *
+   * Phone and desktop want different shapes here, and not because of width.
+   * On a phone the image is portrait and the copy sits over its lower third,
+   * so the section takes a minimum height and the text is pushed down to meet
+   * the scrim. On a desktop the image is landscape and the copy sits in the
+   * left third against a horizontal scrim, so the section is capped by
+   * viewport height instead and the text stays vertically centred.
+   */
+  .hero--shot {
+    display: flex;
+    align-items: flex-end;
+    min-height: 82svh;
+    padding-block: var(--space-1000) var(--space-800);
+  }
+
+  .hero--shot .hero__inner { width: 100%; }
+
+  @media (min-width: 48rem) {
+    .hero--shot {
+      align-items: center;
+      min-height: min(74svh, 46rem);
+      padding-block: var(--space-1000);
+    }
+    .hero--shot .hero__inner { max-width: var(--container-max); }
+    .hero--shot .hero__title,
+    .hero--shot .hero__lead { max-width: 15em; }
+    .hero--shot .hero__lead { max-width: 38ch; }
+  }
+
+  /* Over a photograph the copy takes the plate colours, because the ground is
+     now the image rather than the page. */
+  .hero--shot .hero__title,
+  .hero--shot .eyebrow,
+  .hero--shot .hero__lead,
+  .hero--shot .hero__note { color: var(--plate-text); }
+  .hero--shot .eyebrow,
+  .hero--shot .hero__note { color: var(--plate-text-secondary); }
 
   .hero__inner { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-300); }
 

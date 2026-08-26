@@ -2,7 +2,7 @@
 import Admin from '~/layouts/Admin.astro';
 import { requireAdmin, env } from '~/lib/admin-guard';
 import { visitsBetween, parseItems, formatPhone, type VisitRow } from '~/lib/visits';
-import { today, startOfDay, isoDate, clock, longDate, addDays } from '~/lib/time';
+import { today, startOfDay, isoDate, clock, longDate } from '~/lib/time';
 import { ADMIN_ICONS } from '~/data/admin-icons';
 
 export const prerender = false;
