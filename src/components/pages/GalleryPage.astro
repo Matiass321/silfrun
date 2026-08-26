@@ -1,0 +1,282 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import ClosingCta from '~/components/ClosingCta.astro';
+import MediaSlot from '~/components/MediaSlot.astro';
+import { type Locale } from '~/config/site';
+import { CONTENT } from '~/data/content';
+import { t } from '~/i18n';
+import { altFor, captionFor, mediaUrl, type MediaRow } from '~/lib/media';
+import { ICONS } from '~/data/icons';
+
+interface Props {
+  locale: Locale;
+  /** Everything placed in the `gallery` slot, in order. */
+  items?: MediaRow[];
+}
+
+const { locale, items = [] } = Astro.props;
+const s = t(locale);
+const page = CONTENT[locale].results;
+
+/**
+ * Verkin okkar.
+ *
+ * The page had one prose section and nothing else, which is why it read as
+ * unfinished — it was. What it is actually for is before-and-after pairs, and
+ * none exist yet.
+ *
+ * So the empty state IS the page, and it is written as one: it says plainly
+ * that there is nothing here yet and why that is deliberate, then shows the
+ * frames the photographs will occupy. That is a stronger position than a
+ * gallery of stock images, and it is consistent with a site that refuses to
+ * publish a placeholder telephone number.
+ */
+const pairs: { before?: MediaRow; after?: MediaRow }[] = [];
+const singles: MediaRow[] = [];
+
+for (const m of items) {
+  if (m.pair_role === 'before') pairs.push({ before: m });
+  else if (m.pair_role === 'after') {
+    const open = [...pairs].reverse().find((p) => p.before && !p.after);
+    if (open) open.after = m;
+    else pairs.push({ after: m });
+  } else singles.push(m);
+}
+
+const hasWork = items.length > 0;
+
+const COPY = {
+  is: {
+    emptyTitle: 'Engar myndir enn',
+    emptyBody:
+      'Við birtum ekki myndasafn af verkum annarra. Þegar fyrstu verkin hafa verið mynduð — fyrir og eftir, í sömu birtu og sama ramma — birtast þau hér.',
+    emptyWhy: 'Hvers vegna ekki myndir af netinu',
+    emptyWhyBody:
+      'Myndasafn sem sýnir ekki okkar eigin verk segir ekkert um hvað við getum. Það er verra en tómt pláss, því það lítur út fyrir að vera svar við spurningu sem er enn ósvarað.',
+    pairBefore: 'Fyrir',
+    pairAfter: 'Eftir',
+    slotLabel: 'Fyrir og eftir',
+  },
+  en: {
+    emptyTitle: 'No photographs yet',
+    emptyBody:
+      'We do not publish a gallery of other people’s work. Once the first jobs have been photographed — before and after, in the same light and the same frame — they appear here.',
+    emptyWhy: 'Why not stock photography',
+    emptyWhyBody:
+      'A gallery that does not show our own work says nothing about what we can do. It is worse than an empty space, because it looks like an answer to a question that is still unanswered.',
+    pairBefore: 'Before',
+    pairAfter: 'After',
+    slotLabel: 'Before and after',
+  },
+} as const;
+
+const c = COPY[locale];
+---
+
+<article class="gl">
+  <header class="section section--tight">
+    <div class="wrap wrap--narrow">
+      <Breadcrumbs locale={locale} trail={[{ label: s.work.title }]} />
+      <p class="eyebrow">{s.work.eyebrow}</p>
+      <h1 class="page__title gl__title">{s.work.title}</h1>
+      <div class="silfrun-rule page__rule"></div>
+      <p class="lead gl__lead">{page.lead}</p>
+    </div>
+  </header>
+
+  {hasWork ? (
+    <section class="gl__grid-wrap">
+      <div class="wrap">
+        {pairs.length > 0 && (
+          <ul class="gl__pairs">
+            {pairs.map((p) => (
+              <li class="gl__pair">
+                <div class="gl__side">
+                  <span class="gl__tag">{c.pairBefore}</span>
+                  {p.before ? (
+                    <img class="gl__img" src={mediaUrl(p.before.key)} alt={altFor(p.before, locale)}
+                         width={p.before.width ?? undefined} height={p.before.height ?? undefined}
+                         loading="lazy" decoding="async" />
+                  ) : (
+                    <MediaSlot slot="gallery" locale={locale} ratio="4 / 5" label={c.pairBefore} />
+                  )}
+                </div>
+                <div class="gl__side">
+                  <span class="gl__tag gl__tag--after">{c.pairAfter}</span>
+                  {p.after ? (
+                    <img class="gl__img" src={mediaUrl(p.after.key)} alt={altFor(p.after, locale)}
+                         width={p.after.width ?? undefined} height={p.after.height ?? undefined}
+                         loading="lazy" decoding="async" />
+                  ) : (
+                    <MediaSlot slot="gallery" locale={locale} ratio="4 / 5" label={c.pairAfter} />
+                  )}
+                </div>
+                {(p.before || p.after) && captionFor(p.after ?? p.before, locale) && (
+                  <p class="gl__cap">{captionFor(p.after ?? p.before, locale)}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {singles.length > 0 && (
+          <ul class="gl__singles">
+            {singles.map((m) => (
+              <li>
+                {m.kind === 'video' ? (
+                  <video class="gl__img" src={mediaUrl(m.key)} autoplay muted loop playsinline
+                         preload="metadata" aria-label={altFor(m, locale)}></video>
+                ) : (
+                  <img class="gl__img" src={mediaUrl(m.key)} alt={altFor(m, locale)}
+                       width={m.width ?? undefined} height={m.height ?? undefined}
+                       loading="lazy" decoding="async" />
+                )}
+                {captionFor(m, locale) && <p class="gl__cap">{captionFor(m, locale)}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  ) : (
+    <>
+      {/* ── The empty state, written as the page rather than as a fallback ── */}
+      <section class="gl__empty">
+        <div class="wrap wrap--narrow">
+          <div class="gl__note">
+            <span class="gl__noteicon" aria-hidden="true" set:html={ICONS.camera} />
+            <div>
+              <h2 class="gl__notetitle">{c.emptyTitle}</h2>
+              <p class="gl__notebody">{c.emptyBody}</p>
+            </div>
+          </div>
+
+          {/* Three frames at the crop the photographs will actually be shot at. */}
+          <div class="gl__waiting">
+            <MediaSlot slot="gallery" locale={locale} ratio="4 / 5" label={c.slotLabel} />
+            <MediaSlot slot="gallery" locale={locale} ratio="4 / 5" label={c.slotLabel} />
+            <MediaSlot slot="gallery" locale={locale} ratio="4 / 5" label={c.slotLabel} />
+          </div>
+
+          <div class="gl__why">
+            <p class="eyebrow">{c.emptyWhy}</p>
+            <p class="gl__whybody">{c.emptyWhyBody}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* The one real section the page already had: how the shots will be made. */}
+      <section class="section section--tight gl__how">
+        <div class="wrap wrap--narrow sections">
+          {page.sections.map((sec) => (
+            <section class="block">
+              <h2>{sec.heading}</h2>
+              {sec.paragraphs.map((para) => <p>{para}</p>)}
+              {sec.points && <ul class="ticks">{sec.points.map((pt) => <li>{pt}</li>)}</ul>}
+            </section>
+          ))}
+        </div>
+      </section>
+    </>
+  )}
+
+  <ClosingCta locale={locale} narrow />
+</article>
+
+<style>
+  .gl__title { max-width: var(--measure-display); }
+  .gl__lead { max-width: 46ch; }
+
+  /* No second block of padding under the header — that was the dead screen. */
+  .gl__empty { padding-block: var(--space-500) var(--space-800); }
+  .gl__grid-wrap { padding-block: var(--space-500) var(--space-1000); }
+
+  /* ---- empty state ---- */
+
+  .gl__note {
+    display: flex;
+    gap: var(--space-300);
+    padding: var(--space-400);
+    background: var(--surface-inset);
+    border-inline-start: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    margin-block-end: var(--space-500);
+  }
+
+  .gl__noteicon { display: inline-flex; width: 20px; height: 20px; flex: none; color: var(--text-accent); margin-block-start: 3px; }
+  .gl__noteicon :global(svg) { width: 100%; height: 100%; display: block; }
+
+  .gl__notetitle { font-size: var(--display-xs); margin-block-end: var(--space-150); }
+  .gl__notebody { color: var(--text-secondary); max-width: 52ch; }
+
+  .gl__waiting {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-250);
+    margin-block-end: var(--space-600);
+  }
+
+  .gl__why { padding-block-start: var(--space-400); border-block-start: 1px solid var(--edge-quiet); }
+  .gl__whybody { color: var(--text-muted); font-size: var(--text-sm); margin-block-start: var(--space-200); max-width: 54ch; }
+
+  /* ---- filled ---- */
+
+  .gl__pairs { display: flex; flex-direction: column; gap: var(--space-800); }
+
+  .gl__pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-200);
+  }
+
+  .gl__side { display: flex; flex-direction: column; gap: var(--space-150); }
+
+  .gl__tag {
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .gl__tag--after { color: var(--text-accent); }
+
+  .gl__img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--edge-quiet);
+    background: var(--surface-sunken);
+  }
+
+  .gl__cap {
+    grid-column: 1 / -1;
+    font: var(--type-mono);
+    color: var(--text-muted);
+    margin-block-start: var(--space-100);
+  }
+
+  .gl__singles {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-400);
+    margin-block-start: var(--space-800);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Desktop uses the width for comparison, not for more columns.
+   *
+   * A pair is only readable when both halves are large and adjacent, so the
+   * pair stays two-up at every width and simply grows. The waiting frames and
+   * the singles go to three across, where more columns genuinely helps.
+   * ------------------------------------------------------------------ */
+  @media (min-width: 48rem) {
+    .gl__waiting { grid-template-columns: repeat(3, 1fr); }
+    .gl__singles { grid-template-columns: repeat(3, 1fr); }
+    .gl__pair { gap: var(--space-300); }
+  }
+
+  @media (min-width: 64rem) {
+    .gl__pairs { gap: var(--space-1000); }
+  }
+</style>

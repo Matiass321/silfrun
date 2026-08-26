@@ -95,6 +95,16 @@
   --btn-hero-ink: var(--surface-page);
   --btn-hero-edge: none;
 
+  /**
+   * Foil for TEXT.
+   *
+   * The full --foil-silver is seven stops. Clipped to a seven-letter wordmark
+   * that is 128px wide, the entire ramp traverses the name and every letter
+   * lands on a different value — which reads as uneven inking, not as metal.
+   * Two stops give the sweep without the mottling.
+   */
+  --foil-silver-text: linear-gradient(100deg, #3E464E 0%, #6A727A 100%);
+
   --foil-hairline: linear-gradient(90deg, rgba(107,101,92,0) 0%, rgba(107,101,92,.28) 30%, rgba(45,42,38,.46) 50%, rgba(107,101,92,.28) 70%, rgba(107,101,92,0) 100%);
 
   /* ---------------------------------------------------------------------
@@ -281,6 +291,22 @@
   --tracking-monogram:       0.34em;
   --tracking-button:         0.14em;
 
+  /**
+   * Display measure, in em rather than ch.
+   *
+   * ch is the advance width of "0", and Marcellus draws unusually wide figures
+   * — 0.806em against a typical 0.5em. A 15ch heading therefore rendered at
+   * 12.1em, roughly 60% wider than the number implies, which is how a measure
+   * meant to force three short lines produced one long banner.
+   *
+   * em is relative to the type size itself, so these hold at every step of the
+   * clamp. Body copy below stays in ch: it is set in Archivo, where ch behaves,
+   * and character count is the right way to think about a paragraph.
+   */
+  --measure-display-tight: 7em;
+  --measure-display:       8.5em;
+  --measure-display-wide:  11em;
+
   /* Measure. Never set body wider than 68ch. */
   --measure-tight: 38ch;
   --measure-body:  62ch;
@@ -454,6 +480,8 @@
     --foil-silver-soft: linear-gradient(103deg, #7B838C 0%, #E4E8EB 38%, #9AA2AA 62%, #D2D7DC 100%);
     --foil-hairline: linear-gradient(90deg, rgba(226,232,238,0) 0%, rgba(226,232,238,.55) 30%, rgba(255,255,255,.85) 50%, rgba(226,232,238,.55) 70%, rgba(226,232,238,0) 100%);
 
+    --foil-silver-text: linear-gradient(100deg, #C9D0D7 0%, #8C949C 100%);
+
     --btn-hero-bg: var(--foil-silver-soft);
     --btn-hero-ink: var(--basalt-900);
     --btn-hero-edge: var(--sheen-vellum);
@@ -478,6 +506,8 @@
   --foil-silver: linear-gradient(103deg, #5D656E 0%, #BAC1C8 16%, #F2F4F6 31%, #9AA2AA 46%, #E4E8EB 62%, #7B838C 80%, #D2D7DC 100%);
   --foil-silver-soft: linear-gradient(103deg, #7B838C 0%, #E4E8EB 38%, #9AA2AA 62%, #D2D7DC 100%);
   --foil-hairline: linear-gradient(90deg, rgba(226,232,238,0) 0%, rgba(226,232,238,.55) 30%, rgba(255,255,255,.85) 50%, rgba(226,232,238,.55) 70%, rgba(226,232,238,0) 100%);
+
+  --foil-silver-text: linear-gradient(100deg, #C9D0D7 0%, #8C949C 100%);
 
   --btn-hero-bg: var(--foil-silver-soft);
   --btn-hero-ink: var(--basalt-900);
@@ -511,6 +541,22 @@
   --plate-edge: rgba(226, 232, 238, .14);
   --plate-grain-opacity: 0.30;
   --plate-hairline: linear-gradient(90deg, rgba(226,232,238,0) 0%, rgba(226,232,238,.55) 30%, rgba(255,255,255,.85) 50%, rgba(226,232,238,.55) 70%, rgba(226,232,238,0) 100%);
+
+  /**
+   * The footer sits one step from BOTH the plate and the page.
+   *
+   * It used to be the identical surface to the closing plate, with the same
+   * hairline and grain, so the conversion block and the sitemap merged into a
+   * single undifferentiated slab — two bright rules about 500px apart in one
+   * dark field, and the closing offer reading as footer furniture.
+   *
+   * On light the plate is basalt-900, so the footer goes deeper. On dark the
+   * plate is already basalt-950 — the deepest surface on the site — so the
+   * footer comes UP instead. Either way there is a real tonal edge between
+   * them, and it also separates the footer from the page ground on the pages
+   * that carry no closing plate at all.
+   */
+  --foot-surface: var(--basalt-950);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -520,6 +566,7 @@
     --plate-text-secondary: var(--silver-300);
     --plate-edge: rgba(226, 232, 238, .12);
     --plate-grain-opacity: 0.32;
+    --foot-surface: var(--basalt-850);
   }
 }
 
@@ -529,4 +576,5 @@
   --plate-text-secondary: var(--silver-300);
   --plate-edge: rgba(226, 232, 238, .12);
   --plate-grain-opacity: 0.32;
+  --foot-surface: var(--basalt-850);
 }

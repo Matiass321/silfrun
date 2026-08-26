@@ -6,6 +6,7 @@ import FaqPage from '~/components/pages/FaqPage.astro';
 import ListPage from '~/components/pages/ListPage.astro';
 import ContactPage from '~/components/pages/ContactPage.astro';
 import ProcessPage from '~/components/pages/ProcessPage.astro';
+import GalleryPage from '~/components/pages/GalleryPage.astro';
 
 import { LOCALES, SITE, type Locale } from '~/config/site';
 import { SLUGS, SERVICE_KEYS, type PageKey, type ServiceKey } from '~/i18n/routes';
@@ -13,7 +14,7 @@ import { SLUGS, SERVICE_KEYS, type PageKey, type ServiceKey } from '~/i18n/route
 import { t, alternates, areaAlternates } from '~/i18n';
 import { PAGE_META, AREA_META } from '~/i18n/meta';
 import { CONTENT } from '~/data/content';
-import { slotMap, type MediaRow } from '~/lib/media';
+import { slotMap, bySlot, type MediaRow } from '~/lib/media';
 import { env } from '~/lib/admin-guard';
 
 /**
@@ -121,9 +122,15 @@ const wantedSlots = isService
       : [];
 
 let media: Record<string, MediaRow | undefined> = {};
-if (wantedSlots.length) {
+let galleryItems: MediaRow[] = [];
+if (wantedSlots.length || pageKey === 'results') {
   const { DB } = env(Astro);
-  if (DB) { try { media = await slotMap(DB, wantedSlots); } catch { /* plates */ } }
+  if (DB) {
+    try {
+      if (wantedSlots.length) media = await slotMap(DB, wantedSlots);
+      if (pageKey === 'results') galleryItems = await bySlot(DB, 'gallery');
+    } catch { /* fall back to marked plates */ }
+  }
 }
 
 /**
@@ -240,9 +247,7 @@ if (area) {
 
 
   {pageKey === 'process' && <ProcessPage locale={locale} media={media} />}
-  {pageKey === 'results' && (
-    <ProsePage locale={locale} heading={s.work.title} eyebrow={s.work.eyebrow} page={c.results} />
-  )}
+  {pageKey === 'results' && <GalleryPage locale={locale} items={galleryItems} />}
   {pageKey === 'about' && (
     <ProsePage locale={locale} heading={s.nav.about} eyebrow={s.why.eyebrow} page={c.about} />
   )}
