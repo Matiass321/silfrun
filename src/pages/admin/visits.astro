@@ -1,12 +1,13 @@
 ---
 import Admin from '~/layouts/Admin.astro';
-import VisitTable from '~/components/admin/VisitTable.astro';
+import VisitCard from '~/components/admin/VisitCard.astro';
 import { requireAdmin, env } from '~/lib/admin-guard';
 import {
   listVisits, getVisit, parseItems, formatPhone,
   VISIT_STATUSES, type VisitRow, type VisitStatus,
 } from '~/lib/visits';
-import { isk, clock, longDate } from '~/lib/time';
+import { isk, clock, longDate, isoDate } from '~/lib/time';
+import { ADMIN_ICONS } from '~/data/admin-icons';
 
 export const prerender = false;
 
@@ -25,20 +26,20 @@ let one: VisitRow | null = null;
 let dbError: string | null = null;
 
 if (!DB) {
-  dbError = 'Gagnagrunnurinn er ekki bundinn (DB).';
+  dbError = 'Gagnagrunnurinn er ekki tengdur.';
 } else {
   try {
     if (ref) one = await getVisit(DB, ref);
     rows = await listVisits(DB, { status: filter as VisitStatus | 'open' | 'all' });
   } catch (e) {
-    dbError = `Gagnagrunnurinn svarar ekki. Keyrðu "npm run db:migrate:remote". (${String(e).slice(0, 120)})`;
+    dbError = `Gagnagrunnurinn svarar ekki. (${String(e).slice(0, 100)})`;
   }
 }
 
-const STATUS_LABEL: Record<string, string> = {
+const STATUS: Record<string, string> = {
   new: 'Ný', quoted: 'Verð sent', scheduled: 'Á dagskrá', done: 'Lokið', cancelled: 'Afturkallað',
 };
-const ITEM_LABEL: Record<string, string> = {
+const ITEM: Record<string, string> = {
   sofa: 'Sófi', rug: 'Teppi', carpet: 'Gólfteppi', stains: 'Blettir',
 };
 
@@ -47,186 +48,163 @@ const FILTERS = [
   { v: 'new', l: 'Nýjar' },
   { v: 'scheduled', l: 'Á dagskrá' },
   { v: 'done', l: 'Lokið' },
+  { v: 'cancelled', l: 'Afturkallað' },
   { v: 'all', l: 'Allt' },
 ];
 
-const wa = one ? `https://wa.me/${one.phone.replace(/[^0-9]/g, '')}` : null;
-const scheduledDate = one?.scheduled_at ? new Date(one.scheduled_at * 1000).toISOString().slice(0, 10) : one?.preferred_date ?? '';
-const scheduledTime = one?.scheduled_at ? clock(one.scheduled_at) : '09:00';
+const digits = one?.phone.replace(/[^0-9]/g, '') ?? '';
+const schedDate = one?.scheduled_at ? isoDate(one.scheduled_at) : one?.preferred_date ?? '';
+const schedTime = one?.scheduled_at ? clock(one.scheduled_at) : '09:00';
 ---
 
-<Admin title="Heimsóknir" current="visits">
-  <div class="adm__wrap">
-    <header class="adm__head">
-      <div>
-        <h1 class="adm__title">Heimsóknir</h1>
-        <p class="adm__sub">{rows.length} færslur</p>
-      </div>
-      <a class="btn btn--foil" href="/admin/new-visit/">Ný heimsókn</a>
-    </header>
-
-    {dbError && <p class="adm__msg adm__msg--err">{dbError}</p>}
-    {saved && <p class="adm__msg adm__msg--ok">Vistað.</p>}
-    {ref && !one && !dbError && <p class="adm__msg adm__msg--warn">Fann ekki {ref}.</p>}
-
-    {one && (
-      <section class="adm__panel det">
-        <header class="det__head">
+<Admin title={one ? one.ref : 'Verk'} current="visits">
+  <div class="a-wrap">
+    {one ? (
+      <>
+        <header class="a-head">
           <div>
-            <h2 class="det__ref">{one.ref}</h2>
-            <span class:list={['adm__st', `adm__st--${one.status}`]}>
-              {STATUS_LABEL[one.status] ?? one.status}
-            </span>
+            <h1 class="a-h1">{one.name}</h1>
+            <p class="a-sub">{one.ref} · {STATUS[one.status]}</p>
           </div>
-          <a class="btn btn--ghost btn--sm" href="/admin/visits/">Loka</a>
+          <a class="a-btn a-btn--quiet" href="/admin/visits/">
+            <span set:html={ADMIN_ICONS.back} />
+            Til baka
+          </a>
         </header>
 
-        <dl class="det__facts">
-          <div><dt>Viðskiptavinur</dt><dd>{one.name}</dd></div>
-          <div>
-            <dt>Sími</dt>
-            <dd>
-              <a href={`tel:${one.phone}`}>{formatPhone(one.phone)}</a>
-              {wa && <a class="det__wa" href={wa} target="_blank" rel="noopener">WhatsApp</a>}
-            </dd>
-          </div>
-          {one.email && <div><dt>Netfang</dt><dd><a href={`mailto:${one.email}`}>{one.email}</a></dd></div>}
-          <div><dt>Óskadagur</dt><dd>{longDate(one.preferred_date, 'is')}</dd></div>
-          <div><dt>Tímabil</dt><dd>{one.window === 'morning' ? 'Fyrir hádegi' : one.window === 'afternoon' ? 'Eftir hádegi' : 'Hvort sem er'}</dd></div>
-          <div><dt>Verk</dt><dd>{parseItems(one.items).map((i) => ITEM_LABEL[i] ?? i).join(', ') || '—'}</dd></div>
-          <div><dt>Heimilisfang</dt><dd>{one.address ?? '—'}</dd></div>
-          <div><dt>Svæði</dt><dd>{one.area ?? '—'}</dd></div>
-          <div><dt>Verð</dt><dd>{isk(one.quote_isk)}</dd></div>
-        </dl>
+        {saved && <p class="a-msg a-msg--ok">Vistað.</p>}
 
-        <form class="det__form" method="POST" action="/api/admin/visit">
+        <div class="a-card dt">
+          <div class="a-acts">
+            <a class="a-btn a-btn--plain a-btn--sm" href={`tel:${one.phone}`}>
+              <span set:html={ADMIN_ICONS.phone} />
+              {formatPhone(one.phone)}
+            </a>
+            <a class="a-btn a-btn--plain a-btn--sm" href={`https://wa.me/${digits}`} target="_blank" rel="noopener">
+              <span set:html={ADMIN_ICONS.whatsapp} />
+              WhatsApp
+            </a>
+            {one.email && (
+              <a class="a-btn a-btn--quiet a-btn--sm" href={`mailto:${one.email}`}>
+                <span set:html={ADMIN_ICONS.mail} />
+                {one.email}
+              </a>
+            )}
+          </div>
+
+          <dl class="dt__facts">
+            <div><dt>Óskadagur</dt><dd>{longDate(one.preferred_date, 'is')}</dd></div>
+            <div><dt>Tímabil</dt><dd>{one.window === 'morning' ? 'Fyrir hádegi' : one.window === 'afternoon' ? 'Eftir hádegi' : 'Hvort sem er'}</dd></div>
+            <div><dt>Verk</dt><dd>{parseItems(one.items).map((i) => ITEM[i] ?? i).join(', ') || '—'}</dd></div>
+            <div><dt>Svæði</dt><dd>{one.area ?? '—'}</dd></div>
+            <div><dt>Heimilisfang</dt><dd>{one.address ?? '—'}</dd></div>
+            <div><dt>Verð</dt><dd>{isk(one.quote_isk)}</dd></div>
+          </dl>
+        </div>
+
+        <form class="a-card a-form dt__form" method="POST" action="/api/admin/visit">
           <input type="hidden" name="ref" value={one.ref} />
 
-          <div class="adm__row">
-            <label class="sf-field">
-              <span class="sf-field__label">Staða</span>
-              <select class="sf-select" name="status">
+          <div class="a-two">
+            <label class="a-field">
+              <span class="a-label">Staða</span>
+              <select class="a-in" name="status">
                 {VISIT_STATUSES.map((st) => (
-                  <option value={st} selected={st === one!.status}>{STATUS_LABEL[st]}</option>
+                  <option value={st} selected={st === one!.status}>{STATUS[st]}</option>
                 ))}
               </select>
             </label>
 
-            <label class="sf-field">
-              <span class="sf-field__label">Verð (ISK)</span>
-              <input class="sf-input" type="number" name="quote_isk" min="0" step="500"
-                     value={one.quote_isk ?? ''} placeholder="—" />
+            <label class="a-field">
+              <span class="a-label">Verð (ISK)</span>
+              <input class="a-in" type="number" inputmode="numeric" name="quote_isk"
+                     min="0" step="500" value={one.quote_isk ?? ''} placeholder="—" />
             </label>
           </div>
 
-          <div class="adm__row">
-            <label class="sf-field">
-              <span class="sf-field__label">Dagsetning</span>
-              <input class="sf-input" type="date" name="date" value={scheduledDate} />
+          <div class="a-two">
+            <label class="a-field">
+              <span class="a-label">Dagsetning</span>
+              <input class="a-in" type="date" name="date" value={schedDate} />
             </label>
 
-            <label class="sf-field">
-              <span class="sf-field__label">Tími</span>
-              <input class="sf-input" type="time" name="time" value={scheduledTime} step="900" />
-              <span class="sf-field__hint">Sett þegar staðan er „Á dagskrá“.</span>
+            <label class="a-field">
+              <span class="a-label">Tími</span>
+              <input class="a-in" type="time" name="time" value={schedTime} step="900" />
+              <span class="a-hint">Skrifast aðeins þegar staðan er „Á dagskrá“.</span>
             </label>
           </div>
 
-          <label class="sf-field">
-            <span class="sf-field__label">Heimilisfang</span>
-            <input class="sf-input" type="text" name="address" value={one.address ?? ''} />
+          <label class="a-field">
+            <span class="a-label">Heimilisfang</span>
+            <input class="a-in" type="text" name="address" value={one.address ?? ''} />
           </label>
 
-          <label class="sf-field">
-            <span class="sf-field__label">Athugasemdir</span>
-            <textarea class="sf-input sf-input--textarea" name="notes" rows="3">{one.notes ?? ''}</textarea>
+          <label class="a-field">
+            <span class="a-label">Athugasemdir</span>
+            <textarea class="a-in" name="notes" rows="4">{one.notes ?? ''}</textarea>
           </label>
 
-          <div class="adm__actions">
-            <button class="btn btn--foil" type="submit">Vista</button>
-            <a class="btn btn--ghost" href="/admin/visits/">Hætta við</a>
+          <div class="a-acts">
+            <button class="a-btn a-btn--primary" type="submit">
+              <span set:html={ADMIN_ICONS.check} />
+              Vista
+            </button>
+            <a class="a-btn a-btn--quiet" href="/admin/visits/">Hætta við</a>
           </div>
         </form>
-      </section>
+      </>
+    ) : (
+      <>
+        <header class="a-head">
+          <div>
+            <h1 class="a-h1">Verk</h1>
+            <p class="a-sub">{rows.length} færslur</p>
+          </div>
+          <a class="a-btn a-btn--primary" href="/admin/new-visit/">
+            <span set:html={ADMIN_ICONS.plus} />
+            Nýtt
+          </a>
+        </header>
+
+        {dbError && <p class="a-msg a-msg--err">{dbError}</p>}
+        {saved && <p class="a-msg a-msg--ok">Vistað.</p>}
+        {ref && !one && !dbError && <p class="a-msg a-msg--warn">Fann ekki {ref}.</p>}
+
+        <nav class="a-filters" aria-label="Sía">
+          {FILTERS.map((f) => (
+            <a class="a-filter" href={`/admin/visits/?status=${f.v}`}
+               aria-current={f.v === filter ? 'true' : undefined}>{f.l}</a>
+          ))}
+        </nav>
+
+        <VisitCard rows={rows} empty="Engin verk í þessari síu." />
+      </>
     )}
-
-    <nav class="filt" aria-label="Sía">
-      {FILTERS.map((f) => (
-        <a class:list={['filt__a', { 'filt__a--on': f.v === filter }]}
-           href={`/admin/visits/?status=${f.v}`}>{f.l}</a>
-      ))}
-    </nav>
-
-    <VisitTable rows={rows} empty="Engar heimsóknir í þessari síu." />
   </div>
 </Admin>
 
 <style>
-  .det { margin-block-end: var(--space-600); }
+  .dt { display: flex; flex-direction: column; gap: 14px; margin-bottom: 12px; }
 
-  .det__head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--space-300);
-    margin-block-end: var(--space-400);
-  }
-
-  .det__ref {
-    font-family: var(--font-mono);
-    font-size: var(--text-lg);
-    letter-spacing: 0;
-    color: var(--text-primary);
-    margin: 0 0 var(--space-150);
-  }
-
-  .det__facts {
+  .dt__facts {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
-    gap: var(--space-300);
-    margin: 0 0 var(--space-500);
-    padding-block-end: var(--space-400);
-    border-block-end: 1px solid var(--edge-quiet);
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    padding-top: 13px;
+    border-top: 1px solid var(--a-line);
   }
 
-  .det__facts dt {
-    font: var(--type-eyebrow);
-    letter-spacing: var(--tracking-eyebrow);
+  .dt__facts dt {
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .05em;
     text-transform: uppercase;
-    color: var(--text-muted);
-    margin-block-end: var(--space-075);
+    color: var(--a-ink-3);
+    margin-bottom: 2px;
   }
 
-  .det__facts dd { margin: 0; color: var(--text-primary); font-size: var(--text-sm); }
-  .det__facts a { color: var(--text-accent); text-decoration: none; }
-  .det__facts a:hover { color: var(--text-primary); }
+  .dt__facts dd { font-size: 14.5px; color: var(--a-ink); }
 
-  .det__wa {
-    display: inline-block;
-    margin-inline-start: var(--space-200);
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-  }
-
-  .det__form { display: flex; flex-direction: column; gap: var(--space-300); }
-
-  .filt { display: flex; flex-wrap: wrap; gap: var(--space-150); margin-block-end: var(--space-300); }
-
-  .filt__a {
-    display: inline-flex;
-    align-items: center;
-    height: 30px;
-    padding: 0 var(--space-200);
-    border: 1px solid var(--edge-hairline);
-    border-radius: var(--radius-pill);
-    font: var(--type-eyebrow);
-    letter-spacing: var(--tracking-eyebrow);
-    text-transform: uppercase;
-    color: var(--text-muted);
-    text-decoration: none;
-    transition: var(--transition-control);
-  }
-
-  .filt__a:hover { color: var(--text-primary); border-color: var(--edge-strong); }
-  .filt__a--on { color: var(--basalt-900); background: var(--silver-050); border-color: var(--silver-050); }
+  .dt__form { margin-bottom: 20px; }
 </style>

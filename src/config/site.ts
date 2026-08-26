@@ -71,8 +71,18 @@ export const SITE = {
   /** ASCII form, for places that cannot carry the accent (domains, handles). */
   brandAscii: 'Silfrun',
 
-  legalName: TODO(''),
-  /** Icelandic company registration number. Required on commercial websites. */
+  legalName: 'Studio Esja ehf.',
+  /**
+   * Icelandic company registration number.
+   *
+   * STILL MISSING. Required on a commercial website under Icelandic e-commerce
+   * law, and it is the last placeholder rendering on every public page.
+   *
+   * It was deliberately not guessed at: several unrelated companies trade under
+   * an "Esja" name with different numbers, and publishing another company's
+   * kennitala attributes this business to their tax registration. Look it up at
+   * skatturinn.is/fyrirtaekjaskra/leit or take it from an invoice.
+   */
   kennitala: TODO(''),
   /** VSK (VAT) number, if the business is VSK-registered. */
   vskNumber: TODO(''),
@@ -85,7 +95,7 @@ export const SITE = {
     phone: '+354 771 3011',
     /** E.164, for tel: links and structured data. No spaces, leading plus. */
     phoneE164: '+3547713011',
-    email: TODO(''),
+    email: 'hello@silfrun.is',
 
     /**
      * WhatsApp number in international digits, no plus and no spaces — an
@@ -105,10 +115,27 @@ export const SITE = {
     messenger: TODO(''),
   },
 
+  /**
+   * Registered address.
+   *
+   * `public: false` keeps it off the site and out of structured data. This is a
+   * service-area business: the work happens in the customer's home, nobody
+   * visits the office, and publishing it invites callers to an address that is
+   * not set up to receive them.
+   *
+   * NOTE: Icelandic e-commerce law (lög nr. 30/2002) expects a commercial
+   * website to state the trader's address alongside the name and kennitala.
+   * Withholding it is a deliberate business decision, not an oversight — but it
+   * is worth a lawyer's view when the legal pages are reviewed.
+   *
+   * The value is kept here so invoices, the legal pages and any future Google
+   * Business Profile can read it from one place rather than a second copy.
+   */
   address: {
-    street: TODO(''),
-    postalCode: TODO(''),
-    city: 'Reykjavík',
+    public: false,
+    street: 'Álafossvegur 27',
+    postalCode: '270',
+    city: 'Mosfellsbær',
     country: 'IS',
     latitude: null as number | null,
     longitude: null as number | null,
@@ -231,6 +258,36 @@ export function messengerUrl(): string | null {
     .replace(/^m\.me\//, '')
     .replace(/^\/+|\/+$/g, '');
   return clean ? `https://m.me/${clean}` : null;
+}
+
+/**
+ * A contact link that counts the click before forwarding.
+ *
+ * Returns null for the same reason the direct helpers do — a channel that is
+ * not configured must render no button at all rather than a dead one.
+ *
+ * `from` is the page the button sits on, so the admin can tell a click from
+ * the rug page apart from one on the price list. That is the whole question a
+ * cleaning business has about its website: which page produces enquiries.
+ */
+export function trackedUrl(
+  channel: 'whatsapp' | 'messenger' | 'call' | 'email',
+  opts: { from?: string; text?: string } = {}
+): string | null {
+  const live =
+    channel === 'whatsapp' ? whatsappUrl() !== null
+    : channel === 'messenger' ? messengerUrl() !== null
+    : channel === 'call' ? !isPlaceholder(SITE.contact.phoneE164)
+    : !isPlaceholder(SITE.contact.email);
+
+  if (!live) return null;
+
+  const q = new URLSearchParams();
+  if (opts.from) q.set('p', opts.from);
+  if (opts.text) q.set('t', opts.text);
+
+  const qs = q.toString();
+  return qs ? `/go/${channel}?${qs}` : `/go/${channel}`;
 }
 
 /** True when at least one instant-messaging channel is live. */

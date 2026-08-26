@@ -95,12 +95,25 @@ const businessLd = business
       knowsLanguage: ['is', 'en'],
       currenciesAccepted: SITE.pricing.currency,
       areaServed: SITE.areas.map((a) => ({ '@type': 'City', name: a.name })),
+      /**
+       * The street is emitted only when the address is marked public.
+       *
+       * This is a service-area business — the work happens in the customer's
+       * home. Putting the registered address in structured data is what makes
+       * it appear in Google's local panel with a pin on it, which is precisely
+       * what "do not advertise the location" rules out.
+       *
+       * The locality still goes out, because a cleaning company that names no
+       * region at all is harder to place than one that says "capital area".
+       */
       address: {
         '@type': 'PostalAddress',
-        addressLocality: SITE.address.city,
+        addressLocality: SITE.address.public ? SITE.address.city : 'Reykjavík',
         addressCountry: SITE.address.country,
-        ...(isPlaceholder(SITE.address.street) ? {} : { streetAddress: SITE.address.street }),
-        ...(isPlaceholder(SITE.address.postalCode) ? {} : { postalCode: SITE.address.postalCode }),
+        ...(SITE.address.public && !isPlaceholder(SITE.address.street)
+          ? { streetAddress: SITE.address.street } : {}),
+        ...(SITE.address.public && !isPlaceholder(SITE.address.postalCode)
+          ? { postalCode: SITE.address.postalCode } : {}),
       },
       openingHoursSpecification: hoursSpec,
       ...(priceRange ? { priceRange } : {}),
@@ -109,7 +122,7 @@ const businessLd = business
       ...(isPlaceholder(SITE.contact.email) ? {} : { email: SITE.contact.email }),
       ...(isPlaceholder(SITE.legalName) ? {} : { legalName: SITE.legalName }),
       ...(isPlaceholder(SITE.kennitala) ? {} : { taxID: SITE.kennitala }),
-      ...(SITE.address.latitude !== null && SITE.address.longitude !== null
+      ...(SITE.address.public && SITE.address.latitude !== null && SITE.address.longitude !== null
         ? { geo: { '@type': 'GeoCoordinates', latitude: SITE.address.latitude, longitude: SITE.address.longitude } }
         : {}),
       /**
@@ -227,5 +240,29 @@ const graph = [websiteLd, webPageLd, ...(businessLd ? [businessLd] : []), ...ext
   <body class="silfrun-grain">
     <a class="skip-link" href="#main">{s.nav.skip}</a>
     <slot />
+
+    {/*
+      Page-view beacon.
+      
+      Prerendered pages are served from the edge and never reach the Worker, so
+      there is nothing to count them by server-side. This 35-byte pixel is the
+      smallest request that does, and unlike a script it works with JavaScript
+      disabled — which is most of the point on a site that ships none.
+
+      Last in the body and lazy, so it never competes with content for the
+      connection. Nothing identifying is recorded; see src/lib/analytics.ts.
+    */}
+    {!noindex && (
+      <img
+        src={`/px.gif?p=${encodeURIComponent(new URL(canonical).pathname)}`}
+        alt=""
+        width="1"
+        height="1"
+        loading="lazy"
+        decoding="async"
+        aria-hidden="true"
+        style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"
+      />
+    )}
   </body>
 </html>

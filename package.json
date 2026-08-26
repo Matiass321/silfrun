@@ -14,7 +14,8 @@
     "db:migrate:local": "wrangler d1 execute silfrun --local --file=./db/schema.sql",
     "db:migrate:remote": "wrangler d1 execute silfrun --remote --file=./db/schema.sql",
     "hash": "node scripts/hash-password.mjs",
-    "indexnow": "node scripts/indexnow.mjs"
+    "indexnow": "node scripts/indexnow.mjs",
+    "icons": "node scripts/admin-icons.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.13",

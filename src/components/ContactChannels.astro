@@ -5,6 +5,7 @@ import {
   isPlaceholder,
   whatsappUrl,
   messengerUrl,
+  trackedUrl,
   type Locale,
 } from '~/config/site';
 import { t } from '~/i18n';
@@ -36,8 +37,18 @@ const {
 const s = t(locale);
 const c = s.contact;
 
-const wa = whatsappUrl(prefill ?? c.prefillGeneral);
-const me = messengerUrl();
+/**
+ * Links go through /go/<channel>, which counts the click and forwards.
+ *
+ * The direct helpers still decide whether a channel exists at all — the
+ * tracker must never render a button for something that is not configured.
+ */
+const here = Astro.url.pathname;
+
+const wa = whatsappUrl(prefill ?? c.prefillGeneral)
+  ? trackedUrl('whatsapp', { from: here, text: prefill ?? c.prefillGeneral })
+  : null;
+const me = messengerUrl() ? trackedUrl('messenger', { from: here }) : null;
 const phoneLive = !isPlaceholder(SITE.contact.phone);
 const emailLive = !isPlaceholder(SITE.contact.email);
 
@@ -72,7 +83,7 @@ const channels = [
   {
     id: 'email',
     live: emailLive,
-    href: emailLive ? `mailto:${SITE.contact.email}` : null,
+    href: emailLive ? trackedUrl('email', { from: here }) : null,
     label: c.emailLabel,
     short: SITE.contact.email,
     pending: s.pending.email,
@@ -81,7 +92,7 @@ const channels = [
   {
     id: 'phone',
     live: phoneLive,
-    href: phoneLive ? `tel:${SITE.contact.phoneE164}` : null,
+    href: phoneLive ? trackedUrl('call', { from: here }) : null,
     label: c.callLabel,
     short: SITE.contact.phone,
     pending: s.pending.phone,

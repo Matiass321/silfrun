@@ -4,6 +4,7 @@ import {
   isPlaceholder,
   whatsappUrl,
   messengerUrl,
+  trackedUrl,
   type Locale,
 } from '~/config/site';
 import { t } from '~/i18n';
@@ -19,9 +20,13 @@ const { locale, prefill } = Astro.props;
 const s = t(locale);
 const c = s.contact;
 
-const wa = whatsappUrl(prefill ?? c.prefillGeneral);
-const me = messengerUrl();
-const phoneLive = !isPlaceholder(SITE.contact.phone);
+const here = Astro.url.pathname;
+
+const wa = whatsappUrl(prefill ?? c.prefillGeneral)
+  ? trackedUrl('whatsapp', { from: here, text: prefill ?? c.prefillGeneral })
+  : null;
+const me = messengerUrl() ? trackedUrl('messenger', { from: here }) : null;
+const phoneLive = !isPlaceholder(SITE.contact.phoneE164);
 
 /**
  * The thumb bar.
@@ -42,7 +47,7 @@ const primary = wa
     : null;
 
 const secondary = phoneLive
-  ? { href: `tel:${SITE.contact.phoneE164}`, label: c.callLabel, icon: ICONS.phone }
+  ? { href: trackedUrl('call', { from: here })!, label: c.callLabel, icon: ICONS.phone }
   : null;
 
 const show = primary !== null || secondary !== null;

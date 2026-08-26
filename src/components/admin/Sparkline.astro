@@ -1,0 +1,101 @@
+---
+import type { DayCount } from '~/lib/analytics';
+
+interface Props {
+  data: DayCount[];
+  label: string;
+}
+
+const { data, label } = Astro.props;
+
+/**
+ * A bar chart drawn as plain SVG.
+ *
+ * No charting library, because the admin ships no JavaScript and a chart is
+ * the weakest possible reason to start. Bars rather than a line: with a lot of
+ * zero days a line implies a continuous quantity that dips to nothing, while
+ * bars read correctly as "no views that day".
+ */
+const W = 720;
+const H = 150;
+const PAD_B = 20;
+const PAD_T = 8;
+
+const max = Math.max(1, ...data.map((d) => d.n));
+const n = Math.max(data.length, 1);
+const slot = W / n;
+const gap = Math.min(slot * 0.28, 5);
+const barW = Math.max(slot - gap, 1);
+
+const plotH = H - PAD_B - PAD_T;
+
+const bars = data.map((d, i) => {
+  const h = d.n === 0 ? 2 : Math.max((d.n / max) * plotH, 3);
+  return {
+    ...d,
+    x: i * slot + gap / 2,
+    y: PAD_T + plotH - h,
+    w: barW,
+    h,
+    zero: d.n === 0,
+  };
+});
+
+const total = data.reduce((s, d) => s + d.n, 0);
+const peak = data.reduce((best, d) => (d.n > best.n ? d : best), data[0] ?? { day: '', n: 0 });
+
+/* Three labels only — one per bar is unreadable at 30 days on a phone. */
+const ticks = data.length
+  ? [0, Math.floor((data.length - 1) / 2), data.length - 1].map((i) => ({
+      i,
+      day: (data[i]?.day ?? '').slice(5),
+      x: i * slot + slot / 2,
+    }))
+  : [];
+
+const short = (d: string) => d.slice(5).replace('-', '.');
+---
+
+<figure class="sp">
+  <svg
+    class="a-chart"
+    viewBox={`0 0 ${W} ${H}`}
+    preserveAspectRatio="none"
+    role="img"
+    aria-label={`${total} ${label} yfir ${data.length} daga. Mest ${peak.n} þann ${short(peak.day)}.`}
+  >
+    <line class="a-chart__grid" x1="0" y1={PAD_T + plotH} x2={W} y2={PAD_T + plotH} />
+    {bars.map((b) => (
+      <rect
+        class:list={['a-chart__bar', { 'a-chart__bar--zero': b.zero }]}
+        x={b.x} y={b.y} width={b.w} height={b.h} rx="1.5"
+      >
+        <title>{short(b.day)}: {b.n}</title>
+      </rect>
+    ))}
+    {ticks.map((t) => (
+      <text class="a-chart__lbl" x={t.x} y={H - 5} text-anchor="middle">{t.day.replace('-', '.')}</text>
+    ))}
+  </svg>
+
+  <figcaption class="sp__cap">
+    <span><strong>{total}</strong> alls</span>
+    {peak.n > 0 && <span>mest <strong>{peak.n}</strong> þann {short(peak.day)}</span>}
+  </figcaption>
+</figure>
+
+<style>
+  .sp { margin: 0; }
+  .a-chart { height: 150px; }
+
+  .sp__cap {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    font-size: 12.5px;
+    color: var(--a-ink-3);
+  }
+
+  .sp__cap strong { color: var(--a-ink); font-family: var(--a-mono); font-weight: 500; }
+</style>

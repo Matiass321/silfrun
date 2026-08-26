@@ -91,7 +91,7 @@ export const GET: APIRoute = () => {
   /* ---- Where ---- */
   push('## Service area', '');
   push(
-    `${SITE.address.city} and the surrounding capital area. Areas covered: ` +
+    `Reykjavík and the surrounding capital area. Areas covered: ` +
       SITE.areas.map((a) => a.name).join(', ') + '.',
     '',
     `Area pages: ${abs('areas', 'en')}`,
@@ -140,7 +140,19 @@ export const GET: APIRoute = () => {
   const unknown: string[] = [];
   if (isPlaceholder(SITE.legalName)) unknown.push('registered company name');
   if (isPlaceholder(SITE.kennitala)) unknown.push('kennitala (company registration number)');
-  if (isPlaceholder(SITE.address.street)) unknown.push('street address');
+  /**
+   * The street address is withheld on purpose, not missing.
+   *
+   * Saying so explicitly matters more here than anywhere else: an engine that
+   * simply finds no address may go looking for one and attach a competitor's,
+   * or the registered address of an unrelated company with a similar name.
+   */
+  if (!SITE.address.public) {
+    unknown.push(
+      'street address (deliberately not published — this is a service-area ' +
+        'business and the work is done in the customer’s home)'
+    );
+  }
   if (isPlaceholder(SITE.contact.phone)) unknown.push('telephone number');
   if (isPlaceholder(SITE.contact.email)) unknown.push('email address');
   if (SITE.reviews.rating === null) unknown.push('customer ratings and reviews');

@@ -1,0 +1,108 @@
+---
+import { parseItems, formatPhone, type VisitRow } from '~/lib/visits';
+import { clock, isk, relativeDays } from '~/lib/time';
+import { ADMIN_ICONS } from '~/data/admin-icons';
+
+interface Props {
+  rows: VisitRow[];
+  empty: string;
+  /** Lead with the fixed time rather than the requested day. Day views only. */
+  showTime?: boolean;
+}
+
+const { rows, empty, showTime = false } = Astro.props;
+
+const STATUS: Record<string, string> = {
+  new: 'Ný', quoted: 'Verð sent', scheduled: 'Á dagskrá', done: 'Lokið', cancelled: 'Afturkallað',
+};
+
+const ITEM: Record<string, string> = {
+  sofa: 'Sófi', rug: 'Teppi', carpet: 'Gólfteppi', stains: 'Blettir',
+};
+
+/**
+ * Records are cards, not table rows.
+ *
+ * A table of eight columns on a 375px screen either scrolls sideways — where
+ * the name leaves the viewport and the row stops meaning anything — or shrinks
+ * the type past reading. A card keeps one job's details together and stays
+ * legible held at arm's length in somebody's hallway.
+ */
+---
+
+{rows.length === 0 ? (
+  <p class="a-empty">{empty}</p>
+) : (
+  <ul class="a-rows">
+    {rows.map((r) => {
+      const items = parseItems(r.items);
+      const digits = r.phone.replace(/[^0-9]/g, '');
+      return (
+        <li>
+          <div class="a-row">
+            <a class="vc__hit" href={`/admin/visits/?ref=${r.ref}`}>
+              <div class="a-row__top">
+                <span class="a-row__name">{r.name}</span>
+                <span class:list={['a-pill', `a-pill--${r.status}`]}>{STATUS[r.status] ?? r.status}</span>
+              </div>
+
+              <p class="a-row__meta">
+                {showTime && r.scheduled_at
+                  ? <><strong class="vc__time">{clock(r.scheduled_at)}</strong>{' · '}</>
+                  : <>{r.preferred_date} <span class="vc__rel">({relativeDays(r.preferred_date)})</span>{' · '}</>}
+                {items.length ? items.map((i) => ITEM[i] ?? i).join(', ') : '—'}
+                {r.area ? ` · ${r.area}` : ''}
+              </p>
+
+              {r.address && (
+                <p class="vc__addr">
+                  <span set:html={ADMIN_ICONS.pin} />
+                  {r.address}
+                </p>
+              )}
+
+              <p class="a-row__mono">
+                {r.ref}{r.quote_isk !== null ? ` · ${isk(r.quote_isk)}` : ''}
+              </p>
+            </a>
+
+            <div class="a-row__foot">
+              <a class="a-btn a-btn--plain a-btn--sm" href={`tel:${r.phone}`}>
+                <span set:html={ADMIN_ICONS.phone} />
+                {formatPhone(r.phone)}
+              </a>
+              <a
+                class="a-btn a-btn--plain a-btn--sm"
+                href={`https://wa.me/${digits}`}
+                target="_blank"
+                rel="noopener"
+              >
+                <span set:html={ADMIN_ICONS.whatsapp} />
+                WhatsApp
+              </a>
+            </div>
+          </div>
+        </li>
+      );
+    })}
+  </ul>
+)}
+
+<style>
+  /* The whole upper block is one tap target; the buttons below are separate. */
+  .vc__hit { display: block; text-decoration: none; color: inherit; }
+
+  .vc__time { font-family: var(--a-mono); font-size: 14px; color: var(--a-ink); }
+  .vc__rel { color: var(--a-ink-4); }
+
+  .vc__addr {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--a-ink-3);
+  }
+
+  .vc__addr :global(svg) { width: 14px; height: 14px; flex: none; }
+</style>

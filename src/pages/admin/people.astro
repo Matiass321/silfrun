@@ -1,0 +1,147 @@
+---
+import Admin from '~/layouts/Admin.astro';
+import { requireAdmin, env } from '~/lib/admin-guard';
+import { listCustomers, customerVisitCounts, formatPhone, type Customer } from '~/lib/visits';
+import { isoDate } from '~/lib/time';
+import { ADMIN_ICONS } from '~/data/admin-icons';
+
+export const prerender = false;
+
+const gate = await requireAdmin(Astro);
+if (gate) return gate;
+
+const { DB } = env(Astro);
+
+const q = (Astro.url.searchParams.get('q') ?? '').trim().toLowerCase();
+
+let all: Customer[] = [];
+let counts: Record<number, number> = {};
+let subs = 0;
+let dbError: string | null = null;
+
+if (!DB) {
+  dbError = 'Gagnagrunnurinn er ekki tengdur.';
+} else {
+  try {
+    const [c, n, s] = await Promise.all([
+      listCustomers(DB),
+      customerVisitCounts(DB),
+      DB.prepare(
+        'SELECT COUNT(*) AS n FROM subscribers WHERE confirmed_at IS NOT NULL AND unsubscribed_at IS NULL'
+      ).first<{ n: number }>().catch(() => ({ n: 0 })),
+    ]);
+    all = c;
+    counts = n;
+    subs = s?.n ?? 0;
+  } catch (e) {
+    dbError = `Gagnagrunnurinn svarar ekki. (${String(e).slice(0, 100)})`;
+  }
+}
+
+/**
+ * Filtered in memory rather than in SQL.
+ *
+ * A household list of this size fits in one query, and a LIKE across four
+ * columns would need its own index to stay fast for no benefit at this scale.
+ * Past a few thousand rows this moves into the query.
+ */
+const rows = q
+  ? all.filter((c) =>
+      [c.name, c.phone, c.email ?? '', c.area ?? ''].join(' ').toLowerCase().includes(q)
+    )
+  : all;
+
+const repeat = all.filter((c) => (counts[c.id] ?? 0) > 1).length;
+---
+
+<Admin title="Fólk" current="people">
+  <div class="a-wrap">
+    <header class="a-head">
+      <div>
+        <h1 class="a-h1">Fólk</h1>
+        <p class="a-sub">{all.length} skráð · {repeat} með fleiri en eitt verk</p>
+      </div>
+      <a class="a-btn a-btn--primary" href="/admin/new-visit/">
+        <span set:html={ADMIN_ICONS.plus} />
+        Nýtt verk
+      </a>
+    </header>
+
+    {dbError && <p class="a-msg a-msg--err">{dbError}</p>}
+
+    <div class="a-grid a-grid--2">
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{all.length}</span>
+        <span class="a-stat__l">Viðskiptavinir</span>
+      </div>
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{repeat}</span>
+        <span class="a-stat__l">Endurteknir</span>
+      </div>
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{subs}</span>
+        <span class="a-stat__l">Á póstlista</span>
+      </div>
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{all.filter((c) => c.email).length}</span>
+        <span class="a-stat__l">Með netfang</span>
+      </div>
+    </div>
+
+    <form class="pp__search a-sec" method="GET" action="/admin/people/" role="search">
+      <label class="a-field pp__f">
+        <span class="a-hide">Leita</span>
+        <input class="a-in" type="search" name="q" value={q} placeholder="Nafn, sími eða svæði…" />
+      </label>
+      <button class="a-btn a-btn--plain" type="submit">Leita</button>
+      {q && <a class="a-btn a-btn--quiet" href="/admin/people/">Hreinsa</a>}
+    </form>
+
+    {rows.length === 0 ? (
+      <p class="a-empty">{q ? 'Ekkert fannst.' : 'Engir viðskiptavinir skráðir enn.'}</p>
+    ) : (
+      <ul class="a-rows">
+        {rows.map((c) => {
+          const digits = c.phone.replace(/[^0-9]/g, '');
+          const n = counts[c.id] ?? 0;
+          return (
+            <li class="a-row">
+              <div class="a-row__top">
+                <span class="a-row__name">{c.name}</span>
+                {n > 1 && <span class="a-pill a-pill--scheduled">{n} verk</span>}
+              </div>
+
+              <p class="a-row__meta">
+                {c.area ?? 'Svæði óskráð'}
+                {c.email ? ` · ${c.email}` : ''}
+              </p>
+              <p class="a-row__mono">Skráð {isoDate(c.created_at)}</p>
+
+              <div class="a-row__foot">
+                <a class="a-btn a-btn--plain a-btn--sm" href={`tel:${c.phone}`}>
+                  <span set:html={ADMIN_ICONS.phone} />
+                  {formatPhone(c.phone)}
+                </a>
+                <a class="a-btn a-btn--plain a-btn--sm"
+                   href={`https://wa.me/${digits}`} target="_blank" rel="noopener">
+                  <span set:html={ADMIN_ICONS.whatsapp} />
+                  WhatsApp
+                </a>
+                {c.email && (
+                  <a class="a-btn a-btn--quiet a-btn--sm" href={`mailto:${c.email}`}>
+                    <span set:html={ADMIN_ICONS.mail} />
+                  </a>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    )}
+  </div>
+</Admin>
+
+<style>
+  .pp__search { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 14px; }
+  .pp__f { flex: 1; min-width: 190px; }
+</style>

@@ -3,6 +3,7 @@ import Admin from '~/layouts/Admin.astro';
 import { requireAdmin, env } from '~/lib/admin-guard';
 import { SITE } from '~/config/site';
 import { today } from '~/lib/time';
+import { ADMIN_ICONS } from '~/data/admin-icons';
 
 export const prerender = false;
 
@@ -16,7 +17,7 @@ const MESSAGES: Record<string, string> = {
   name: 'Nafn vantar.',
   phone: 'Símanúmer vantar.',
   date: 'Dagsetning vantar.',
-  nodb: 'Gagnagrunnurinn er ekki bundinn.',
+  nodb: 'Gagnagrunnurinn er ekki tengdur.',
 };
 
 const SERVICES = [
@@ -27,41 +28,44 @@ const SERVICES = [
 ];
 ---
 
-<Admin title="Ný heimsókn" current="visits">
-  <div class="adm__wrap nv">
-    <header class="adm__head">
+<Admin title="Nýtt verk" current="visits">
+  <div class="a-wrap nv">
+    <header class="a-head">
       <div>
-        <h1 class="adm__title">Ný heimsókn</h1>
-        <p class="adm__sub">Skráð handvirkt eftir símtal eða WhatsApp-skilaboð.</p>
+        <h1 class="a-h1">Nýtt verk</h1>
+        <p class="a-sub">Skráð eftir símtal eða WhatsApp.</p>
       </div>
-      <a class="btn btn--ghost" href="/admin/visits/">Til baka</a>
+      <a class="a-btn a-btn--quiet" href="/admin/visits/">
+        <span set:html={ADMIN_ICONS.back} />
+        Til baka
+      </a>
     </header>
 
-    {!DB && <p class="adm__msg adm__msg--err">Gagnagrunnurinn er ekki bundinn (DB).</p>}
-    {err && MESSAGES[err] && <p class="adm__msg adm__msg--err">{MESSAGES[err]}</p>}
+    {!DB && <p class="a-msg a-msg--err">Gagnagrunnurinn er ekki tengdur.</p>}
+    {err && MESSAGES[err] && <p class="a-msg a-msg--err">{MESSAGES[err]}</p>}
 
-    <form class="adm__panel adm__form" method="POST" action="/api/admin/new-visit">
-      <fieldset class="fs">
-        <legend class="fs__l">Viðskiptavinur</legend>
-        <div class="adm__row">
-          <label class="sf-field">
-            <span class="sf-field__label">Nafn</span>
-            <input class="sf-input" type="text" name="name" required autocomplete="off" />
+    <form class="a-card a-form" method="POST" action="/api/admin/new-visit">
+      <fieldset class="a-fs">
+        <legend class="a-legend">Viðskiptavinur</legend>
+        <div class="a-two">
+          <label class="a-field">
+            <span class="a-label">Nafn <span class="a-req">*</span></span>
+            <input class="a-in" type="text" name="name" required autocomplete="off" />
           </label>
-          <label class="sf-field">
-            <span class="sf-field__label">Sími</span>
-            <input class="sf-input" type="tel" name="phone" required placeholder="771 3011" autocomplete="off" />
-            <span class="sf-field__hint">Sjö tölustafir, eða með +354.</span>
+          <label class="a-field">
+            <span class="a-label">Sími <span class="a-req">*</span></span>
+            <input class="a-in" type="tel" inputmode="tel" name="phone" required
+                   placeholder="771 3011" autocomplete="off" />
           </label>
         </div>
-        <div class="adm__row">
-          <label class="sf-field">
-            <span class="sf-field__label">Netfang</span>
-            <input class="sf-input" type="email" name="email" autocomplete="off" />
+        <div class="a-two">
+          <label class="a-field">
+            <span class="a-label">Netfang</span>
+            <input class="a-in" type="email" inputmode="email" name="email" autocomplete="off" />
           </label>
-          <label class="sf-field">
-            <span class="sf-field__label">Svæði</span>
-            <select class="sf-select" name="area">
+          <label class="a-field">
+            <span class="a-label">Svæði</span>
+            <select class="a-in" name="area">
               <option value="">—</option>
               {SITE.areas.map((a) => <option value={a.name}>{a.name}</option>)}
             </select>
@@ -69,34 +73,32 @@ const SERVICES = [
         </div>
       </fieldset>
 
-      <fieldset class="fs">
-        <legend class="fs__l">Verkið</legend>
+      <fieldset class="a-fs">
+        <legend class="a-legend">Verkið</legend>
         <div class="nv__items">
           {SERVICES.map((s) => (
-            <label class="sf-check">
+            <label class="a-check">
               <input type="checkbox" name="items" value={s.key} />
-              <span class="sf-check__box"></span>
-              <span class="sf-check__text">{s.label}</span>
+              <span>{s.label}</span>
             </label>
           ))}
         </div>
-
-        <label class="sf-field">
-          <span class="sf-field__label">Heimilisfang</span>
-          <input class="sf-input" type="text" name="address" autocomplete="off" />
+        <label class="a-field">
+          <span class="a-label">Heimilisfang</span>
+          <input class="a-in" type="text" name="address" autocomplete="off" />
         </label>
       </fieldset>
 
-      <fieldset class="fs">
-        <legend class="fs__l">Tími</legend>
-        <div class="adm__row">
-          <label class="sf-field">
-            <span class="sf-field__label">Óskadagur</span>
-            <input class="sf-input" type="date" name="preferred_date" required value={today()} />
+      <fieldset class="a-fs">
+        <legend class="a-legend">Tími</legend>
+        <div class="a-two">
+          <label class="a-field">
+            <span class="a-label">Óskadagur <span class="a-req">*</span></span>
+            <input class="a-in" type="date" name="preferred_date" required value={today()} />
           </label>
-          <label class="sf-field">
-            <span class="sf-field__label">Tímabil</span>
-            <select class="sf-select" name="window">
+          <label class="a-field">
+            <span class="a-label">Tímabil</span>
+            <select class="a-in" name="window">
               <option value="morning">Fyrir hádegi</option>
               <option value="afternoon">Eftir hádegi</option>
               <option value="either">Hvort sem er</option>
@@ -105,44 +107,25 @@ const SERVICES = [
         </div>
       </fieldset>
 
-      <label class="sf-field">
-        <span class="sf-field__label">Athugasemdir</span>
-        <textarea class="sf-input sf-input--textarea" name="notes" rows="3"
+      <label class="a-field">
+        <span class="a-label">Athugasemdir</span>
+        <textarea class="a-in" name="notes" rows="4"
                   placeholder="Efni, blettir, aðgengi, bílastæði…"></textarea>
       </label>
 
-      <div class="adm__actions">
-        <button class="btn btn--foil" type="submit" disabled={!DB}>Skrá heimsókn</button>
-        <a class="btn btn--ghost" href="/admin/visits/">Hætta við</a>
+      <div class="a-acts">
+        <button class="a-btn a-btn--primary" type="submit" disabled={!DB}>
+          <span set:html={ADMIN_ICONS.check} />
+          Skrá verk
+        </button>
+        <a class="a-btn a-btn--quiet" href="/admin/visits/">Hætta við</a>
       </div>
     </form>
   </div>
 </Admin>
 
 <style>
-  .nv .adm__wrap { max-width: 46rem; }
-
-  .fs {
-    border: 0;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-300);
-  }
-
-  .fs__l {
-    padding: 0;
-    font: var(--type-eyebrow);
-    letter-spacing: var(--tracking-eyebrow);
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-block-end: var(--space-100);
-  }
-
-  .nv__items {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
-    gap: var(--space-200);
-  }
+  .nv .a-wrap { max-width: 720px; }
+  .nv__items { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  @media (min-width: 40rem) { .nv__items { grid-template-columns: 1fr 1fr; } }
 </style>

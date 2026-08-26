@@ -1,28 +1,33 @@
 ---
-import '@fontsource/marcellus/400.css';
 import '@fontsource-variable/archivo';
 import '@fontsource/ibm-plex-mono/400.css';
-import '~/styles/tokens.css';
-import '~/styles/base.css';
+import '~/styles/admin.css';
 
 import { SITE } from '~/config/site';
+import { ADMIN_ICONS } from '~/data/admin-icons';
 
 interface Props {
   title: string;
-  /** Which nav item is current. Omit on login and setup, which have no nav. */
-  current?: 'today' | 'visits' | 'calendar' | 'customers' | 'settings';
-  /** Chrome-less shell for login and setup. */
+  current?: 'today' | 'visits' | 'calendar' | 'people' | 'stats';
+  /** Chrome-less shell, for login and setup. */
   bare?: boolean;
 }
 
 const { title, current, bare = false } = Astro.props;
 
-const NAV = [
-  { key: 'today',     href: '/admin/',          label: 'Í dag' },
-  { key: 'visits',    href: '/admin/visits/',   label: 'Heimsóknir' },
-  { key: 'calendar',  href: '/admin/calendar/', label: 'Dagatal' },
-  { key: 'customers', href: '/admin/customers/',label: 'Viðskiptavinir' },
-  { key: 'settings',  href: '/admin/settings/', label: 'Stillingar' },
+/**
+ * Five tabs, because six is where a phone tab bar starts truncating labels.
+ *
+ * Settings is deliberately not one of them — it is opened a handful of times
+ * ever, and spending a fifth of the thumb bar on it would cost a tab that gets
+ * used every day. It lives in the top bar instead.
+ */
+const TABS = [
+  { key: 'today',    href: '/admin/',          label: 'Í dag',    icon: ADMIN_ICONS.today },
+  { key: 'visits',   href: '/admin/visits/',   label: 'Verk',     icon: ADMIN_ICONS.visits },
+  { key: 'calendar', href: '/admin/calendar/', label: 'Dagatal',  icon: ADMIN_ICONS.calendar },
+  { key: 'people',   href: '/admin/people/',   label: 'Fólk',     icon: ADMIN_ICONS.people },
+  { key: 'stats',    href: '/admin/stats/',    label: 'Tölur',    icon: ADMIN_ICONS.stats },
 ] as const;
 ---
 
@@ -30,245 +35,71 @@ const NAV = [
 <html lang="is">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/*
+      viewport-fit=cover lets the tab bar sit against the bottom of the screen
+      on a notched phone, with env(safe-area-inset-bottom) keeping it clear of
+      the home indicator.
+    */}
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
     <title>{title} · {SITE.brand}</title>
 
     {/*
-      The admin must never be indexed. robots.txt disallows /admin/, but a
-      robots rule only asks a crawler not to fetch — it does not stop a URL
-      that leaked into a link from being listed. The header is what actually
-      removes it, so both are set.
+      Never indexed. robots.txt disallows /admin/, but a Disallow only asks a
+      crawler not to fetch — it does nothing about a URL that leaked into a
+      link. The header and this tag are what actually remove it.
     */}
     <meta name="robots" content="noindex, nofollow, noarchive" />
-    <meta name="theme-color" content="#0B0D0F" />
-    <meta name="color-scheme" content="dark" />
+
+    {/* Installable to the home screen; see public/admin.webmanifest. */}
+    <link rel="manifest" href="/admin.webmanifest" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="color-scheme" content="light" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content={SITE.brand} />
+    <link rel="apple-touch-icon" href="/admin-icon-180.png" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>
 
   <body class="adm">
     {!bare && (
-      <header class="adm__bar">
-        <div class="adm__barin">
-          <a class="adm__brand" href="/admin/">
-            <span class="adm__mark" aria-hidden="true">
-              <svg viewBox="0 0 48 64" fill="none">
-                <path d="M24 2 Q16 17 6 32 Q16 47 24 62 Z" fill="currentColor" opacity=".10" />
-                <path d="M24 2 Q32 17 42 32 Q32 47 24 62 Q16 47 6 32 Q16 17 24 2 Z"
-                      fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" />
-                <path d="M24 2 V62" stroke="currentColor" stroke-width=".75" opacity=".45" />
-              </svg>
-            </span>
-            <span class="adm__word">{SITE.brand}</span>
+      <header class="a-top">
+        <div class="a-top__in">
+          <a class="a-brand" href="/admin/">
+            <svg viewBox="0 0 48 64" fill="none" aria-hidden="true">
+              <path d="M24 2 Q16 17 6 32 Q16 47 24 62 Z" fill="currentColor" opacity=".12" />
+              <path d="M24 2 Q32 17 42 32 Q32 47 24 62 Q16 47 6 32 Q16 17 24 2 Z"
+                    stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            </svg>
+            <span>{SITE.brand}</span>
           </a>
 
-          <nav class="adm__nav" aria-label="Stjórnborð">
-            {NAV.map((n) => (
+          <nav class="a-tabs" aria-label="Aðalvalmynd">
+            {TABS.map((t) => (
               <a
-                class:list={['adm__link', { 'adm__link--on': n.key === current }]}
-                href={n.href}
-                aria-current={n.key === current ? 'page' : undefined}
+                class="a-tab"
+                href={t.href}
+                aria-current={t.key === current ? 'page' : undefined}
               >
-                {n.label}
+                <span set:html={t.icon} />
+                <span>{t.label}</span>
               </a>
             ))}
           </nav>
 
-          <form class="adm__out" method="POST" action="/api/admin/logout">
-            <button class="btn btn--ghost btn--sm" type="submit">Útskrá</button>
-          </form>
+          <div class="a-out">
+            <a class="a-btn a-btn--quiet a-btn--sm" href="/admin/settings/" aria-label="Stillingar">
+              <span set:html={ADMIN_ICONS.settings} />
+            </a>
+          </div>
         </div>
       </header>
     )}
 
-    <main class:list={['adm__main', { 'adm__main--bare': bare }]}>
+    <main class:list={['a-main', { 'a-main--bare': bare }]}>
       <slot />
     </main>
-
-    <style is:global>
-      /* The admin is a tool, not a page: tighter rhythm, denser type, and the
-         display face reserved for headings so data stays scannable. */
-      body.adm {
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        background: var(--surface-page);
-      }
-
-      .adm__main { flex: 1; padding: var(--space-600) var(--space-400) var(--space-1000); }
-      .adm__main--bare {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: var(--space-400);
-      }
-
-      .adm__wrap { width: 100%; max-width: 1120px; margin-inline: auto; }
-
-      /* ---- top bar ---- */
-      .adm__bar {
-        position: sticky;
-        top: 0;
-        z-index: 40;
-        background: var(--veil-dark);
-        backdrop-filter: var(--blur-veil);
-        -webkit-backdrop-filter: var(--blur-veil);
-      }
-      .adm__bar::after {
-        content: '';
-        position: absolute;
-        inset: auto 0 0;
-        height: 1px;
-        background: var(--foil-hairline);
-        opacity: .6;
-      }
-      .adm__barin {
-        display: flex;
-        align-items: center;
-        gap: var(--space-400);
-        max-width: 1120px;
-        margin-inline: auto;
-        padding: var(--space-200) var(--space-400);
-        min-height: 60px;
-      }
-      .adm__brand { display: inline-flex; align-items: center; gap: .7em; color: var(--text-primary); text-decoration: none; flex: none; }
-      .adm__mark { width: 15px; height: 20px; display: block; color: var(--silver-300); }
-      .adm__mark svg { width: 100%; height: 100%; display: block; }
-      .adm__word {
-        font-family: var(--font-display);
-        letter-spacing: var(--tracking-monogram);
-        text-transform: uppercase;
-        font-size: 14px;
-        padding-left: .34em;
-      }
-
-      .adm__nav { display: flex; gap: var(--space-300); margin-inline-start: auto; flex-wrap: wrap; }
-      .adm__link {
-        position: relative;
-        font: var(--type-eyebrow);
-        letter-spacing: var(--tracking-eyebrow);
-        text-transform: uppercase;
-        color: var(--text-muted);
-        text-decoration: none;
-        padding-block: var(--space-100);
-        transition: color var(--dur-fast) var(--ease-glide);
-      }
-      .adm__link::after {
-        content: '';
-        position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
-        background: var(--silver-050); opacity: 0; transform: scaleX(.4); transform-origin: left;
-        transition: opacity var(--dur-base) var(--ease-settle), transform var(--dur-base) var(--ease-settle);
-      }
-      .adm__link:hover { color: var(--text-primary); }
-      .adm__link--on { color: var(--text-primary); }
-      .adm__link--on::after { opacity: 1; transform: scaleX(1); }
-      .adm__out { flex: none; margin-inline-start: var(--space-200); }
-
-      /* ---- page furniture ---- */
-      .adm__head {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: var(--space-300);
-        flex-wrap: wrap;
-        margin-block-end: var(--space-500);
-      }
-      .adm__title { font-size: var(--display-md); margin: 0; }
-      .adm__sub { font: var(--type-mono); color: var(--text-muted); margin: var(--space-100) 0 0; max-width: none; }
-
-      /* ---- data table ---- */
-      .adm__tablewrap { overflow-x: auto; border: 1px solid var(--edge-quiet); border-radius: var(--radius-sm); }
-      table.adm__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-      .adm__table th {
-        text-align: left;
-        font: var(--type-eyebrow);
-        letter-spacing: var(--tracking-eyebrow);
-        text-transform: uppercase;
-        color: var(--text-muted);
-        padding: var(--space-200) var(--space-250);
-        border-block-end: 1px solid var(--edge-hairline);
-        white-space: nowrap;
-        background: var(--surface-raised);
-      }
-      .adm__table td {
-        padding: var(--space-200) var(--space-250);
-        border-block-end: 1px solid var(--edge-quiet);
-        color: var(--text-secondary);
-        vertical-align: top;
-      }
-      .adm__table tr:last-child td { border-block-end: 0; }
-      .adm__table tbody tr { transition: background-color var(--dur-fast) var(--ease-glide); }
-      .adm__table tbody tr:hover { background: var(--surface-hover); }
-      .adm__num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: var(--text-xs); }
-      .adm__strong { color: var(--text-primary); }
-
-      .adm__empty {
-        padding: var(--space-1000) var(--space-400);
-        text-align: center;
-        color: var(--text-muted);
-        font: var(--type-mono);
-      }
-
-      /* ---- status pill ---- */
-      .adm__st {
-        display: inline-flex; align-items: center; gap: var(--space-075);
-        height: 22px; padding: 0 var(--space-150);
-        border-radius: var(--radius-pill);
-        font: var(--type-eyebrow);
-        letter-spacing: var(--tracking-eyebrow);
-        text-transform: uppercase;
-        white-space: nowrap;
-        border: 1px solid transparent;
-      }
-      .adm__st--new       { color: var(--text-accent); border-color: var(--edge-accent); }
-      .adm__st--quoted    { color: var(--signal-caution); background: var(--signal-caution-surface); }
-      .adm__st--scheduled { color: var(--silver-050); border-color: var(--edge-strong); }
-      .adm__st--done      { color: var(--signal-positive); background: var(--signal-positive-surface); }
-      .adm__st--cancelled { color: var(--text-muted); border-color: var(--edge-quiet); }
-
-      /* ---- cards / stats ---- */
-      .adm__grid { display: grid; gap: var(--space-300); }
-      .adm__grid--4 { grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr)); }
-      .adm__grid--2 { grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr)); }
-
-      .adm__stat {
-        padding: var(--space-300);
-        background: var(--surface-raised);
-        border: 1px solid var(--edge-hairline);
-        border-radius: var(--radius-sm);
-        box-shadow: var(--sheen-top);
-      }
-      .adm__statn { font-family: var(--font-display); font-size: var(--display-md); line-height: 1; color: var(--text-primary); font-variant-numeric: tabular-nums; }
-      .adm__statl { font: var(--type-eyebrow); letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--text-muted); margin-block-start: var(--space-150); }
-
-      /* ---- forms ---- */
-      .adm__form { display: flex; flex-direction: column; gap: var(--space-300); }
-      .adm__row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr)); gap: var(--space-300); }
-      .adm__panel {
-        padding: var(--space-400);
-        background: var(--surface-raised);
-        border: 1px solid var(--edge-hairline);
-        border-radius: var(--radius-sm);
-        box-shadow: var(--sheen-top);
-      }
-
-      .adm__msg {
-        padding: var(--space-250) var(--space-300);
-        border-radius: var(--radius-sm);
-        border-inline-start: 1px solid;
-        font-size: var(--text-sm);
-      }
-      .adm__msg--err { color: var(--signal-negative); background: var(--signal-negative-surface); border-color: var(--signal-negative); }
-      .adm__msg--ok  { color: var(--signal-positive); background: var(--signal-positive-surface); border-color: var(--signal-positive); }
-      .adm__msg--warn{ color: var(--signal-caution); background: var(--signal-caution-surface); border-color: var(--signal-caution); }
-
-      .adm__actions { display: flex; flex-wrap: wrap; gap: var(--space-200); align-items: center; }
-
-      @media (max-width: 48rem) {
-        .adm__barin { gap: var(--space-200); padding-inline: var(--space-250); }
-        .adm__nav { order: 3; width: 100%; margin-inline-start: 0; gap: var(--space-250); }
-        .adm__out { margin-inline-start: auto; }
-        .adm__main { padding: var(--space-400) var(--space-250) var(--space-800); }
-      }
-    </style>
   </body>
 </html>

@@ -2,7 +2,8 @@
 import Admin from '~/layouts/Admin.astro';
 import { requireAdmin, env } from '~/lib/admin-guard';
 import { visitsBetween, parseItems, formatPhone, type VisitRow } from '~/lib/visits';
-import { today, addDays, startOfDay, endOfDay, clock, isoDate, longDate } from '~/lib/time';
+import { today, startOfDay, isoDate, clock, longDate, addDays } from '~/lib/time';
+import { ADMIN_ICONS } from '~/data/admin-icons';
 
 export const prerender = false;
 
@@ -11,182 +12,268 @@ if (gate) return gate;
 
 const { DB } = env(Astro);
 
+/* ?m=YYYY-MM selects the month; ?d=YYYY-MM-DD opens one day beneath it. */
+const todayIso = today();
+const monthRaw = Astro.url.searchParams.get('m') ?? todayIso.slice(0, 7);
+const month = /^\d{4}-\d{2}$/.test(monthRaw) ? monthRaw : todayIso.slice(0, 7);
+const selected = Astro.url.searchParams.get('d');
+
+const [Y, M] = month.split('-').map(Number);
+
 /**
- * Two weeks forward from today, not a calendar month.
+ * The grid always starts on a Monday.
  *
- * A month grid on a phone is unreadable and mostly empty for a business that
- * books a fortnight ahead. A dense list of the days that actually have work is
- * what the person driving the van needs.
+ * getUTCDay() is 0 for Sunday, so the offset is shifted by one: an Icelandic
+ * calendar begins the week on Monday, and a grid that starts on Sunday reads
+ * as wrong to everyone who will use this.
  */
-const DAYS = 14;
-const from = Astro.url.searchParams.get('from') ?? today();
-const start = startOfDay(from);
-const end = endOfDay(addDays(from, DAYS - 1));
+const first = new Date(Date.UTC(Y!, M! - 1, 1));
+const lead = (first.getUTCDay() + 6) % 7;
+const gridStart = new Date(Date.UTC(Y!, M! - 1, 1 - lead));
+
+const CELLS = 42; // six weeks, so the grid never changes height month to month
+const gridStartIso = isoDate(Math.floor(gridStart.getTime() / 1000));
 
 let rows: VisitRow[] = [];
 let dbError: string | null = null;
 
 if (!DB) {
-  dbError = 'Gagnagrunnurinn er ekki bundinn (DB).';
+  dbError = 'Gagnagrunnurinn er ekki tengdur.';
 } else {
   try {
-    rows = await visitsBetween(DB, start, end);
+    const from = startOfDay(gridStartIso);
+    rows = await visitsBetween(DB, from, from + CELLS * 86400);
   } catch (e) {
-    dbError = `Gagnagrunnurinn svarar ekki. Keyrðu "npm run db:migrate:remote". (${String(e).slice(0, 120)})`;
+    dbError = `Gagnagrunnurinn svarar ekki. (${String(e).slice(0, 100)})`;
   }
 }
 
-/** Group by local day so each day renders once, in order. */
+/** Bucket by local day so each cell is one lookup rather than a filter. */
 const byDay = new Map<string, VisitRow[]>();
-for (let i = 0; i < DAYS; i++) byDay.set(addDays(from, i), []);
 for (const r of rows) {
   if (!r.scheduled_at) continue;
   const d = isoDate(r.scheduled_at);
-  if (byDay.has(d)) byDay.get(d)!.push(r);
+  if (!byDay.has(d)) byDay.set(d, []);
+  byDay.get(d)!.push(r);
 }
 
-const days = [...byDay.entries()];
-const todayIso = today();
+const cells = Array.from({ length: CELLS }, (_, i) => {
+  const iso = isoDate(Math.floor(gridStart.getTime() / 1000) + i * 86400);
+  return {
+    iso,
+    dayNum: Number(iso.slice(8, 10)),
+    inMonth: iso.slice(0, 7) === month,
+    isToday: iso === todayIso,
+    isSelected: iso === selected,
+    visits: byDay.get(iso) ?? [],
+  };
+});
 
-const ITEM_LABEL: Record<string, string> = {
+const prevMonth = M === 1 ? `${Y! - 1}-12` : `${Y}-${String(M! - 1).padStart(2, '0')}`;
+const nextMonth = M === 12 ? `${Y! + 1}-01` : `${Y}-${String(M! + 1).padStart(2, '0')}`;
+
+const MONTHS = ['janúar','febrúar','mars','apríl','maí','júní','júlí','ágúst','september','október','nóvember','desember'];
+const DOW = ['M', 'Þ', 'M', 'F', 'F', 'L', 'S'];
+
+const dayVisits = selected ? (byDay.get(selected) ?? []) : [];
+const monthTotal = cells.filter((c) => c.inMonth).reduce((n, c) => n + c.visits.length, 0);
+
+const ITEM: Record<string, string> = {
   sofa: 'Sófi', rug: 'Teppi', carpet: 'Gólfteppi', stains: 'Blettir',
 };
-
-const prev = addDays(from, -DAYS);
-const next = addDays(from, DAYS);
 ---
 
 <Admin title="Dagatal" current="calendar">
-  <div class="adm__wrap">
-    <header class="adm__head">
+  <div class="a-wrap">
+    <header class="a-head">
       <div>
-        <h1 class="adm__title">Dagatal</h1>
-        <p class="adm__sub">{rows.length} bókanir næstu {DAYS} daga</p>
+        <h1 class="a-h1">{MONTHS[M! - 1]} {Y}</h1>
+        <p class="a-sub">{monthTotal} bókanir í mánuðinum</p>
       </div>
-      <div class="adm__actions">
-        <a class="btn btn--ghost btn--sm" href={`/admin/calendar/?from=${prev}`}>← Fyrri</a>
-        <a class="btn btn--ghost btn--sm" href="/admin/calendar/">Í dag</a>
-        <a class="btn btn--ghost btn--sm" href={`/admin/calendar/?from=${next}`}>Næstu →</a>
-      </div>
+      <a class="a-btn a-btn--primary" href="/admin/new-visit/">
+        <span set:html={ADMIN_ICONS.plus} />
+        Nýtt
+      </a>
     </header>
 
-    {dbError && <p class="adm__msg adm__msg--err">{dbError}</p>}
+    {dbError && <p class="a-msg a-msg--err">{dbError}</p>}
 
-    <div class="cal">
-      {days.map(([iso, list]) => (
-        <section class:list={['cal__d', { 'cal__d--today': iso === todayIso, 'cal__d--empty': list.length === 0 }]}>
-          <header class="cal__h">
-            <span class="cal__date">{longDate(iso, 'is')}</span>
-            {iso === todayIso && <span class="cal__badge">Í dag</span>}
-            {list.length > 0 && <span class="cal__n">{list.length}</span>}
-          </header>
+    <nav class="cal__nav" aria-label="Mánuður">
+      <a class="a-btn a-btn--plain a-btn--sm" href={`/admin/calendar/?m=${prevMonth}`} aria-label="Fyrri mánuður">
+        <span set:html={ADMIN_ICONS.back} />
+      </a>
+      <a class="a-btn a-btn--plain a-btn--sm" href="/admin/calendar/">Í dag</a>
+      <a class="a-btn a-btn--plain a-btn--sm cal__next" href={`/admin/calendar/?m=${nextMonth}`} aria-label="Næsti mánuður">
+        <span set:html={ADMIN_ICONS.back} />
+      </a>
+    </nav>
 
-          {list.length === 0 ? (
-            <p class="cal__none">—</p>
-          ) : (
-            <ul class="cal__list">
-              {list.map((r) => (
-                <li class="cal__item">
-                  <span class="cal__time">{clock(r.scheduled_at!)}</span>
-                  <span class="cal__body">
-                    <a class="cal__name" href={`/admin/visits/?ref=${r.ref}`}>{r.name}</a>
-                    <span class="cal__meta">
-                      {parseItems(r.items).map((i) => ITEM_LABEL[i] ?? i).join(', ') || '—'}
-                      {r.area ? ` · ${r.area}` : ''}
-                    </span>
-                    {r.address && <span class="cal__addr">{r.address}</span>}
-                  </span>
-                  <a class="cal__ph" href={`tel:${r.phone}`}>{formatPhone(r.phone)}</a>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      ))}
+    <div class="a-card cal">
+      <div class="cal__dow" aria-hidden="true">
+        {DOW.map((d) => <span>{d}</span>)}
+      </div>
+
+      <div class="cal__grid">
+        {cells.map((c) => (
+          <a
+            class:list={['cal__cell', {
+              'cal__cell--out': !c.inMonth,
+              'cal__cell--today': c.isToday,
+              'cal__cell--on': c.isSelected,
+              'cal__cell--has': c.visits.length > 0,
+            }]}
+            href={`/admin/calendar/?m=${month}&d=${c.iso}`}
+            aria-label={`${c.iso}, ${c.visits.length} bókanir`}
+            aria-current={c.isToday ? 'date' : undefined}
+          >
+            <span class="cal__n">{c.dayNum}</span>
+            {c.visits.length > 0 && (
+              <span class="cal__dots">
+                {c.visits.slice(0, 3).map(() => <span class="cal__dot"></span>)}
+                {c.visits.length > 3 && <span class="cal__more">+{c.visits.length - 3}</span>}
+              </span>
+            )}
+          </a>
+        ))}
+      </div>
     </div>
+
+    {selected && (
+      <section class="a-sec">
+        <h2 class="a-sec__h">
+          {longDate(selected, 'is')}
+          {dayVisits.length > 0 && <span class="a-badge">{dayVisits.length}</span>}
+        </h2>
+
+        {dayVisits.length === 0 ? (
+          <p class="a-empty">Ekkert bókað þennan dag.</p>
+        ) : (
+          <ul class="a-rows">
+            {dayVisits.map((r) => {
+              const digits = r.phone.replace(/[^0-9]/g, '');
+              return (
+                <li class="a-row">
+                  <a class="cal__hit" href={`/admin/visits/?ref=${r.ref}`}>
+                    <div class="a-row__top">
+                      <span class="a-row__name">
+                        <span class="cal__time">{clock(r.scheduled_at!)}</span>
+                        {r.name}
+                      </span>
+                    </div>
+                    <p class="a-row__meta">
+                      {parseItems(r.items).map((i) => ITEM[i] ?? i).join(', ') || '—'}
+                      {r.area ? ` · ${r.area}` : ''}
+                    </p>
+                    {r.address && <p class="a-row__mono">{r.address}</p>}
+                  </a>
+                  <div class="a-row__foot">
+                    <a class="a-btn a-btn--plain a-btn--sm" href={`tel:${r.phone}`}>
+                      <span set:html={ADMIN_ICONS.phone} />
+                      {formatPhone(r.phone)}
+                    </a>
+                    <a class="a-btn a-btn--plain a-btn--sm" href={`https://wa.me/${digits}`} target="_blank" rel="noopener">
+                      <span set:html={ADMIN_ICONS.whatsapp} />
+                      WhatsApp
+                    </a>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+    )}
+
+    <p class="cal__sync">
+      <span set:html={ADMIN_ICONS.link} />
+      Til að sjá þetta í Google Calendar, sæktu áskriftarslóðina í
+      <a href="/admin/settings/">Stillingum</a>.
+    </p>
   </div>
 </Admin>
 
 <style>
-  .cal { display: flex; flex-direction: column; }
+  .cal__nav { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+  .cal__next :global(svg) { transform: rotate(180deg); }
 
-  .cal__d {
-    padding-block: var(--space-300);
-    border-block-end: 1px solid var(--edge-quiet);
+  .cal { padding: 10px; }
+
+  .cal__dow,
+  .cal__grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+
+  .cal__dow {
+    gap: 2px;
+    margin-bottom: 4px;
   }
 
-  .cal__d--empty { opacity: .5; }
-  .cal__d--today { border-inline-start: 1px solid var(--accent); padding-inline-start: var(--space-300); }
+  .cal__dow span {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--a-ink-4);
+    padding: 4px 0;
+  }
 
-  .cal__h {
+  .cal__grid { gap: 2px; }
+
+  .cal__cell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 3px;
+    /* Square-ish cells that stay tappable at 44px on the narrowest phone. */
+    min-height: 46px;
+    padding: 5px 2px 4px;
+    border-radius: var(--a-r-sm);
+    text-decoration: none;
+    color: var(--a-ink);
+    background: transparent;
+    border: 1px solid transparent;
+  }
+
+  .cal__cell:active { background: var(--a-inset); }
+  .cal__cell--out { color: var(--a-ink-4); }
+  .cal__cell--has { background: var(--a-inset); }
+
+  .cal__cell--today { border-color: var(--a-accent); font-weight: 700; }
+  .cal__cell--today .cal__n { color: var(--a-accent); }
+
+  .cal__cell--on { background: var(--a-accent); }
+  .cal__cell--on .cal__n,
+  .cal__cell--on .cal__more { color: var(--a-accent-ink); }
+  .cal__cell--on .cal__dot { background: var(--a-accent-ink); }
+
+  .cal__n { font-size: 14px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+
+  .cal__dots { display: flex; align-items: center; gap: 2px; }
+  .cal__dot { width: 4px; height: 4px; border-radius: 50%; background: var(--a-accent); }
+  .cal__more { font-size: 9px; color: var(--a-ink-3); font-family: var(--a-mono); }
+
+  .cal__hit { display: block; text-decoration: none; color: inherit; }
+  .cal__time {
+    font-family: var(--a-mono);
+    font-size: 13px;
+    color: var(--a-accent);
+    margin-right: 7px;
+  }
+
+  .cal__sync {
     display: flex;
     align-items: center;
-    gap: var(--space-200);
-    margin-block-end: var(--space-200);
+    gap: 7px;
+    margin-top: 22px;
+    font-size: 12.5px;
+    color: var(--a-ink-3);
+    line-height: 1.5;
   }
 
-  .cal__date {
-    font: var(--type-eyebrow);
-    letter-spacing: var(--tracking-eyebrow);
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
+  .cal__sync :global(svg) { width: 15px; height: 15px; flex: none; }
+  .cal__sync a { color: var(--a-accent); }
 
-  .cal__d--today .cal__date { color: var(--text-primary); }
-
-  .cal__badge {
-    font: var(--type-mono);
-    font-size: 10px;
-    color: var(--text-accent);
-  }
-
-  .cal__n {
-    display: inline-flex; align-items: center; justify-content: center;
-    min-width: 18px; height: 18px; padding: 0 5px;
-    border-radius: var(--radius-pill);
-    background: var(--surface-inset);
-    color: var(--text-secondary);
-    font-family: var(--font-mono); font-size: 10px;
-  }
-
-  .cal__none { font-family: var(--font-mono); color: var(--silver-600); margin: 0; }
-
-  .cal__list { display: flex; flex-direction: column; gap: var(--space-200); }
-
-  .cal__item {
-    display: grid;
-    grid-template-columns: 4rem 1fr auto;
-    gap: var(--space-250);
-    align-items: baseline;
-  }
-
-  .cal__time {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .cal__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-
-  .cal__name { color: var(--text-primary); text-decoration: none; font-size: var(--text-sm); }
-  .cal__name:hover { color: var(--text-accent); }
-
-  .cal__meta { font-size: var(--text-xs); color: var(--text-muted); }
-  .cal__addr { font-size: var(--text-xs); color: var(--silver-600); }
-
-  .cal__ph {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--text-muted);
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  .cal__ph:hover { color: var(--text-accent); }
-
-  @media (max-width: 40rem) {
-    .cal__item { grid-template-columns: 3.5rem 1fr; }
-    .cal__ph { grid-column: 2; }
+  @media (min-width: 46rem) {
+    .cal__cell { min-height: 74px; padding: 7px 4px; }
+    .cal__n { font-size: 15px; }
   }
 </style>

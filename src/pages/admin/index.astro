@@ -1,13 +1,13 @@
 ---
 import Admin from '~/layouts/Admin.astro';
-import VisitTable from '~/components/admin/VisitTable.astro';
+import VisitCard from '~/components/admin/VisitCard.astro';
 import { requireAdmin, env } from '~/lib/admin-guard';
 import { listVisits, statusCounts, visitsBetween, type VisitRow } from '~/lib/visits';
 import { today, addDays, startOfDay, endOfDay, longDate, clock } from '~/lib/time';
 import {
-  generateTomorrowReminders, pendingReminders, reminderLink,
-  type ReminderRow,
+  generateTomorrowReminders, pendingReminders, reminderLink, type ReminderRow,
 } from '~/lib/reminders';
+import { ADMIN_ICONS } from '~/data/admin-icons';
 
 export const prerender = false;
 
@@ -26,25 +26,19 @@ let dbError: string | null = null;
 /**
  * A missing or unmigrated database must not blank the dashboard.
  *
- * The most likely time to see this is the first deploy, when the schema has
- * not been applied yet — and a stack trace in place of the page tells whoever
- * is standing there nothing about what to do next.
+ * The likeliest moment to hit this is the first deploy, before the schema is
+ * applied — and a stack trace tells whoever is standing there nothing about
+ * what to do next.
  */
 if (!DB) {
-  dbError = 'Gagnagrunnurinn er ekki bundinn (DB). Athugaðu wrangler.toml.';
+  dbError = 'Gagnagrunnurinn er ekki tengdur.';
 } else {
   try {
     const d0 = today();
     const d1 = addDays(d0, 1);
 
-    /**
-     * Generated on load rather than on a schedule.
-     *
-     * Cron would mean a Worker that runs whether or not anyone is working, for
-     * a business where somebody opens this page every morning anyway. The
-     * insert is idempotent, so calling it on every load costs one query and
-     * can never produce a duplicate message.
-     */
+    /* Idempotent through the UNIQUE index, so running it on every load can
+       never produce a second message to a customer. */
     await generateTomorrowReminders(DB);
 
     [counts, todays, tomorrows, fresh, reminders] = await Promise.all([
@@ -55,7 +49,7 @@ if (!DB) {
       pendingReminders(DB),
     ]);
   } catch (e) {
-    dbError = `Gagnagrunnurinn svarar ekki. Keyrðu "npm run db:migrate:remote". (${String(e).slice(0, 120)})`;
+    dbError = `Gagnagrunnurinn svarar ekki. Keyrðu "npm run db:migrate:remote". (${String(e).slice(0, 100)})`;
   }
 }
 
@@ -64,73 +58,80 @@ const open = (counts.new ?? 0) + (counts.quoted ?? 0) + (counts.scheduled ?? 0);
 ---
 
 <Admin title="Í dag" current="today">
-  <div class="adm__wrap">
-    <header class="adm__head">
+  <div class="a-wrap">
+    <header class="a-head">
       <div>
-        <h1 class="adm__title">Í dag</h1>
-        <p class="adm__sub">{longDate(d0, 'is')}</p>
+        <h1 class="a-h1">Í dag</h1>
+        <p class="a-sub">{longDate(d0, 'is')}</p>
       </div>
-      <a class="btn btn--foil" href="/admin/new-visit/">Ný heimsókn</a>
+      <a class="a-btn a-btn--primary" href="/admin/new-visit/">
+        <span set:html={ADMIN_ICONS.plus} />
+        Nýtt verk
+      </a>
     </header>
 
-    {dbError && <p class="adm__msg adm__msg--err">{dbError}</p>}
+    {dbError && <p class="a-msg a-msg--err">{dbError}</p>}
 
-    <div class="adm__grid adm__grid--4">
-      <div class="adm__stat">
-        <div class="adm__statn">{todays.length}</div>
-        <div class="adm__statl">Bókað í dag</div>
+    <div class="a-grid a-grid--2">
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{todays.length}</span>
+        <span class="a-stat__l">Í dag</span>
       </div>
-      <div class="adm__stat">
-        <div class="adm__statn">{counts.new ?? 0}</div>
-        <div class="adm__statl">Nýjar fyrirspurnir</div>
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{counts.new ?? 0}</span>
+        <span class="a-stat__l">Nýjar</span>
       </div>
-      <div class="adm__stat">
-        <div class="adm__statn">{counts.scheduled ?? 0}</div>
-        <div class="adm__statl">Á dagskrá</div>
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{counts.scheduled ?? 0}</span>
+        <span class="a-stat__l">Á dagskrá</span>
       </div>
-      <div class="adm__stat">
-        <div class="adm__statn">{open}</div>
-        <div class="adm__statl">Opið alls</div>
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{open}</span>
+        <span class="a-stat__l">Opið</span>
       </div>
     </div>
 
     {reminders.length > 0 && (
-      <section class="sec">
-        <h2 class="sec__h">
-          Áminningar að senda
-          <span class="sec__n">{reminders.length}</span>
+      <section class="a-sec">
+        <h2 class="a-sec__h">
+          Áminningar
+          <span class="a-badge">{reminders.length}</span>
         </h2>
 
-        <ul class="rem">
+        <ul class="a-rows">
           {reminders.map((r) => {
             const link = reminderLink(r);
             return (
-              <li class="rem__i">
-                <div class="rem__who">
-                  <span class="rem__name">{r.name ?? '—'}</span>
-                  <span class="rem__meta">
-                    {r.subject}
-                    {r.scheduled_at ? ` · ${clock(r.scheduled_at)} á morgun` : ''}
+              <li class="a-card rm">
+                <div class="a-row__top">
+                  <span class="a-row__name">{r.name ?? '—'}</span>
+                  <span class="a-row__mono">
+                    {r.subject}{r.scheduled_at ? ` · ${clock(r.scheduled_at)}` : ''}
                   </span>
                 </div>
 
-                <p class="rem__body">{r.body}</p>
+                {/* Shown in full: nobody should press send on text they have not read. */}
+                <p class="rm__body">{r.body}</p>
 
-                <div class="rem__act">
+                <div class="a-acts">
                   {link && (
-                    <a class="btn btn--foil btn--sm" href={link} target="_blank" rel="noopener">
-                      Opna í WhatsApp
+                    <a class="a-btn a-btn--primary a-btn--sm" href={link} target="_blank" rel="noopener">
+                      <span set:html={ADMIN_ICONS.whatsapp} />
+                      Senda
                     </a>
                   )}
                   <form method="POST" action="/api/admin/reminder">
                     <input type="hidden" name="id" value={r.id} />
                     <input type="hidden" name="action" value="sent" />
-                    <button class="btn btn--ghost btn--sm" type="submit">Merkja sent</button>
+                    <button class="a-btn a-btn--plain a-btn--sm" type="submit">
+                      <span set:html={ADMIN_ICONS.check} />
+                      Merkja sent
+                    </button>
                   </form>
                   <form method="POST" action="/api/admin/reminder">
                     <input type="hidden" name="id" value={r.id} />
                     <input type="hidden" name="action" value="dismiss" />
-                    <button class="btn btn--ghost btn--sm" type="submit">Sleppa</button>
+                    <button class="a-btn a-btn--quiet a-btn--sm" type="submit">Sleppa</button>
                   </form>
                 </div>
               </li>
@@ -140,90 +141,36 @@ const open = (counts.new ?? 0) + (counts.quoted ?? 0) + (counts.scheduled ?? 0);
       </section>
     )}
 
-    <section class="sec">
-      <h2 class="sec__h">Dagskrá dagsins</h2>
-      <VisitTable rows={todays} empty="Ekkert bókað í dag." showTime />
+    <section class="a-sec">
+      <h2 class="a-sec__h">Dagskrá dagsins</h2>
+      <VisitCard rows={todays} empty="Ekkert bókað í dag." showTime />
     </section>
 
-    <section class="sec">
-      <h2 class="sec__h">Á morgun</h2>
-      <VisitTable rows={tomorrows} empty="Ekkert bókað á morgun." showTime />
+    <section class="a-sec">
+      <h2 class="a-sec__h">Á morgun</h2>
+      <VisitCard rows={tomorrows} empty="Ekkert bókað á morgun." showTime />
     </section>
 
-    <section class="sec">
-      <h2 class="sec__h">
+    <section class="a-sec">
+      <h2 class="a-sec__h">
         Nýjar fyrirspurnir
-        {fresh.length > 0 && <span class="sec__n">{fresh.length}</span>}
+        {fresh.length > 0 && <span class="a-badge">{fresh.length}</span>}
       </h2>
-      <VisitTable rows={fresh} empty="Engar ósvaraðar fyrirspurnir." />
+      <VisitCard rows={fresh} empty="Engar ósvaraðar fyrirspurnir." />
     </section>
   </div>
 </Admin>
 
 <style>
-  .sec { margin-block-start: var(--space-800); }
+  .rm { display: flex; flex-direction: column; gap: 10px; }
 
-  .sec__h {
-    display: flex;
-    align-items: center;
-    gap: var(--space-200);
-    font-family: var(--font-text);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-medium);
-    letter-spacing: var(--tracking-eyebrow);
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin: 0 0 var(--space-250);
-  }
-
-  .sec__n {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
-    border-radius: var(--radius-pill);
-    background: var(--glacier-700);
-    color: var(--silver-050);
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: 0;
-  }
-
-  .adm__grid { margin-block-end: var(--space-400); }
-
-  /* ---- reminders ---- */
-
-  .rem { display: flex; flex-direction: column; gap: var(--space-250); }
-
-  .rem__i {
-    padding: var(--space-300);
-    background: var(--surface-raised);
-    border: 1px solid var(--edge-hairline);
-    border-radius: var(--radius-sm);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-200);
-  }
-
-  .rem__who { display: flex; align-items: baseline; gap: var(--space-200); flex-wrap: wrap; }
-  .rem__name { color: var(--text-primary); font-size: var(--text-sm); }
-  .rem__meta { font: var(--type-mono); color: var(--text-muted); }
-
-  /* The message is shown in full: nobody should press send on text they
-     have not read. */
-  .rem__body {
-    margin: 0;
-    padding: var(--space-250);
-    background: var(--surface-inset);
-    border-radius: var(--radius-sm);
-    font-size: var(--text-sm);
-    color: var(--text-secondary);
+  .rm__body {
+    padding: 11px 13px;
+    background: var(--a-inset);
+    border-radius: var(--a-r-sm);
+    font-size: 14px;
+    color: var(--a-ink-2);
     white-space: pre-wrap;
-    max-width: none;
+    line-height: 1.55;
   }
-
-  .rem__act { display: flex; flex-wrap: wrap; gap: var(--space-150); align-items: center; }
-  .rem__act form { display: contents; }
 </style>

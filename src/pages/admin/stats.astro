@@ -1,0 +1,225 @@
+---
+import Admin from '~/layouts/Admin.astro';
+import Sparkline from '~/components/admin/Sparkline.astro';
+import BarList from '~/components/admin/BarList.astro';
+import { requireAdmin, env } from '~/lib/admin-guard';
+import {
+  totals, series, topPages, topReferrers, splitBy, viewsOf,
+  type DayCount, type LabelCount,
+} from '~/lib/analytics';
+import { SLUGS } from '~/i18n/routes';
+
+export const prerender = false;
+
+const gate = await requireAdmin(Astro);
+if (gate) return gate;
+
+const { DB } = env(Astro);
+
+const rangeRaw = Number(Astro.url.searchParams.get('d') ?? 30);
+const days = [7, 30, 90].includes(rangeRaw) ? rangeRaw : 30;
+
+let t: Record<string, number> = {};
+let viewSeries: DayCount[] = [];
+let waSeries: DayCount[] = [];
+let pages: LabelCount[] = [];
+let refs: LabelCount[] = [];
+let devices: LabelCount[] = [];
+let countries: LabelCount[] = [];
+let contactViews = 0;
+let quoteViews = 0;
+let dbError: string | null = null;
+
+/** Both languages of one page are one question, so they are counted together. */
+const quotePaths = [`/is/${SLUGS.quote.is}/`, `/en/${SLUGS.quote.en}/`];
+const contactPaths = [`/is/${SLUGS.contact.is}/`, `/en/${SLUGS.contact.en}/`];
+
+if (!DB) {
+  dbError = 'Gagnagrunnurinn er ekki tengdur.';
+} else {
+  try {
+    [t, viewSeries, waSeries, pages, refs, devices, countries, contactViews, quoteViews] =
+      await Promise.all([
+        totals(DB, days),
+        series(DB, 'view', days),
+        series(DB, 'whatsapp', days),
+        topPages(DB, days),
+        topReferrers(DB, days),
+        splitBy(DB, 'device', days),
+        splitBy(DB, 'country', days),
+        viewsOf(DB, contactPaths, days),
+        viewsOf(DB, quotePaths, days),
+      ]);
+  } catch (e) {
+    dbError = `Tölfræði ekki tiltæk. Keyrðu nýjustu færsluna á gagnagrunninn. (${String(e).slice(0, 90)})`;
+  }
+}
+
+const views = t.view ?? 0;
+const wa = t.whatsapp ?? 0;
+const bookings = t.booking ?? 0;
+const contacts = wa + (t.messenger ?? 0) + (t.call ?? 0) + (t.email ?? 0);
+
+/**
+ * Conversion as a share of views.
+ *
+ * Views, not visitors: nothing here stores an identifier, so there is no way
+ * to count people. The label says "af flettingum" — of page views — rather
+ * than implying a per-person rate the data cannot support.
+ */
+const pct = (n: number) => (views > 0 ? ((n / views) * 100).toFixed(1) : '0.0');
+
+const RANGES = [
+  { d: 7, l: '7 dagar' },
+  { d: 30, l: '30 dagar' },
+  { d: 90, l: '90 dagar' },
+];
+
+const PAGE_LABEL: Record<string, string> = {
+  [`/is/${SLUGS.quote.is}/`]: 'Fá tilboð',
+  [`/en/${SLUGS.quote.en}/`]: 'Fá tilboð (EN)',
+  [`/is/${SLUGS.contact.is}/`]: 'Hafa samband',
+  [`/en/${SLUGS.contact.en}/`]: 'Hafa samband (EN)',
+  '/is/': 'Forsíða',
+  '/en/': 'Forsíða (EN)',
+  [`/is/${SLUGS.prices.is}/`]: 'Verðskrá',
+  [`/is/${SLUGS.sofa.is}/`]: 'Sófahreinsun',
+  [`/is/${SLUGS.rug.is}/`]: 'Teppahreinsun',
+};
+---
+
+<Admin title="Tölur" current="stats">
+  <div class="a-wrap">
+    <header class="a-head">
+      <div>
+        <h1 class="a-h1">Tölur</h1>
+        <p class="a-sub">Síðustu {days} dagar</p>
+      </div>
+    </header>
+
+    <nav class="a-filters" aria-label="Tímabil">
+      {RANGES.map((r) => (
+        <a class="a-filter" href={`/admin/stats/?d=${r.d}`} aria-current={r.d === days ? 'true' : undefined}>
+          {r.l}
+        </a>
+      ))}
+    </nav>
+
+    {dbError && <p class="a-msg a-msg--err">{dbError}</p>}
+
+    {!dbError && views === 0 && (
+      <p class="a-msg a-msg--info">
+        Engar mælingar enn. Tölur byrja að safnast um leið og einhver heimsækir
+        vefinn — flettingar eru taldar með einum mynddíl, ekki með skriftu, svo
+        þær virka líka þegar slökkt er á JavaScript.
+      </p>
+    )}
+
+    <div class="a-grid a-grid--2">
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{views}</span>
+        <span class="a-stat__l">Flettingar</span>
+      </div>
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{wa}</span>
+        <span class="a-stat__l">WhatsApp</span>
+        <span class="a-stat__d">{pct(wa)}% af flettingum</span>
+      </div>
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{contacts}</span>
+        <span class="a-stat__l">Öll samskipti</span>
+        <span class="a-stat__d">{pct(contacts)}%</span>
+      </div>
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{bookings}</span>
+        <span class="a-stat__l">Bókanir</span>
+        <span class="a-stat__d">{pct(bookings)}%</span>
+      </div>
+    </div>
+
+    <section class="a-sec">
+      <h2 class="a-sec__h">Flettingar á dag</h2>
+      <div class="a-card">
+        <Sparkline data={viewSeries} label="flettingar" />
+      </div>
+    </section>
+
+    <section class="a-sec">
+      <h2 class="a-sec__h">WhatsApp-smellir á dag</h2>
+      <div class="a-card">
+        <Sparkline data={waSeries} label="smellir" />
+      </div>
+    </section>
+
+    <section class="a-sec">
+      <h2 class="a-sec__h">Leiðin að fyrirspurn</h2>
+      <div class="a-card fn">
+        {[
+          { l: 'Flettingar', n: views },
+          { l: 'Á „Fá tilboð“', n: quoteViews },
+          { l: 'Á „Hafa samband“', n: contactViews },
+          { l: 'Smellt á samskipti', n: contacts },
+          { l: 'Bókun send', n: bookings },
+        ].map((step) => (
+          <div class="fn__step">
+            <div class="fn__top">
+              <span class="fn__l">{step.l}</span>
+              <span class="fn__n">{step.n}</span>
+            </div>
+            <div class="fn__track">
+              <div class="fn__fill" style={`width:${views > 0 ? Math.max((step.n / views) * 100, step.n > 0 ? 1.5 : 0) : 0}%`}></div>
+            </div>
+          </div>
+        ))}
+        <p class="fn__note">
+          Hlutföll miðast við flettingar, ekki einstaklinga — ekkert auðkenni er
+          geymt, svo ekki er hægt að telja fólk.
+        </p>
+      </div>
+    </section>
+
+    <div class="a-grid a-grid--wide a-sec">
+      <div class="a-card">
+        <h2 class="a-sec__h">Vinsælustu síður</h2>
+        <BarList items={pages} labels={PAGE_LABEL} empty="Engar flettingar enn." />
+      </div>
+
+      <div class="a-card">
+        <h2 class="a-sec__h">Hvaðan komu þau</h2>
+        <BarList items={refs} empty="Engar utanaðkomandi tilvísanir enn." />
+      </div>
+
+      <div class="a-card">
+        <h2 class="a-sec__h">Tæki</h2>
+        <BarList
+          items={devices}
+          labels={{ mobile: 'Sími', desktop: 'Tölva' }}
+          empty="Engin gögn enn."
+        />
+      </div>
+
+      <div class="a-card">
+        <h2 class="a-sec__h">Lönd</h2>
+        <BarList items={countries} empty="Engin gögn enn." />
+      </div>
+    </div>
+
+    <p class="a-sub priv">
+      Engin vafrakaka, engin IP-tala og ekkert auðkenni er geymt. Þess vegna
+      þarf vefurinn ekkert samþykkisborð.
+    </p>
+  </div>
+</Admin>
+
+<style>
+  .fn { display: flex; flex-direction: column; gap: 12px; }
+  .fn__step { display: flex; flex-direction: column; gap: 5px; }
+  .fn__top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .fn__l { font-size: 14px; color: var(--a-ink-2); }
+  .fn__n { font-family: var(--a-mono); font-size: 13px; color: var(--a-ink); font-variant-numeric: tabular-nums; }
+  .fn__track { height: 8px; border-radius: 4px; background: var(--a-sunken); overflow: hidden; }
+  .fn__fill { height: 100%; border-radius: 4px; background: var(--a-accent); transition: width .3s ease; }
+  .fn__note { margin-top: 4px; font-size: 12.5px; color: var(--a-ink-4); line-height: 1.5; }
+
+  .priv { margin-top: 22px; font-size: 12.5px; line-height: 1.5; }
+</style>

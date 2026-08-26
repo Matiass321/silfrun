@@ -1,0 +1,36 @@
+---
+import type { LabelCount } from '~/lib/analytics';
+
+interface Props {
+  items: LabelCount[];
+  /** Friendly names for raw values — a URL path, a country code. */
+  labels?: Record<string, string>;
+  empty: string;
+}
+
+const { items, labels = {}, empty } = Astro.props;
+
+/** Bars are relative to the largest row, not to the total: with one dominant
+    row every other bar would round to invisible. */
+const max = Math.max(1, ...items.map((i) => i.n));
+---
+
+{items.length === 0 ? (
+  <p class="bl__empty">{empty}</p>
+) : (
+  <ul class="a-bars">
+    {items.map((it) => (
+      <li class="a-bar">
+        <span class="a-bar__l" title={it.label}>{labels[it.label] ?? it.label}</span>
+        <span class="a-bar__n">{it.n}</span>
+        <span class="a-bar__t">
+          <span class="a-bar__f" style={`width:${Math.max((it.n / max) * 100, 2)}%`}></span>
+        </span>
+      </li>
+    ))}
+  </ul>
+)}
+
+<style>
+  .bl__empty { font-size: 13.5px; color: var(--a-ink-4); padding: 6px 0; }
+</style>
