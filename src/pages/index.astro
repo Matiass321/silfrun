@@ -42,10 +42,37 @@ const LABEL: Record<string, string> = { is: 'Íslenska', en: 'English' };
     <title>{SITE.brand}</title>
     <link rel="canonical" href={`${SITE.url}${target}`} />
     <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} type="image/svg+xml" />
-    <meta name="theme-color" content="#0B0D0F" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#FBF9F5" media="(prefers-color-scheme: light)" />
+      <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0B0D0F" />
+    <meta name="color-scheme" content="light dark" />
     <style>
       *, *::before, *::after { box-sizing: border-box; }
+
+      /* This page does not load tokens.css, so it carries its own pair.
+         Light is the default; dark applies on preference. */
+      :root {
+        --c-bg: #FBF9F5;
+        --c-ink: #0B0D0F;
+        --c-mark: #6B655C;
+        --c-edge: rgba(11, 13, 15, .30);
+        --c-hover: rgba(11, 13, 15, .045);
+        --c-grain: 0.05;
+        --c-foil: linear-gradient(103deg, #6B737B 0%, #99A1A9 15%, #464E56 33%, #8C949C 51%, #3C444C 69%, #7E868E 85%, #545C64 100%);
+        --c-rule: linear-gradient(90deg, rgba(107,101,92,0) 0%, rgba(107,101,92,.28) 30%, rgba(45,42,38,.46) 50%, rgba(107,101,92,.28) 70%, rgba(107,101,92,0) 100%);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --c-bg: #0B0D0F;
+          --c-ink: #F2F4F6;
+          --c-mark: #BAC1C8;
+          --c-edge: rgba(226, 232, 238, .28);
+          --c-hover: rgba(242, 244, 246, .06);
+          --c-grain: 0.32;
+          --c-foil: linear-gradient(103deg, #5D656E 0%, #BAC1C8 16%, #F2F4F6 31%, #9AA2AA 46%, #E4E8EB 62%, #7B838C 80%, #D2D7DC 100%);
+          --c-rule: linear-gradient(90deg, rgba(226,232,238,0) 0%, rgba(226,232,238,.55) 30%, rgba(255,255,255,.85) 50%, rgba(226,232,238,.55) 70%, rgba(226,232,238,0) 100%);
+        }
+      }
 
       body {
         margin: 0;
@@ -56,21 +83,21 @@ const LABEL: Record<string, string> = { is: 'Íslenska', en: 'English' };
         justify-content: center;
         gap: 2.5rem;
         padding: 2rem;
-        background: #0B0D0F;
-        color: #F2F4F6;
+        background: var(--c-bg);
+        color: var(--c-ink);
         font-family: 'Archivo Variable', Archivo, 'Helvetica Neue', Helvetica, Arial, sans-serif;
         -webkit-font-smoothing: antialiased;
         text-align: center;
       }
 
-      /* The grain keeps the flat black from reading as plastic. */
+      /* Full tooth on black, barely-there on paper. */
       body::after {
         content: '';
         position: fixed;
         inset: 0;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
         background-size: 180px;
-        opacity: 0.32;
+        opacity: var(--c-grain);
         pointer-events: none;
         z-index: 0;
       }
@@ -78,7 +105,7 @@ const LABEL: Record<string, string> = { is: 'Íslenska', en: 'English' };
       .mark { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 1.1rem; }
       .mark nav { margin-top: 1.4rem; }
 
-      .mark svg { width: 34px; height: 45px; display: block; color: #BAC1C8; }
+      .mark svg { width: 34px; height: 45px; display: block; color: var(--c-mark); }
 
       h1 {
         margin: 0;
@@ -88,7 +115,7 @@ const LABEL: Record<string, string> = { is: 'Íslenska', en: 'English' };
         letter-spacing: 0.34em;
         text-transform: uppercase;
         padding-left: 0.34em;
-        background: linear-gradient(103deg, #5D656E 0%, #BAC1C8 16%, #F2F4F6 31%, #9AA2AA 46%, #E4E8EB 62%, #7B838C 80%, #D2D7DC 100%);
+        background: var(--c-foil);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
@@ -99,7 +126,7 @@ const LABEL: Record<string, string> = { is: 'Íslenska', en: 'English' };
         height: 1px;
         border: 0;
         margin: 0;
-        background: linear-gradient(90deg, rgba(226,232,238,0) 0%, rgba(226,232,238,.55) 30%, rgba(255,255,255,.85) 50%, rgba(226,232,238,.55) 70%, rgba(226,232,238,0) 100%);
+        background: var(--c-rule);
       }
 
       ul {
@@ -119,9 +146,9 @@ const LABEL: Record<string, string> = { is: 'Íslenska', en: 'English' };
         align-items: center;
         height: 42px;
         padding: 0 1.5rem;
-        border: 1px solid rgba(226, 232, 238, .28);
+        border: 1px solid var(--c-edge);
         border-radius: 2px;
-        color: #F2F4F6;
+        color: var(--c-ink);
         font-size: 12.5px;
         font-weight: 500;
         letter-spacing: 0.14em;
@@ -130,7 +157,7 @@ const LABEL: Record<string, string> = { is: 'Íslenska', en: 'English' };
         transition: background-color 160ms cubic-bezier(.22,.61,.36,1), border-color 160ms cubic-bezier(.22,.61,.36,1);
       }
 
-      a:hover { background: rgba(242, 244, 246, .06); border-color: #BAC1C8; }
+      a:hover { background: var(--c-hover); border-color: var(--c-ink); }
 
       @media (prefers-reduced-motion: reduce) {
         a { transition-duration: 0.01ms; }

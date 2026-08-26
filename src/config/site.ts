@@ -73,17 +73,13 @@ export const SITE = {
 
   legalName: 'Studio Esja ehf.',
   /**
-   * Icelandic company registration number.
+   * Icelandic company registration number. Required on a commercial website.
    *
-   * STILL MISSING. Required on a commercial website under Icelandic e-commerce
-   * law, and it is the last placeholder rendering on every public page.
-   *
-   * It was deliberately not guessed at: several unrelated companies trade under
-   * an "Esja" name with different numbers, and publishing another company's
-   * kennitala attributes this business to their tax registration. Look it up at
-   * skatturinn.is/fyrirtaekjaskra/leit or take it from an invoice.
+   * Company form: the day carries +40, so 63 is the 23rd. Registered
+   * 23.02.2026. The check digit was verified rather than trusted — a
+   * transposed pair still looks like a kennitala but belongs to nobody.
    */
-  kennitala: TODO(''),
+  kennitala: '630226-0580',
   /** VSK (VAT) number, if the business is VSK-registered. */
   vskNumber: TODO(''),
 

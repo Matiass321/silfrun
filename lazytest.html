@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>lazy pixel test</title></head>
+<body style="margin:0">
+<div style="height:6000px;background:linear-gradient(#eee,#ccc)">tall spacer</div>
+
+<img id="c" src="http://127.0.0.1:9/lazy-c.gif" width="1" height="1" loading="eager"
+     style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
+
+<img id="b" src="http://127.0.0.1:9/lazy-b.gif" width="300" height="300" loading="lazy">
+
+<img id="a" src="http://127.0.0.1:9/lazy-a.gif" alt="" width="1" height="1" loading="lazy" decoding="async"
+     aria-hidden="true"
+     style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
+
+<script>
+window.__fired = {};
+for (const id of ['a','b','c']) {
+  const el = document.getElementById(id);
+  el.addEventListener('error', () => { window.__fired[id] = 'error@' + Math.round(performance.now()); });
+  el.addEventListener('load',  () => { window.__fired[id] = 'load@'  + Math.round(performance.now()); });
+}
+window.__report = () => JSON.stringify({
+  fired: window.__fired,
+  resourceEntries: performance.getEntriesByType('resource')
+      .filter(e => e.name.indexOf('lazy-') !== -1).map(e => e.name.slice(-11)),
+  innerHeight: window.innerHeight,
+  scrollY: window.scrollY,
+  docHeight: document.documentElement.scrollHeight,
+  aTopFromViewport: Math.round(document.getElementById('a').getBoundingClientRect().top)
+});
+window.__toBottom = () => { window.scrollTo(0, document.documentElement.scrollHeight); return 'scrolled'; };
+</script>
+</body>
+</html>

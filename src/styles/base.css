@@ -69,7 +69,7 @@ hr {
   margin: var(--space-600) 0;
 }
 
-::selection { background: var(--glacier-700); color: var(--silver-050); }
+::selection { background: var(--accent); color: var(--surface-page); }
 
 small { font-size: var(--text-xs); }
 code, kbd { font: var(--type-mono); }
@@ -162,7 +162,7 @@ strong { font-weight: var(--weight-medium); }
   width: 5px;
   height: 8px;
   flex: none;
-  background: var(--silver-300);
+  background: var(--text-muted);
   clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
 }
 
@@ -209,21 +209,32 @@ strong { font-weight: var(--weight-medium); }
 }
 
 /**
- * The deep section is the closing plate: pure ink, grained, with a foil
- * hairline thrown across its top edge. It reads as the inside of the case.
+ * The closing plate.
+ *
+ * On dark it is the deepest surface on the site. On light it is the one INKED
+ * band on a paper page — a deliberate reversal rather than an inversion,
+ * because a white band on a white page reads as a hole, not as weight. Both
+ * come from --plate-*, so the section carries its own text colours with it.
  */
 .section--deep {
   position: relative;
-  background: var(--basalt-950);
+  background: var(--plate-surface);
+  color: var(--plate-text);
   isolation: isolate;
 }
+
+.section--deep .lead,
+.section--deep p { color: var(--plate-text-secondary); }
+.section--deep h1,
+.section--deep h2,
+.section--deep h3 { color: var(--plate-text); }
 
 .section--deep::before {
   content: '';
   position: absolute;
   inset: 0 0 auto;
   height: 1px;
-  background: var(--foil-hairline);
+  background: var(--plate-hairline, var(--foil-hairline));
 }
 
 .section--deep::after {
@@ -232,7 +243,7 @@ strong { font-weight: var(--weight-medium); }
   inset: 0;
   background-image: var(--grain-url);
   background-size: var(--grain-size);
-  opacity: var(--grain-opacity);
+  opacity: var(--plate-grain-opacity);
   pointer-events: none;
   z-index: -1;
 }
@@ -319,7 +330,7 @@ strong { font-weight: var(--weight-medium); }
   display: block;
   width: 100%;
   overflow: hidden;
-  background: var(--basalt-800);
+  background: var(--surface-sunken);
   border: 1px solid var(--edge-quiet);
   border-radius: var(--radius-sm);
 }
@@ -411,27 +422,41 @@ strong { font-weight: var(--weight-medium); }
 /* Solid — the default primary. Silver plate on ink. */
 .sf-btn--solid,
 .btn--primary {
-  background: var(--silver-050);
-  color: var(--basalt-900);
+  background: var(--text-primary);
+  color: var(--surface-page);
   box-shadow: var(--shadow-100);
 }
 
 .sf-btn--solid:hover,
-.btn--primary:hover { background: #fff; box-shadow: var(--shadow-200); }
+.btn--primary:hover { background: var(--basalt-700); box-shadow: var(--shadow-200); }
 
 .sf-btn--solid:active,
-.btn--primary:active { background: var(--silver-200); box-shadow: none; transform: translateY(1px); }
+.btn--primary:active { background: var(--basalt-600); box-shadow: none; transform: translateY(1px); }
 
-/* Foil — brushed metal. One per page at most, and only on the hero action. */
+/**
+ * The hero action. One per page at most.
+ *
+ * Brushed metal on dark, solid ink on paper. See --btn-hero-* in tokens.css
+ * for why the light theme does not use a gradient here.
+ */
 .sf-btn--foil,
 .btn--foil {
-  background: var(--foil-silver-soft);
-  color: var(--basalt-900);
-  box-shadow: var(--shadow-100), var(--sheen-vellum);
+  background: var(--btn-hero-bg);
+  color: var(--btn-hero-ink);
+  box-shadow: var(--shadow-100), var(--btn-hero-edge, none);
 }
 
+/* brightness() lifts a gradient but only washes flat ink, so each theme
+   gets the hover gesture that actually reads on it. */
 .sf-btn--foil:hover, .btn--foil:hover { filter: brightness(1.08); }
 .sf-btn--foil:active, .btn--foil:active { filter: brightness(.94); transform: translateY(1px); }
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .sf-btn--foil:hover,
+  :root:not([data-theme="dark"]) .btn--foil:hover { filter: none; background: var(--basalt-700); }
+}
+:root[data-theme="light"] .sf-btn--foil:hover,
+:root[data-theme="light"] .btn--foil:hover { filter: none; background: var(--basalt-700); }
 
 .sf-btn--outline,
 .btn--ghost {
@@ -440,7 +465,7 @@ strong { font-weight: var(--weight-medium); }
 }
 
 .sf-btn--outline:hover,
-.btn--ghost:hover { background: var(--surface-hover); border-color: var(--silver-300); }
+.btn--ghost:hover { background: var(--surface-hover); border-color: var(--edge-strong); }
 
 .sf-btn--outline:active,
 .btn--ghost:active { background: var(--surface-active); transform: translateY(1px); }
@@ -567,7 +592,7 @@ strong { font-weight: var(--weight-medium); }
 .sf-card--plain { background: transparent; box-shadow: none; }
 .sf-card--raised { box-shadow: var(--shadow-200), var(--sheen-top); }
 .sf-card--inset { background: var(--surface-inset); border-color: var(--edge-quiet); box-shadow: none; }
-.sf-card--ink { background: var(--basalt-950); border-color: var(--edge-quiet); }
+.sf-card--ink { background: var(--plate-surface); color: var(--plate-text); border-color: var(--plate-edge); }
 .sf-card--pad-lg { padding: var(--pad-card-lg); }
 .sf-card--pad-none { padding: 0; }
 
@@ -758,8 +783,8 @@ strong { font-weight: var(--weight-medium); }
   align-items: center;
   height: var(--control-h);
   padding: 0 var(--pad-control-x);
-  background: var(--silver-050);
-  color: var(--basalt-900);
+  background: var(--text-primary);
+  color: var(--surface-page);
   font: var(--type-label);
   font-size: var(--text-xs);
   letter-spacing: var(--tracking-button);

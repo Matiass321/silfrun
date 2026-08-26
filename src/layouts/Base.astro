@@ -229,9 +229,19 @@ const graph = [websiteLd, webPageLd, ...(businessLd ? [businessLd] : []), ...ext
 
     {/* Base-aware: a hardcoded "/favicon.svg" 404s on a subpath deploy. */}
     <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} type="image/svg+xml" />
-    {/* Browser chrome matches the basalt ground, not a mid-tone accent. */}
-    <meta name="theme-color" content="#0B0D0F" />
-    <meta name="color-scheme" content="dark" />
+    {/*
+      Both themes are declared, so the browser paints form controls,
+      scrollbars and the address bar to match the one actually in use. With
+      only "dark" here a visitor on a light OS got dark scrollbars against a
+      paper page.
+
+      Two theme-color tags rather than one: the media attribute is how the
+      address bar follows the theme rather than being pinned to whichever
+      value was hardcoded.
+    */}
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FBF9F5" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0B0D0F" />
 
     {/* One graph per page: fewer blocks, and the @id references resolve. */}
     <script type="application/ld+json" is:inline set:html={JSON.stringify(graph)} />

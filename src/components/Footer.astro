@@ -100,13 +100,14 @@ const legalLinks = [
 
 <style>
   /**
-   * The footer is the deepest surface on the site — basalt-950, grained, with a
+   * The footer carries the plate treatment — inked on light, deepest on dark —
    * foil hairline across the top edge. It is the inside of the case the silver
    * is returned to.
    */
   .foot {
     position: relative;
-    background: var(--basalt-950);
+    background: var(--plate-surface);
+    color: var(--plate-text-secondary);
     color: var(--text-secondary);
     padding-block: var(--space-1200) var(--space-500);
     margin-block-start: auto;
@@ -118,7 +119,7 @@ const legalLinks = [
     position: absolute;
     inset: 0 0 auto;
     height: 1px;
-    background: var(--foil-hairline);
+    background: var(--plate-hairline, var(--foil-hairline));
   }
 
   .foot::after {
@@ -127,7 +128,7 @@ const legalLinks = [
     inset: 0;
     background-image: var(--grain-url);
     background-size: var(--grain-size);
-    opacity: var(--grain-opacity);
+    opacity: var(--plate-grain-opacity);
     pointer-events: none;
     z-index: -1;
   }
