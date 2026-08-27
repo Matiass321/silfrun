@@ -246,6 +246,47 @@ export async function updateVisit(
   return (res.meta.changes ?? 0) > 0;
 }
 
+/**
+ * Deletes one visit for good.
+ *
+ * Cancelling and deleting are different acts and the admin offers both. A
+ * cancelled visit is a fact about the business — somebody asked, it did not go
+ * ahead — and it belongs in the record. Deletion is for rows that were never a
+ * customer at all: a duplicate submit, a test booking, obvious junk. Those
+ * pollute every count on the dashboard and there is no honest reason to keep
+ * them.
+ *
+ * The customer goes too, but only when this was their last visit. A household
+ * that has booked twice must not lose its history because one of the two was a
+ * duplicate; a row created by a test submission should not sit in the people
+ * list forever.
+ *
+ * Reminders go with it — they key on the visit ref, not its id. One left
+ * pointing at a deleted visit would either break the dashboard join or, worse,
+ * send a message about work that no longer exists.
+ */
+export async function deleteVisit(db: D1Database, ref: string): Promise<boolean> {
+  const row = await db
+    .prepare('SELECT id, customer_id FROM visits WHERE ref = ?')
+    .bind(ref)
+    .first<{ id: number; customer_id: number }>();
+
+  if (!row) return false;
+
+  await db.batch([
+    db.prepare('DELETE FROM reminders WHERE subject = ?').bind(ref),
+    db.prepare('DELETE FROM visits WHERE id = ?').bind(row.id),
+    db
+      .prepare(
+        'DELETE FROM customers WHERE id = ? ' +
+          'AND NOT EXISTS (SELECT 1 FROM visits WHERE customer_id = ?)'
+      )
+      .bind(row.customer_id, row.customer_id),
+  ]);
+
+  return true;
+}
+
 /** Counts by status, for the dashboard. One query rather than five. */
 export async function statusCounts(db: D1Database): Promise<Record<string, number>> {
   const res = await db

@@ -11,3 +11,4 @@ deploy.ps1
 
 # Local D1 / wrangler state
 .wrangler/
+db/backups/

@@ -62,7 +62,7 @@ const short = (d: string) => d.slice(5).replace('-', '.');
     viewBox={`0 0 ${W} ${H}`}
     preserveAspectRatio="none"
     role="img"
-    aria-label={`${total} ${label} yfir ${data.length} daga. Mest ${peak.n} þann ${short(peak.day)}.`}
+    aria-label={`${total} ${label} over ${data.length} days. Peak ${peak.n} on ${short(peak.day)}.`}
   >
     <line class="a-chart__grid" x1="0" y1={PAD_T + plotH} x2={W} y2={PAD_T + plotH} />
     {bars.map((b) => (
@@ -80,7 +80,7 @@ const short = (d: string) => d.slice(5).replace('-', '.');
 
   <figcaption class="sp__cap">
     <span><strong>{total}</strong> alls</span>
-    {peak.n > 0 && <span>mest <strong>{peak.n}</strong> þann {short(peak.day)}</span>}
+    {peak.n > 0 && <span>peak <strong>{peak.n}</strong> on {short(peak.day)}</span>}
   </figcaption>
 </figure>
 

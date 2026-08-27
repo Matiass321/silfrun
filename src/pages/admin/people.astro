@@ -20,7 +20,7 @@ let subs = 0;
 let dbError: string | null = null;
 
 if (!DB) {
-  dbError = 'Gagnagrunnurinn er ekki tengdur.';
+  dbError = 'The database is not connected.';
 } else {
   try {
     const [c, n, s] = await Promise.all([
@@ -34,7 +34,7 @@ if (!DB) {
     counts = n;
     subs = s?.n ?? 0;
   } catch (e) {
-    dbError = `Gagnagrunnurinn svarar ekki. (${String(e).slice(0, 100)})`;
+    dbError = `The database is not responding. (${String(e).slice(0, 100)})`;
   }
 }
 
@@ -54,16 +54,16 @@ const rows = q
 const repeat = all.filter((c) => (counts[c.id] ?? 0) > 1).length;
 ---
 
-<Admin title="Fólk" current="people">
+<Admin title="People" current="people">
   <div class="a-wrap">
     <header class="a-head">
       <div>
-        <h1 class="a-h1">Fólk</h1>
-        <p class="a-sub">{all.length} skráð · {repeat} með fleiri en eitt verk</p>
+        <h1 class="a-h1">People</h1>
+        <p class="a-sub">{all.length} recorded · {repeat} with more than one job</p>
       </div>
       <a class="a-btn a-btn--primary" href="/admin/new-visit/">
         <span set:html={ADMIN_ICONS.plus} />
-        Nýtt verk
+        New verk
       </a>
     </header>
 
@@ -72,7 +72,7 @@ const repeat = all.filter((c) => (counts[c.id] ?? 0) > 1).length;
     <div class="a-grid a-grid--2">
       <div class="a-card a-stat">
         <span class="a-stat__n">{all.length}</span>
-        <span class="a-stat__l">Viðskiptavinir</span>
+        <span class="a-stat__l">Customers</span>
       </div>
       <div class="a-card a-stat">
         <span class="a-stat__n">{repeat}</span>
@@ -80,25 +80,25 @@ const repeat = all.filter((c) => (counts[c.id] ?? 0) > 1).length;
       </div>
       <div class="a-card a-stat">
         <span class="a-stat__n">{subs}</span>
-        <span class="a-stat__l">Á póstlista</span>
+        <span class="a-stat__l">On the mailing list</span>
       </div>
       <div class="a-card a-stat">
         <span class="a-stat__n">{all.filter((c) => c.email).length}</span>
-        <span class="a-stat__l">Með netfang</span>
+        <span class="a-stat__l">With an email address</span>
       </div>
     </div>
 
     <form class="pp__search a-sec" method="GET" action="/admin/people/" role="search">
       <label class="a-field pp__f">
         <span class="a-hide">Leita</span>
-        <input class="a-in" type="search" name="q" value={q} placeholder="Nafn, sími eða svæði…" />
+        <input class="a-in" type="search" name="q" value={q} placeholder="Name, phone or area…" />
       </label>
       <button class="a-btn a-btn--plain" type="submit">Leita</button>
       {q && <a class="a-btn a-btn--quiet" href="/admin/people/">Hreinsa</a>}
     </form>
 
     {rows.length === 0 ? (
-      <p class="a-empty">{q ? 'Ekkert fannst.' : 'Engir viðskiptavinir skráðir enn.'}</p>
+      <p class="a-empty">{q ? 'Nothing found.' : 'No customers recorded yet.'}</p>
     ) : (
       <ul class="a-rows">
         {rows.map((c) => {
@@ -112,10 +112,10 @@ const repeat = all.filter((c) => (counts[c.id] ?? 0) > 1).length;
               </div>
 
               <p class="a-row__meta">
-                {c.area ?? 'Svæði óskráð'}
+                {c.area ?? 'Area not recorded'}
                 {c.email ? ` · ${c.email}` : ''}
               </p>
-              <p class="a-row__mono">Skráð {isoDate(c.created_at)}</p>
+              <p class="a-row__mono">Added {isoDate(c.created_at)}</p>
 
               <div class="a-row__foot">
                 <a class="a-btn a-btn--plain a-btn--sm" href={`tel:${c.phone}`}>
@@ -131,7 +131,7 @@ const repeat = all.filter((c) => (counts[c.id] ?? 0) > 1).length;
                   <a
                     class="a-btn a-btn--quiet a-btn--sm"
                     href={`mailto:${c.email}`}
-                    aria-label={`Senda tölvupóst á ${c.email}`}
+                    aria-label={`Send an email to ${c.email}`}
                   >
                     <span set:html={ADMIN_ICONS.mail} />
                   </a>

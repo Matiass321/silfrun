@@ -20,36 +20,49 @@ const ref = Astro.url.searchParams.get('ref');
 const filterRaw = Astro.url.searchParams.get('status') ?? 'open';
 const filter = (['open', 'all', ...VISIT_STATUSES] as string[]).includes(filterRaw) ? filterRaw : 'open';
 const saved = Astro.url.searchParams.get('saved') === '1';
+const deleted = Astro.url.searchParams.get('deleted') === '1';
+const missing = Astro.url.searchParams.get('missing') === '1';
+
+/**
+ * Deleting is two steps, and the first one is a page.
+ *
+ * A native confirm() needs JavaScript and reads as a browser warning rather
+ * than as part of the tool. This shows what is about to be destroyed — the
+ * name, the reference, the phone number — on a screen of its own, and the
+ * button on it is the only thing that POSTs. Nothing irreversible is ever one
+ * tap away in a van.
+ */
+const confirming = Astro.url.searchParams.get('confirm') === 'delete';
 
 let rows: VisitRow[] = [];
 let one: VisitRow | null = null;
 let dbError: string | null = null;
 
 if (!DB) {
-  dbError = 'Gagnagrunnurinn er ekki tengdur.';
+  dbError = 'The database is not connected.';
 } else {
   try {
     if (ref) one = await getVisit(DB, ref);
     rows = await listVisits(DB, { status: filter as VisitStatus | 'open' | 'all' });
   } catch (e) {
-    dbError = `Gagnagrunnurinn svarar ekki. (${String(e).slice(0, 100)})`;
+    dbError = `The database is not responding. (${String(e).slice(0, 100)})`;
   }
 }
 
 const STATUS: Record<string, string> = {
-  new: 'Ný', quoted: 'Verð sent', scheduled: 'Á dagskrá', done: 'Lokið', cancelled: 'Afturkallað',
+  new: 'New', quoted: 'Quoted', scheduled: 'Scheduled', done: 'Done', cancelled: 'Cancelled',
 };
 const ITEM: Record<string, string> = {
-  sofa: 'Sófi', rug: 'Teppi', carpet: 'Gólfteppi', stains: 'Blettir',
+  sofa: 'Sofa', rug: 'Rug', carpet: 'Carpet', stains: 'Stains',
 };
 
 const FILTERS = [
-  { v: 'open', l: 'Opið' },
-  { v: 'new', l: 'Nýjar' },
-  { v: 'scheduled', l: 'Á dagskrá' },
-  { v: 'done', l: 'Lokið' },
-  { v: 'cancelled', l: 'Afturkallað' },
-  { v: 'all', l: 'Allt' },
+  { v: 'open', l: 'Open' },
+  { v: 'new', l: 'New' },
+  { v: 'scheduled', l: 'Scheduled' },
+  { v: 'done', l: 'Done' },
+  { v: 'cancelled', l: 'Cancelled' },
+  { v: 'all', l: 'All' },
 ];
 
 const digits = one?.phone.replace(/[^0-9]/g, '') ?? '';
@@ -57,7 +70,7 @@ const schedDate = one?.scheduled_at ? isoDate(one.scheduled_at) : one?.preferred
 const schedTime = one?.scheduled_at ? clock(one.scheduled_at) : '09:00';
 ---
 
-<Admin title={one ? one.ref : 'Verk'} current="visits">
+<Admin title={one ? one.ref : 'Jobs'} current="visits">
   <div class="a-wrap">
     {one ? (
       <>
@@ -68,117 +81,157 @@ const schedTime = one?.scheduled_at ? clock(one.scheduled_at) : '09:00';
           </div>
           <a class="a-btn a-btn--quiet" href="/admin/visits/">
             <span set:html={ADMIN_ICONS.back} />
-            Til baka
+            Back
           </a>
         </header>
 
-        {saved && <p class="a-msg a-msg--ok">Vistað.</p>}
+        {saved && <p class="a-msg a-msg--ok">Saved.</p>}
 
-        <div class="a-card dt">
-          <div class="a-acts">
-            <a class="a-btn a-btn--plain a-btn--sm" href={`tel:${one.phone}`}>
-              <span set:html={ADMIN_ICONS.phone} />
-              {formatPhone(one.phone)}
-            </a>
-            <a class="a-btn a-btn--plain a-btn--sm" href={`https://wa.me/${digits}`} target="_blank" rel="noopener">
-              <span set:html={ADMIN_ICONS.whatsapp} />
-              WhatsApp
-            </a>
-            {one.email && (
-              <a class="a-btn a-btn--quiet a-btn--sm" href={`mailto:${one.email}`}>
-                <span set:html={ADMIN_ICONS.mail} />
-                {one.email}
+        {confirming ? (
+          <div class="a-card del">
+            <h2 class="del__title">Delete this job?</h2>
+            <p class="del__body">
+              <strong>{one.name}</strong> · {one.ref} · {formatPhone(one.phone)}
+              <br />
+              This removes the job and its reminders for good. If the customer has no
+              other jobs, their contact details go too. It cannot be undone.
+            </p>
+            <p class="del__hint">
+              If the work was simply called off, set the status to <strong>Cancelled</strong>
+              instead — that keeps the record.
+            </p>
+
+            <form method="POST" action="/api/admin/visit" class="a-acts">
+              <input type="hidden" name="ref" value={one.ref} />
+              <input type="hidden" name="action" value="delete" />
+              <button class="a-btn a-btn--danger" type="submit">
+                <span set:html={ADMIN_ICONS.trash ?? ''} />
+                Delete permanently
+              </button>
+              <a class="a-btn a-btn--quiet" href={`/admin/visits/?ref=${encodeURIComponent(one.ref)}`}>Keep it</a>
+            </form>
+          </div>
+        ) : (
+          <>
+            <div class="a-card dt">
+              <div class="a-acts">
+                <a class="a-btn a-btn--plain a-btn--sm" href={`tel:${one.phone}`}>
+                  <span set:html={ADMIN_ICONS.phone} />
+                  {formatPhone(one.phone)}
+                </a>
+                <a class="a-btn a-btn--plain a-btn--sm" href={`https://wa.me/${digits}`} target="_blank" rel="noopener">
+                  <span set:html={ADMIN_ICONS.whatsapp} />
+                  WhatsApp
+                </a>
+                {one.email && (
+                  <a class="a-btn a-btn--quiet a-btn--sm" href={`mailto:${one.email}`}>
+                    <span set:html={ADMIN_ICONS.mail} />
+                    {one.email}
+                  </a>
+                )}
+              </div>
+
+              <dl class="dt__facts">
+                <div><dt>Preferred day</dt><dd>{longDate(one.preferred_date, 'en')}</dd></div>
+                <div><dt>Window</dt><dd>{one.window === 'morning' ? 'Morning' : one.window === 'afternoon' ? 'Afternoon' : 'Either'}</dd></div>
+                <div><dt>Work</dt><dd>{parseItems(one.items).map((i) => ITEM[i] ?? i).join(', ') || '—'}</dd></div>
+                <div><dt>Area</dt><dd>{one.area ?? '—'}</dd></div>
+                <div><dt>Address</dt><dd>{one.address ?? '—'}</dd></div>
+                <div><dt>Price</dt><dd>{isk(one.quote_isk)}</dd></div>
+              </dl>
+            </div>
+
+            <form class="a-card a-form dt__form" method="POST" action="/api/admin/visit">
+              <input type="hidden" name="ref" value={one.ref} />
+
+              <div class="a-two">
+                <label class="a-field">
+                  <span class="a-label">Status</span>
+                  <select class="a-in" name="status">
+                    {VISIT_STATUSES.map((st) => (
+                      <option value={st} selected={st === one!.status}>{STATUS[st]}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label class="a-field">
+                  <span class="a-label">Price (ISK)</span>
+                  <input class="a-in" type="number" inputmode="numeric" name="quote_isk"
+                         min="0" step="500" value={one.quote_isk ?? ''} placeholder="—" />
+                </label>
+              </div>
+
+              <div class="a-two">
+                <label class="a-field">
+                  <span class="a-label">Date</span>
+                  <input class="a-in" type="date" name="date" value={schedDate} />
+                </label>
+
+                <label class="a-field">
+                  <span class="a-label">Time</span>
+                  <input class="a-in" type="time" name="time" value={schedTime} step="900" />
+                  <span class="a-hint">Only saved when the status is “Scheduled”.</span>
+                </label>
+              </div>
+
+              <label class="a-field">
+                <span class="a-label">Address</span>
+                <input class="a-in" type="text" name="address" value={one.address ?? ''} />
+              </label>
+
+              <label class="a-field">
+                <span class="a-label">Notes</span>
+                <textarea class="a-in" name="notes" rows="4">{one.notes ?? ''}</textarea>
+              </label>
+
+              <div class="a-acts">
+                <button class="a-btn a-btn--primary" type="submit">
+                  <span set:html={ADMIN_ICONS.check} />
+                  Save
+                </button>
+                <a class="a-btn a-btn--quiet" href="/admin/visits/">Cancel</a>
+              </div>
+            </form>
+
+            {/* Set apart from the form it does not belong to, so a thumb
+                reaching for Save never lands here. */}
+            <p class="dt__danger">
+              <a class="a-link-danger" href={`/admin/visits/?ref=${encodeURIComponent(one.ref)}&confirm=delete`}>
+                Delete this job
               </a>
-            )}
-          </div>
-
-          <dl class="dt__facts">
-            <div><dt>Óskadagur</dt><dd>{longDate(one.preferred_date, 'is')}</dd></div>
-            <div><dt>Tímabil</dt><dd>{one.window === 'morning' ? 'Fyrir hádegi' : one.window === 'afternoon' ? 'Eftir hádegi' : 'Hvort sem er'}</dd></div>
-            <div><dt>Verk</dt><dd>{parseItems(one.items).map((i) => ITEM[i] ?? i).join(', ') || '—'}</dd></div>
-            <div><dt>Svæði</dt><dd>{one.area ?? '—'}</dd></div>
-            <div><dt>Heimilisfang</dt><dd>{one.address ?? '—'}</dd></div>
-            <div><dt>Verð</dt><dd>{isk(one.quote_isk)}</dd></div>
-          </dl>
-        </div>
-
-        <form class="a-card a-form dt__form" method="POST" action="/api/admin/visit">
-          <input type="hidden" name="ref" value={one.ref} />
-
-          <div class="a-two">
-            <label class="a-field">
-              <span class="a-label">Staða</span>
-              <select class="a-in" name="status">
-                {VISIT_STATUSES.map((st) => (
-                  <option value={st} selected={st === one!.status}>{STATUS[st]}</option>
-                ))}
-              </select>
-            </label>
-
-            <label class="a-field">
-              <span class="a-label">Verð (ISK)</span>
-              <input class="a-in" type="number" inputmode="numeric" name="quote_isk"
-                     min="0" step="500" value={one.quote_isk ?? ''} placeholder="—" />
-            </label>
-          </div>
-
-          <div class="a-two">
-            <label class="a-field">
-              <span class="a-label">Dagsetning</span>
-              <input class="a-in" type="date" name="date" value={schedDate} />
-            </label>
-
-            <label class="a-field">
-              <span class="a-label">Tími</span>
-              <input class="a-in" type="time" name="time" value={schedTime} step="900" />
-              <span class="a-hint">Skrifast aðeins þegar staðan er „Á dagskrá“.</span>
-            </label>
-          </div>
-
-          <label class="a-field">
-            <span class="a-label">Heimilisfang</span>
-            <input class="a-in" type="text" name="address" value={one.address ?? ''} />
-          </label>
-
-          <label class="a-field">
-            <span class="a-label">Athugasemdir</span>
-            <textarea class="a-in" name="notes" rows="4">{one.notes ?? ''}</textarea>
-          </label>
-
-          <div class="a-acts">
-            <button class="a-btn a-btn--primary" type="submit">
-              <span set:html={ADMIN_ICONS.check} />
-              Vista
-            </button>
-            <a class="a-btn a-btn--quiet" href="/admin/visits/">Hætta við</a>
-          </div>
-        </form>
+            </p>
+          </>
+        )}
       </>
     ) : (
       <>
         <header class="a-head">
           <div>
-            <h1 class="a-h1">Verk</h1>
-            <p class="a-sub">{rows.length} færslur</p>
+            <h1 class="a-h1">Jobs</h1>
+            <p class="a-sub">{rows.length} {rows.length === 1 ? 'entry' : 'entries'}</p>
           </div>
           <a class="a-btn a-btn--primary" href="/admin/new-visit/">
             <span set:html={ADMIN_ICONS.plus} />
-            Nýtt
+            New
           </a>
         </header>
 
         {dbError && <p class="a-msg a-msg--err">{dbError}</p>}
-        {saved && <p class="a-msg a-msg--ok">Vistað.</p>}
-        {ref && !one && !dbError && <p class="a-msg a-msg--warn">Fann ekki {ref}.</p>}
+        {saved && <p class="a-msg a-msg--ok">Saved.</p>}
+        {deleted && <p class="a-msg a-msg--ok">Deleted.</p>}
+        {missing && <p class="a-msg a-msg--warn">That job no longer exists.</p>}
+        {ref && !one && !dbError && !deleted && !missing && (
+          <p class="a-msg a-msg--warn">Could not find {ref}.</p>
+        )}
 
-        <nav class="a-filters" aria-label="Sía">
+        <nav class="a-filters" aria-label="Filter">
           {FILTERS.map((f) => (
             <a class="a-filter" href={`/admin/visits/?status=${f.v}`}
                aria-current={f.v === filter ? 'true' : undefined}>{f.l}</a>
           ))}
         </nav>
 
-        <VisitCard rows={rows} empty="Engin verk í þessari síu." />
+        <VisitCard rows={rows} empty="No jobs in this filter." />
       </>
     )}
   </div>
@@ -207,4 +260,23 @@ const schedTime = one?.scheduled_at ? clock(one.scheduled_at) : '09:00';
   .dt__facts dd { font-size: 14.5px; color: var(--a-ink); }
 
   .dt__form { margin-bottom: 20px; }
+
+  /* The destructive route out, kept visually quiet and physically distant. */
+  .dt__danger { margin: 4px 0 28px; text-align: center; }
+
+  .a-link-danger {
+    display: inline-block;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    color: var(--a-bad);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+
+  .a-link-danger:hover { border-bottom-color: currentColor; }
+
+  .del { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+  .del__title { font-size: 19px; margin: 0; color: var(--a-ink); }
+  .del__body { font-size: 14.5px; line-height: 1.55; color: var(--a-ink-2); }
+  .del__hint { font-size: 13.5px; color: var(--a-ink-3); }
 </style>

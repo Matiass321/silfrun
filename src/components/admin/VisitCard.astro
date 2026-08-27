@@ -13,11 +13,11 @@ interface Props {
 const { rows, empty, showTime = false } = Astro.props;
 
 const STATUS: Record<string, string> = {
-  new: 'Ný', quoted: 'Verð sent', scheduled: 'Á dagskrá', done: 'Lokið', cancelled: 'Afturkallað',
+  new: 'New', quoted: 'Quoted', scheduled: 'Scheduled', done: 'Done', cancelled: 'Cancelled',
 };
 
 const ITEM: Record<string, string> = {
-  sofa: 'Sófi', rug: 'Teppi', carpet: 'Gólfteppi', stains: 'Blettir',
+  sofa: 'Sofa', rug: 'Rug', carpet: 'Carpet', stains: 'Stains',
 };
 
 /**

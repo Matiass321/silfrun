@@ -16,25 +16,25 @@ const err = Astro.url.searchParams.get('e');
 const editing = Number(Astro.url.searchParams.get('edit')) || null;
 
 const MESSAGES: Record<string, string> = {
-  nofile: 'Engin skrá valin.',
-  type: 'Þetta skráarsnið er ekki stutt. Notaðu JPEG, PNG, WebP, AVIF, MP4 eða WebM.',
-  big: 'Skráin er of stór. Hámark er 25 MB.',
-  dupe: 'Þessi skrá er þegar til í safninu.',
-  alt: 'Myndir sem birtast á vefnum verða að hafa íslenskan lýsingartexta.',
+  nofile: 'No file selected.',
+  type: 'That file type is not supported. Use JPEG, PNG, WebP, AVIF, MP4 or WebM.',
+  big: 'That file is too large. The maximum is 25 MB.',
+  dupe: 'That file is already in the library.',
+  alt: 'Images shown on the website must have Icelandic alt text.',
   nokv: 'Myndageymslan er ekki tengd.',
-  bad: 'Ógild beiðni.',
+  bad: 'Invalid request.',
 };
 
 let items: MediaRow[] = [];
 let dbError: string | null = null;
 
 if (!DB) {
-  dbError = 'Gagnagrunnurinn er ekki tengdur.';
+  dbError = 'The database is not connected.';
 } else {
   try {
     items = await listAll(DB);
   } catch (e) {
-    dbError = `Myndasafnið er ekki tilbúið. Keyrðu færslu 0002. (${String(e).slice(0, 90)})`;
+    dbError = `The media library is not ready. Run migration 0002. (${String(e).slice(0, 90)})`;
   }
 }
 
@@ -54,17 +54,17 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
     <header class="a-head">
       <div>
         <h1 class="a-h1">Myndir</h1>
-        <p class="a-sub">{items.length} skrár · {placed} birtast · {totalMb} MB</p>
+        <p class="a-sub">{items.length} files · {placed} placed · {totalMb} MB</p>
       </div>
     </header>
 
     {dbError && <p class="a-msg a-msg--err">{dbError}</p>}
-    {saved && <p class="a-msg a-msg--ok">Vistað.</p>}
+    {saved && <p class="a-msg a-msg--ok">Saved.</p>}
     {err && MESSAGES[err] && <p class="a-msg a-msg--err">{MESSAGES[err]}</p>}
 
     {/* ── Upload ──────────────────────────────────────────────────── */}
     <section class="a-card md__up">
-      <h2 class="a-sec__h" style="margin-top:0">Hlaða upp</h2>
+      <h2 class="a-sec__h" style="margin-top:0">Upload</h2>
 
       <form method="POST" action="/api/admin/media" enctype="multipart/form-data" class="a-form">
         <input type="hidden" name="action" value="upload" />
@@ -79,11 +79,11 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
                  accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm"
                  required />
           <span class="md__dropicon" set:html={ADMIN_ICONS.plus} />
-          <span class="md__droptext">Veldu mynd eða myndband</span>
-          <span class="md__drophint">JPEG · PNG · WebP · AVIF · MP4 · WebM — hámark 25 MB</span>
+          <span class="md__droptext">Choose a photo or video</span>
+          <span class="md__drophint">JPEG · PNG · WebP · AVIF · MP4 · WebM — 25 MB maximum</span>
         </label>
 
-        <button class="a-btn a-btn--primary" type="submit" disabled={!DB}>Hlaða upp</button>
+        <button class="a-btn a-btn--primary" type="submit" disabled={!DB}>Upload</button>
       </form>
     </section>
 
@@ -92,7 +92,7 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
       <section class="a-card md__edit">
         <div class="a-row__top">
           <h2 class="a-sec__h" style="margin:0">Breyta</h2>
-          <a class="a-btn a-btn--quiet a-btn--sm" href="/admin/media/">Loka</a>
+          <a class="a-btn a-btn--quiet a-btn--sm" href="/admin/media/">Close</a>
         </div>
 
         <div class="md__editgrid">
@@ -113,9 +113,9 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
             <input type="hidden" name="id" value={current.id} />
 
             <label class="a-field">
-              <span class="a-label">Hvar birtist hún</span>
+              <span class="a-label">Where it appears</span>
               <select class="a-in" name="slot">
-                <option value="">Hvergi — bara í safninu</option>
+                <option value="">Nowhere — library only</option>
                 {SLOTS.filter((s) => s.kinds.includes(current.kind)).map((s) => (
                   <option value={s.key} selected={s.key === current.slot}>{s.label}</option>
                 ))}
@@ -123,33 +123,33 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
             </label>
 
             <label class="a-field">
-              <span class="a-label">Lýsing á íslensku <span class="a-req">*</span></span>
+              <span class="a-label">Alt text (Icelandic) <span class="a-req">*</span></span>
               <input class="a-in" type="text" name="alt_is" value={current.alt_is ?? ''}
-                     placeholder="Þriggja sæta ullarsófi, dökkur á frambrún sessa" />
+                     placeholder="Three-seat wool sofa, dark along the front edge of the cushion" />
               <span class="a-hint">
-                Nauðsynleg fyrir myndir sem birtast. Lýstu því sem sést, ekki „mynd af sófa“.
+                Required for any image that appears on the site. Describe what is visible, not “photo of a sofa”.
               </span>
             </label>
 
             <label class="a-field">
-              <span class="a-label">Lýsing á ensku</span>
+              <span class="a-label">Alt text (English)</span>
               <input class="a-in" type="text" name="alt_en" value={current.alt_en ?? ''} />
             </label>
 
             <div class="a-two">
               <label class="a-field">
-                <span class="a-label">Myndatexti (ís)</span>
+                <span class="a-label">Caption (IS)</span>
                 <input class="a-in" type="text" name="caption_is" value={current.caption_is ?? ''} />
               </label>
               <label class="a-field">
-                <span class="a-label">Myndatexti (en)</span>
+                <span class="a-label">Caption (EN)</span>
                 <input class="a-in" type="text" name="caption_en" value={current.caption_en ?? ''} />
               </label>
             </div>
 
             <div class="a-two">
               <label class="a-field">
-                <span class="a-label">Fyrir eða eftir</span>
+                <span class="a-label">Before or after</span>
                 <select class="a-in" name="pair_role">
                   <option value="">—</option>
                   <option value="before" selected={current.pair_role === 'before'}>Fyrir</option>
@@ -157,16 +157,16 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
                 </select>
               </label>
               <label class="a-field">
-                <span class="a-label">Röð</span>
+                <span class="a-label">Order</span>
                 <input class="a-in" type="number" name="position" min="0" value={current.position} />
-                <span class="a-hint">Lægri tala birtist framar.</span>
+                <span class="a-hint">A lower number appears first.</span>
               </label>
             </div>
 
             <div class="a-acts">
               <button class="a-btn a-btn--primary" type="submit">
                 <span set:html={ADMIN_ICONS.check} />
-                Vista
+                Save
               </button>
             </div>
           </form>
@@ -175,17 +175,17 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
         <form method="POST" action="/api/admin/media" class="md__del">
           <input type="hidden" name="action" value="delete" />
           <input type="hidden" name="id" value={current.id} />
-          <button class="a-btn a-btn--danger a-btn--sm" type="submit">Eyða varanlega</button>
+          <button class="a-btn a-btn--danger a-btn--sm" type="submit">Delete varanlega</button>
         </form>
       </section>
     )}
 
     {/* ── The library ─────────────────────────────────────────────── */}
     <section class="a-sec">
-      <h2 class="a-sec__h">Safnið</h2>
+      <h2 class="a-sec__h">Library</h2>
 
       {items.length === 0 ? (
-        <p class="a-empty">Engar myndir enn. Hlaðið upp fyrstu myndinni að ofan.</p>
+        <p class="a-empty">No photographs yet. Upload the first one above.</p>
       ) : (
         <ul class="md__grid">
           {items.map((m) => (
@@ -202,9 +202,9 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
 
                 <span class="md__foot">
                   <span class:list={['a-pill', m.slot ? 'a-pill--scheduled' : 'a-pill--done']}>
-                    {m.slot ? SLOTS.find((s) => s.key === m.slot)?.label ?? m.slot : 'Óbirt'}
+                    {m.slot ? SLOTS.find((s) => s.key === m.slot)?.label ?? m.slot : 'Unplaced'}
                   </span>
-                  {m.slot && !m.alt_is && <span class="a-pill a-pill--quoted">Vantar lýsingu</span>}
+                  {m.slot && !m.alt_is && <span class="a-pill a-pill--quoted">Alt text missing</span>}
                 </span>
               </a>
             </li>
@@ -217,12 +217,12 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
     {emptySlots.length > 0 && (
       <section class="a-sec">
         <h2 class="a-sec__h">
-          Tóm pláss
+          Empty slots
           <span class="a-badge">{emptySlots.length}</span>
         </h2>
         <p class="md__note">
-          Þessi pláss eru enn tóm og sýna merkta reiti á vefnum. Sjá
-          <code>docs/photography.md</code> fyrir hvernig myndirnar eiga að vera teknar.
+          These slots are still empty and show marked plates on the site. See
+          <code>docs/photography.md</code> for how the photographs should be shot.
         </p>
         <ul class="md__slots">
           {emptySlots.map((s) => (

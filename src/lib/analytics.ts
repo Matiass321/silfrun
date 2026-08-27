@@ -56,16 +56,36 @@ export async function record(
      */
     if (/bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|monitor|preview|scrape/i.test(ua)) return;
 
+    /**
+     * Preview deployments are not the website.
+     *
+     * Cloudflare Pages serves every build at <hash>.silfrun.pages.dev, and
+     * those hosts are only ever reached by whoever is working on the site.
+     * Counting them put 183 of my own test loads into the same table as real
+     * enquiries, and left the business looking at a 62% WhatsApp click rate
+     * that no visitor produced.
+     *
+     * Dropped on the request host rather than filtered in the reports, because
+     * a row that should not exist is worse than a row that is hard to query:
+     * the reports are read by somebody deciding what to spend money on.
+     */
+    const host = new URL(request.url).hostname;
+    if (!/(^|.)silfrun.(is|com)$/i.test(host)) return;
+
     const device = /Mobi|Android|iPhone|iPad|iPod/i.test(ua) ? 'mobile' : 'desktop';
 
     /* Host only. A full referrer URL can carry a search query, which is
-       personal data the moment somebody searches for something revealing. */
+       personal data the moment somebody searches for something revealing.
+
+       pages.dev is treated as internal for the same reason as above — a click
+       from one preview page to another is not a referral. */
     let referrer: string | null = null;
     const raw = request.headers.get('referer');
     if (raw) {
       try {
-        const host = new URL(raw).host;
-        referrer = host.endsWith('silfrun.is') || host.endsWith('silfrun.com') ? null : host;
+        const from = new URL(raw).host;
+        const internal = /(^|.)silfrun.(is|com)$/i.test(from) || /(^|.)pages.dev$/i.test(from);
+        referrer = internal ? null : from;
       } catch { /* malformed referrer, drop it */ }
     }
 

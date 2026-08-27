@@ -19,13 +19,13 @@ if (!hash) return Astro.redirect('/admin/setup/', 302);
 
 const err = Astro.url.searchParams.get('e');
 const MESSAGES: Record<string, string> = {
-  bad: 'Netfang eða lykilorð er rangt.',
-  rate: 'Of margar tilraunir. Reyndu aftur eftir nokkrar mínútur.',
-  missing: 'Sláðu inn netfang og lykilorð.',
+  bad: 'That email address or password is wrong.',
+  rate: 'Too many attempts. Try again in a few minutes.',
+  missing: 'Enter an email address and password.',
 };
 ---
 
-<Admin title="Innskráning" bare>
+<Admin title="Sign-in" bare>
   <div class="lg">
     <svg class="lg__mark" viewBox="0 0 48 64" fill="none" aria-hidden="true">
       <path d="M24 2 Q16 17 6 32 Q16 47 24 62 Z" fill="currentColor" opacity=".12" />
@@ -33,28 +33,28 @@ const MESSAGES: Record<string, string> = {
             stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
     </svg>
 
-    <h1 class="lg__h">Stjórnborð</h1>
+    <h1 class="lg__h">Admin</h1>
 
     {!ADMIN_SESSION_SECRET && (
-      <p class="a-msg a-msg--warn">ADMIN_SESSION_SECRET er ekki stillt. Innskráning virkar ekki.</p>
+      <p class="a-msg a-msg--warn">ADMIN_SESSION_SECRET er ekki stillt. Sign-in virkar ekki.</p>
     )}
     {err && MESSAGES[err] && <p class="a-msg a-msg--err">{MESSAGES[err]}</p>}
 
     <form class="a-form" method="POST" action="/api/admin/login">
       <label class="a-field">
-        <span class="a-label">Netfang</span>
+        <span class="a-label">Email address</span>
         <input class="a-in" type="email" name="email" autocomplete="username" required autofocus />
       </label>
 
       <label class="a-field">
-        <span class="a-label">Lykilorð</span>
+        <span class="a-label">Password</span>
         <input class="a-in" type="password" name="password" autocomplete="current-password" required />
       </label>
 
-      <button class="a-btn a-btn--primary a-btn--block" type="submit">Skrá inn</button>
+      <button class="a-btn a-btn--primary a-btn--block" type="submit">Sign in</button>
     </form>
 
-    <p class="lg__note">Lotan endist í 12 klukkustundir.</p>
+    <p class="lg__note">The session lasts 12 hours.</p>
   </div>
 </Admin>
 

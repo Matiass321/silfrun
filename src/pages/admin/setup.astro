@@ -21,11 +21,11 @@ const ready = Boolean(DB) && Boolean(ADMIN_SESSION_SECRET);
 
 const err = Astro.url.searchParams.get('e');
 const MESSAGES: Record<string, string> = {
-  email: 'Sláðu inn gilt netfang.',
-  short: 'Lykilorðið þarf að vera minnst 12 stafir.',
-  mismatch: 'Lykilorðin stemma ekki.',
-  taken: 'Lykilorð hefur þegar verið sett.',
-  nodb: 'Gagnagrunnurinn er ekki tengdur.',
+  email: 'Enter a valid email address.',
+  short: 'The password must be at least 12 characters.',
+  mismatch: 'The passwords do not match.',
+  taken: 'A password has already been set.',
+  nodb: 'The database is not connected.',
 };
 ---
 
@@ -33,36 +33,36 @@ const MESSAGES: Record<string, string> = {
   <div class="st">
     <h1 class="st__h">Uppsetning</h1>
     <p class="st__lead">
-      Veldu netfang og lykilorð. Lykilorðið er geymt sem PBKDF2-hash — aldrei
-      sem texti — og þessi síða lokast varanlega á eftir.
+      Choose an email address and a password. It is stored as a PBKDF2 hash — never
+      as text — and this page closes permanently afterwards.
     </p>
 
-    {!DB && <p class="a-msg a-msg--err">Gagnagrunnurinn er ekki tengdur.</p>}
+    {!DB && <p class="a-msg a-msg--err">The database is not connected.</p>}
     {!ADMIN_SESSION_SECRET && <p class="a-msg a-msg--err">ADMIN_SESSION_SECRET vantar.</p>}
     {err && MESSAGES[err] && <p class="a-msg a-msg--err">{MESSAGES[err]}</p>}
 
     <form class="a-form" method="POST" action="/api/admin/setup">
       <label class="a-field">
-        <span class="a-label">Netfang</span>
+        <span class="a-label">Email address</span>
         <input class="a-in" type="email" name="email" autocomplete="username" required disabled={!ready} />
-        <span class="a-hint">Notað til að skrá inn. Birtist hvergi á vefnum.</span>
+        <span class="a-hint">Used to sign in. Never appears anywhere on the website.</span>
       </label>
 
       <label class="a-field">
-        <span class="a-label">Lykilorð</span>
+        <span class="a-label">Password</span>
         <input class="a-in" type="password" name="password" minlength="12"
                autocomplete="new-password" required disabled={!ready} />
-        <span class="a-hint">Minnst 12 stafir. Notaðu lykilorðastjóra.</span>
+        <span class="a-hint">At least 12 characters. Use a password manager.</span>
       </label>
 
       <label class="a-field">
-        <span class="a-label">Endurtaktu lykilorðið</span>
+        <span class="a-label">Repeat the password</span>
         <input class="a-in" type="password" name="confirm" minlength="12"
                autocomplete="new-password" required disabled={!ready} />
       </label>
 
       <button class="a-btn a-btn--primary a-btn--block" type="submit" disabled={!ready}>
-        Vista og skrá inn
+        Save and sign in
       </button>
     </form>
   </div>

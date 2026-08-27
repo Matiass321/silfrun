@@ -14,57 +14,57 @@ const { DB } = env(Astro);
 
 const err = Astro.url.searchParams.get('e');
 const MESSAGES: Record<string, string> = {
-  name: 'Nafn vantar.',
-  phone: 'Símanúmer vantar.',
-  date: 'Dagsetning vantar.',
-  nodb: 'Gagnagrunnurinn er ekki tengdur.',
+  name: 'Name vantar.',
+  phone: 'Phone number missing.',
+  date: 'Date vantar.',
+  nodb: 'The database is not connected.',
 };
 
 const SERVICES = [
-  { key: 'sofa', label: 'Sófi og áklæði' },
-  { key: 'rug', label: 'Teppi' },
-  { key: 'carpet', label: 'Gólfteppi' },
-  { key: 'stains', label: 'Blettir og lykt' },
+  { key: 'sofa', label: 'Sofa and upholstery' },
+  { key: 'rug', label: 'Rug' },
+  { key: 'carpet', label: 'Carpet' },
+  { key: 'stains', label: 'Stains and odour' },
 ];
 ---
 
-<Admin title="Nýtt verk" current="visits">
+<Admin title="New verk" current="visits">
   <div class="a-wrap nv">
     <header class="a-head">
       <div>
-        <h1 class="a-h1">Nýtt verk</h1>
-        <p class="a-sub">Skráð eftir símtal eða WhatsApp.</p>
+        <h1 class="a-h1">New verk</h1>
+        <p class="a-sub">Recorded after a phone call or WhatsApp.</p>
       </div>
       <a class="a-btn a-btn--quiet" href="/admin/visits/">
         <span set:html={ADMIN_ICONS.back} />
-        Til baka
+        Back
       </a>
     </header>
 
-    {!DB && <p class="a-msg a-msg--err">Gagnagrunnurinn er ekki tengdur.</p>}
+    {!DB && <p class="a-msg a-msg--err">The database is not connected.</p>}
     {err && MESSAGES[err] && <p class="a-msg a-msg--err">{MESSAGES[err]}</p>}
 
     <form class="a-card a-form" method="POST" action="/api/admin/new-visit">
       <fieldset class="a-fs">
-        <legend class="a-legend">Viðskiptavinur</legend>
+        <legend class="a-legend">Customer</legend>
         <div class="a-two">
           <label class="a-field">
-            <span class="a-label">Nafn <span class="a-req">*</span></span>
+            <span class="a-label">Name <span class="a-req">*</span></span>
             <input class="a-in" type="text" name="name" required autocomplete="off" />
           </label>
           <label class="a-field">
-            <span class="a-label">Sími <span class="a-req">*</span></span>
+            <span class="a-label">Phone <span class="a-req">*</span></span>
             <input class="a-in" type="tel" inputmode="tel" name="phone" required
                    placeholder="771 3011" autocomplete="off" />
           </label>
         </div>
         <div class="a-two">
           <label class="a-field">
-            <span class="a-label">Netfang</span>
+            <span class="a-label">Email address</span>
             <input class="a-in" type="email" inputmode="email" name="email" autocomplete="off" />
           </label>
           <label class="a-field">
-            <span class="a-label">Svæði</span>
+            <span class="a-label">Area</span>
             <select class="a-in" name="area">
               <option value="">—</option>
               {SITE.areas.map((a) => <option value={a.name}>{a.name}</option>)}
@@ -74,7 +74,7 @@ const SERVICES = [
       </fieldset>
 
       <fieldset class="a-fs">
-        <legend class="a-legend">Verkið</legend>
+        <legend class="a-legend">The job</legend>
         <div class="nv__items">
           {SERVICES.map((s) => (
             <label class="a-check">
@@ -84,41 +84,41 @@ const SERVICES = [
           ))}
         </div>
         <label class="a-field">
-          <span class="a-label">Heimilisfang</span>
+          <span class="a-label">Address</span>
           <input class="a-in" type="text" name="address" autocomplete="off" />
         </label>
       </fieldset>
 
       <fieldset class="a-fs">
-        <legend class="a-legend">Tími</legend>
+        <legend class="a-legend">Time</legend>
         <div class="a-two">
           <label class="a-field">
-            <span class="a-label">Óskadagur <span class="a-req">*</span></span>
+            <span class="a-label">Preferred day <span class="a-req">*</span></span>
             <input class="a-in" type="date" name="preferred_date" required value={today()} />
           </label>
           <label class="a-field">
-            <span class="a-label">Tímabil</span>
+            <span class="a-label">Window</span>
             <select class="a-in" name="window">
-              <option value="morning">Fyrir hádegi</option>
-              <option value="afternoon">Eftir hádegi</option>
-              <option value="either">Hvort sem er</option>
+              <option value="morning">Morning</option>
+              <option value="afternoon">Afternoon</option>
+              <option value="either">Either</option>
             </select>
           </label>
         </div>
       </fieldset>
 
       <label class="a-field">
-        <span class="a-label">Athugasemdir</span>
+        <span class="a-label">Notes</span>
         <textarea class="a-in" name="notes" rows="4"
-                  placeholder="Efni, blettir, aðgengi, bílastæði…"></textarea>
+                  placeholder="Material, stains, access, parking…"></textarea>
       </label>
 
       <div class="a-acts">
         <button class="a-btn a-btn--primary" type="submit" disabled={!DB}>
           <span set:html={ADMIN_ICONS.check} />
-          Skrá verk
+          Record job
         </button>
-        <a class="a-btn a-btn--quiet" href="/admin/visits/">Hætta við</a>
+        <a class="a-btn a-btn--quiet" href="/admin/visits/">Cancel</a>
       </div>
     </form>
   </div>

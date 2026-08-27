@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { requireAdmin, env } from '~/lib/admin-guard';
-import { updateVisit, type VisitStatus, VISIT_STATUSES } from '~/lib/visits';
+import { updateVisit, deleteVisit, type VisitStatus, VISIT_STATUSES } from '~/lib/visits';
 import { at } from '~/lib/time';
 
 export const prerender = false;
@@ -22,6 +22,18 @@ export const POST: APIRoute = async (context) => {
   const form = await context.request.formData();
   const ref = String(form.get('ref') ?? '').trim();
   if (!ref) return context.redirect('/admin/visits/', 303);
+
+  /**
+   * Deletion is a POST with its own action, never a link.
+   *
+   * A GET that destroys a row is one prefetch, one crawler, or one browser
+   * restoring tabs away from wiping a customer. The admin's confirm screen is
+   * a GET; the thing it confirms is this.
+   */
+  if (String(form.get('action')) === 'delete') {
+    const gone = await deleteVisit(DB, ref);
+    return context.redirect(gone ? '/admin/visits/?deleted=1' : '/admin/visits/?missing=1', 303);
+  }
 
   const statusRaw = String(form.get('status') ?? '');
   const status = VISIT_STATUSES.includes(statusRaw as VisitStatus)

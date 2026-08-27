@@ -1,4 +1,5 @@
 ---
+import { ADMIN_ICONS } from '~/data/admin-icons';
 import Admin from '~/layouts/Admin.astro';
 import Sparkline from '~/components/admin/Sparkline.astro';
 import BarList from '~/components/admin/BarList.astro';
@@ -35,7 +36,7 @@ const quotePaths = [`/is/${SLUGS.quote.is}/`, `/en/${SLUGS.quote.en}/`];
 const contactPaths = [`/is/${SLUGS.contact.is}/`, `/en/${SLUGS.contact.en}/`];
 
 if (!DB) {
-  dbError = 'Gagnagrunnurinn er ekki tengdur.';
+  dbError = 'The database is not connected.';
 } else {
   try {
     [t, viewSeries, waSeries, pages, refs, devices, countries, contactViews, quoteViews] =
@@ -51,7 +52,7 @@ if (!DB) {
         viewsOf(DB, quotePaths, days),
       ]);
   } catch (e) {
-    dbError = `Tölfræði ekki tiltæk. Keyrðu nýjustu færsluna á gagnagrunninn. (${String(e).slice(0, 90)})`;
+    dbError = `Statistics unavailable. Run the latest migration on the database. (${String(e).slice(0, 90)})`;
   }
 }
 
@@ -76,27 +77,37 @@ const RANGES = [
 ];
 
 const PAGE_LABEL: Record<string, string> = {
-  [`/is/${SLUGS.quote.is}/`]: 'Fá tilboð',
-  [`/en/${SLUGS.quote.en}/`]: 'Fá tilboð (EN)',
+  [`/is/${SLUGS.quote.is}/`]: 'Request a quote',
+  [`/en/${SLUGS.quote.en}/`]: 'Request a quote (EN)',
   [`/is/${SLUGS.contact.is}/`]: 'Hafa samband',
   [`/en/${SLUGS.contact.en}/`]: 'Hafa samband (EN)',
-  '/is/': 'Forsíða',
-  '/en/': 'Forsíða (EN)',
-  [`/is/${SLUGS.sofa.is}/`]: 'Sófahreinsun',
-  [`/is/${SLUGS.rug.is}/`]: 'Teppahreinsun',
+  '/is/': 'Home',
+  '/en/': 'Home (EN)',
+  [`/is/${SLUGS.sofa.is}/`]: 'Sofa cleaning',
+  [`/is/${SLUGS.rug.is}/`]: 'Rug cleaning',
 };
+/**
+ * The reset flow is two steps and the confirm screen is a GET.
+ *
+ * Wiping the table is not dangerous the way deleting a customer is, but it is
+ * irreversible, and the numbers on this page are what somebody uses to decide
+ * where to spend money. Worth one deliberate tap.
+ */
+const confirmingReset = Astro.url.searchParams.get('confirm') === 'reset';
+const clearedRaw = Astro.url.searchParams.get('cleared');
+const cleared = clearedRaw !== null ? Number(clearedRaw) : null;
 ---
 
-<Admin title="Tölur" current="stats">
+<Admin title="Stats" current="stats">
   <div class="a-wrap">
     <header class="a-head">
       <div>
-        <h1 class="a-h1">Tölur</h1>
-        <p class="a-sub">Síðustu {days} dagar</p>
+        <h1 class="a-h1">Stats</h1>
+        <p class="a-sub">Last {days} days</p>
       </div>
     </header>
 
-    <nav class="a-filters" aria-label="Tímabil">
+    <nav class="a-filters" aria-label="Window">
       {RANGES.map((r) => (
         <a class="a-filter" href={`/admin/stats/?d=${r.d}`} aria-current={r.d === days ? 'true' : undefined}>
           {r.l}
@@ -106,11 +117,17 @@ const PAGE_LABEL: Record<string, string> = {
 
     {dbError && <p class="a-msg a-msg--err">{dbError}</p>}
 
+    {cleared !== null && Number.isFinite(cleared) && (
+      <p class="a-msg a-msg--ok">
+        Cleared {cleared} {cleared === 1 ? 'event' : 'events'}. Counting starts again from now.
+      </p>
+    )}
+
     {!dbError && views === 0 && (
       <p class="a-msg a-msg--info">
-        Engar mælingar enn. Tölur byrja að safnast um leið og einhver heimsækir
-        vefinn — flettingar eru taldar með einum mynddíl, ekki með skriftu, svo
-        þær virka líka þegar slökkt er á JavaScript.
+        No measurements yet. Numbers start collecting the moment somebody visits
+        the site — views are counted with a single pixel, not a script, so
+        they work with JavaScript switched off too.
       </p>
     )}
 
@@ -126,39 +143,39 @@ const PAGE_LABEL: Record<string, string> = {
       </div>
       <div class="a-card a-stat">
         <span class="a-stat__n">{contacts}</span>
-        <span class="a-stat__l">Öll samskipti</span>
+        <span class="a-stat__l">All contacts</span>
         <span class="a-stat__d">{pct(contacts)}%</span>
       </div>
       <div class="a-card a-stat">
         <span class="a-stat__n">{bookings}</span>
-        <span class="a-stat__l">Bókanir</span>
+        <span class="a-stat__l">Bookings</span>
         <span class="a-stat__d">{pct(bookings)}%</span>
       </div>
     </div>
 
     <section class="a-sec">
-      <h2 class="a-sec__h">Flettingar á dag</h2>
+      <h2 class="a-sec__h">Views per day</h2>
       <div class="a-card">
         <Sparkline data={viewSeries} label="flettingar" />
       </div>
     </section>
 
     <section class="a-sec">
-      <h2 class="a-sec__h">WhatsApp-smellir á dag</h2>
+      <h2 class="a-sec__h">WhatsApp clicks per day</h2>
       <div class="a-card">
         <Sparkline data={waSeries} label="smellir" />
       </div>
     </section>
 
     <section class="a-sec">
-      <h2 class="a-sec__h">Leiðin að fyrirspurn</h2>
+      <h2 class="a-sec__h">The path to an enquiry</h2>
       <div class="a-card fn">
         {[
           { l: 'Flettingar', n: views },
-          { l: 'Á „Fá tilboð“', n: quoteViews },
-          { l: 'Á „Hafa samband“', n: contactViews },
-          { l: 'Smellt á samskipti', n: contacts },
-          { l: 'Bókun send', n: bookings },
+          { l: 'Reached “Request a quote”', n: quoteViews },
+          { l: 'Reached “Contact”', n: contactViews },
+          { l: 'Clicked a contact channel', n: contacts },
+          { l: 'Booking submitted', n: bookings },
         ].map((step) => (
           <div class="fn__step">
             <div class="fn__top">
@@ -171,46 +188,89 @@ const PAGE_LABEL: Record<string, string> = {
           </div>
         ))}
         <p class="fn__note">
-          Hlutföll miðast við flettingar, ekki einstaklinga — ekkert auðkenni er
-          geymt, svo ekki er hægt að telja fólk.
+          Rates are against views, not individuals — no identifier is
+          stored, so people cannot be counted.
         </p>
       </div>
     </section>
 
     <div class="a-grid a-grid--wide a-sec">
       <div class="a-card">
-        <h2 class="a-sec__h">Vinsælustu síður</h2>
+        <h2 class="a-sec__h">Most-viewed pages</h2>
         <BarList items={pages} labels={PAGE_LABEL} empty="Engar flettingar enn." />
       </div>
 
       <div class="a-card">
-        <h2 class="a-sec__h">Hvaðan komu þau</h2>
-        <BarList items={refs} empty="Engar utanaðkomandi tilvísanir enn." />
+        <h2 class="a-sec__h">Where they came from</h2>
+        <BarList items={refs} empty="No external referrals yet." />
       </div>
 
       <div class="a-card">
-        <h2 class="a-sec__h">Tæki</h2>
+        <h2 class="a-sec__h">Devices</h2>
         <BarList
           items={devices}
-          labels={{ mobile: 'Sími', desktop: 'Tölva' }}
-          empty="Engin gögn enn."
+          labels={{ mobile: 'Phone', desktop: 'Desktop' }}
+          empty="No data yet."
         />
       </div>
 
       <div class="a-card">
-        <h2 class="a-sec__h">Lönd</h2>
-        <BarList items={countries} empty="Engin gögn enn." />
+        <h2 class="a-sec__h">Countries</h2>
+        <BarList items={countries} empty="No data yet." />
       </div>
     </div>
 
     <p class="a-sub priv">
-      Engin vafrakaka, engin IP-tala og ekkert auðkenni er geymt. Þess vegna
-      þarf vefurinn ekkert samþykkisborð.
+      No cookie, no IP address and no identifier is stored. That is why
+      the site needs no consent banner.
     </p>
+
+    {confirmingReset ? (
+      <div class="a-card rs">
+        <h2 class="rs__title">Clear all recorded events?</h2>
+        <p class="rs__body">
+          This deletes every view and every contact click, and the graphs start
+          from zero. Jobs, customers and photographs are not touched.
+        </p>
+        <p class="rs__hint">
+          Worth doing once, after the site goes live, so the period when you were
+          testing it yourself is not counted as customers.
+        </p>
+        <form method="POST" action="/api/admin/analytics" class="a-acts">
+          <input type="hidden" name="action" value="reset" />
+          <button class="a-btn a-btn--danger" type="submit">
+            <span set:html={ADMIN_ICONS.trash} />
+            Clear the numbers
+          </button>
+          <a class="a-btn a-btn--quiet" href="/admin/stats/">Keep them</a>
+        </form>
+      </div>
+    ) : (
+      <p class="rs__link">
+        <a class="a-link-danger" href="/admin/stats/?confirm=reset">Clear recorded events</a>
+      </p>
+    )}
   </div>
 </Admin>
 
 <style>
+  .rs { display: flex; flex-direction: column; gap: 14px; margin: 20px 0 28px; }
+  .rs__title { font-size: 18px; margin: 0; color: var(--a-ink); }
+  .rs__body { font-size: 14.5px; line-height: 1.55; color: var(--a-ink-2); }
+  .rs__hint { font-size: 13.5px; color: var(--a-ink-3); }
+  .rs__link { margin: 16px 0 28px; text-align: center; }
+
+  .a-link-danger {
+    display: inline-block;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    color: var(--a-bad);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+
+  .a-link-danger:hover { border-bottom-color: currentColor; }
+
   .fn { display: flex; flex-direction: column; gap: 12px; }
   .fn__step { display: flex; flex-direction: column; gap: 5px; }
   .fn__top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }

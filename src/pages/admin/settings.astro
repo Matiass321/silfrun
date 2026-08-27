@@ -15,10 +15,10 @@ const { DB, ADMIN_SESSION_SECRET, ADMIN_PASSWORD_HASH } = env(Astro);
 const saved = Astro.url.searchParams.get('saved') === '1';
 const err = Astro.url.searchParams.get('e');
 const MESSAGES: Record<string, string> = {
-  short: 'Nýja lykilorðið þarf að vera minnst 12 stafir.',
-  mismatch: 'Lykilorðin stemma ekki.',
-  wrong: 'Núverandi lykilorð er rangt.',
-  nodb: 'Gagnagrunnurinn er ekki tengdur.',
+  short: 'The new password must be at least 12 characters.',
+  mismatch: 'The passwords do not match.',
+  wrong: 'The current password is wrong.',
+  nodb: 'The database is not connected.',
 };
 
 /* Health checks, so a broken install names the missing piece rather than
@@ -31,7 +31,7 @@ if (DB) {
     dbOk = true;
     dbDetail = 'Tengdur';
   } catch {
-    dbDetail = 'Tengdur en skema vantar — keyrðu db:migrate:remote';
+    dbDetail = 'Connected but the schema is missing — run db:migrate:remote';
   }
 }
 
@@ -55,13 +55,13 @@ try {
 
 const checks = [
   { l: 'Gagnagrunnur', ok: dbOk, d: dbDetail },
-  { l: 'Tölfræði', ok: statsOk, d: statsOk ? 'Virk' : 'Færsla 0001 ekki keyrð' },
-  { l: 'Lotulykill', ok: Boolean(ADMIN_SESSION_SECRET), d: ADMIN_SESSION_SECRET ? 'Stilltur' : 'Vantar' },
-  { l: 'Innskráning', ok: Boolean(adminEmail), d: adminEmail ?? 'Netfang ekki sett' },
-  { l: 'Lykilorð', ok: passwordInD1 || Boolean(ADMIN_PASSWORD_HASH), d: passwordInD1 ? 'Geymt' : ADMIN_PASSWORD_HASH ? 'Leyndarmál' : 'Ekki sett' },
+  { l: 'Statistics', ok: statsOk, d: statsOk ? 'Active' : 'Migration 0001 not run' },
+  { l: 'Lotulykill', ok: Boolean(ADMIN_SESSION_SECRET), d: ADMIN_SESSION_SECRET ? 'Stilltur' : 'Missing' },
+  { l: 'Sign-in', ok: Boolean(adminEmail), d: adminEmail ?? 'No email address set' },
+  { l: 'Password', ok: passwordInD1 || Boolean(ADMIN_PASSWORD_HASH), d: passwordInD1 ? 'Stored' : ADMIN_PASSWORD_HASH ? 'In the environment' : 'Not set' },
   { l: 'WhatsApp', ok: whatsappUrl() !== null, d: whatsappUrl() ? SITE.contact.phone : 'Ekki stillt' },
-  { l: 'Netfang vefs', ok: !isPlaceholder(SITE.contact.email), d: isPlaceholder(SITE.contact.email) ? 'Ekki stillt' : String(SITE.contact.email) },
-  { l: 'Kennitala', ok: !isPlaceholder(SITE.kennitala), d: isPlaceholder(SITE.kennitala) ? 'VANTAR — lögbundin' : String(SITE.kennitala) },
+  { l: 'Email address vefs', ok: !isPlaceholder(SITE.contact.email), d: isPlaceholder(SITE.contact.email) ? 'Ekki stillt' : String(SITE.contact.email) },
+  { l: 'Company number', ok: !isPlaceholder(SITE.kennitala), d: isPlaceholder(SITE.kennitala) ? 'MISSING — legally required' : String(SITE.kennitala) },
 ];
 
 const missing = checks.filter((c) => !c.ok).length;
@@ -72,26 +72,26 @@ const missing = checks.filter((c) => !c.ok).length;
     <header class="a-head">
       <div>
         <h1 class="a-h1">Stillingar</h1>
-        <p class="a-sub">{missing === 0 ? 'Allt í lagi' : `${missing} atriði þarfnast athygli`}</p>
+        <p class="a-sub">{missing === 0 ? 'All good' : `${missing} items need attention`}</p>
       </div>
       <a class="a-btn a-btn--quiet" href="/admin/">
         <span set:html={ADMIN_ICONS.back} />
-        Til baka
+        Back
       </a>
     </header>
 
-    {saved && <p class="a-msg a-msg--ok">Vistað.</p>}
+    {saved && <p class="a-msg a-msg--ok">Saved.</p>}
     {err && MESSAGES[err] && <p class="a-msg a-msg--err">{MESSAGES[err]}</p>}
 
     <section class="a-card">
-      <h2 class="a-sec__h">Kerfisstaða</h2>
+      <h2 class="a-sec__h">System status</h2>
       <ul class="se__checks">
         {checks.map((c) => (
           <li class="se__check">
             <span class:list={['se__dot', c.ok ? 'se__dot--ok' : 'se__dot--no']} aria-hidden="true"></span>
             <span class="se__l">{c.l}</span>
             <span class="se__d">{c.d}</span>
-            <span class="a-hide">{c.ok ? 'Í lagi' : 'Vantar'}</span>
+            <span class="a-hide">{c.ok ? 'OK' : 'Missing'}</span>
           </li>
         ))}
       </ul>
@@ -100,17 +100,17 @@ const missing = checks.filter((c) => !c.ok).length;
     <section class="a-card a-sec">
       <h2 class="a-sec__h">Google Calendar</h2>
       <p class="se__note">
-        Afritaðu slóðina og límdu hana í Google Calendar undir
-        <strong>Önnur dagatöl → Gerast áskrifandi → Frá vefslóð</strong>.
-        Bókanir birtast sjálfkrafa. Google sækir uppfærslur á sínum hraða,
-        oftast á klukkustundar fresti — þetta er áskrift, ekki lifandi speglun.
+        Copy the link and paste it into Google Calendar under
+        <strong>Other calendars → Subscribe to calendar → From URL</strong>.
+        Bookings appear automatically. Google fetches updates at its own pace,
+        usually about hourly — this is a subscription, not a live mirror.
       </p>
 
       {tokens.length === 0 ? (
         <form method="POST" action="/api/admin/calendar-token">
           <button class="a-btn a-btn--primary" type="submit" disabled={!dbOk}>
             <span set:html={ADMIN_ICONS.link} />
-            Búa til áskriftarslóð
+            Create a subscription link
           </button>
         </form>
       ) : (
@@ -122,10 +122,10 @@ const missing = checks.filter((c) => !c.ok).length;
                 type="text"
                 readonly
                 value={`${SITE.url}/calendar/${t.token}.ics`}
-                aria-label="Áskriftarslóð"
+                aria-label="Subscription link"
               />
               <div class="a-acts">
-                <span class="se__used">{t.last_used_at ? 'Sótt af Google' : 'Ekki sótt enn'}</span>
+                <span class="se__used">{t.last_used_at ? 'Fetched by Google' : 'Not fetched yet'}</span>
                 <form method="POST" action="/api/admin/calendar-token">
                   <input type="hidden" name="action" value="revoke" />
                   <input type="hidden" name="token" value={t.token} />
@@ -139,15 +139,15 @@ const missing = checks.filter((c) => !c.ok).length;
     </section>
 
     <section class="a-card a-sec">
-      <h2 class="a-sec__h">Breyta lykilorði</h2>
+      <h2 class="a-sec__h">Change password</h2>
       <form class="a-form" method="POST" action="/api/admin/password">
         <label class="a-field">
-          <span class="a-label">Núverandi lykilorð</span>
+          <span class="a-label">Current password</span>
           <input class="a-in" type="password" name="current" autocomplete="current-password" required />
         </label>
         <div class="a-two">
           <label class="a-field">
-            <span class="a-label">Nýtt lykilorð</span>
+            <span class="a-label">New password</span>
             <input class="a-in" type="password" name="password" minlength="12" autocomplete="new-password" required />
           </label>
           <label class="a-field">
@@ -156,22 +156,22 @@ const missing = checks.filter((c) => !c.ok).length;
           </label>
         </div>
         <div class="a-acts">
-          <button class="a-btn a-btn--primary" type="submit" disabled={!dbOk}>Vista lykilorð</button>
+          <button class="a-btn a-btn--primary" type="submit" disabled={!dbOk}>Save password</button>
         </div>
       </form>
     </section>
 
     <section class="a-card a-sec">
-      <h2 class="a-sec__h">Breytt í kóða</h2>
+      <h2 class="a-sec__h">Changed in code</h2>
       <p class="se__note">
-        Verð, þjónustusvæði, opnunartími og tengiliðir eru í
-        <code>src/config/site.ts</code> — ekki hér. Það er eini staðurinn sem þau
-        eru skrifuð, svo vefurinn og byggingin geta ekki orðið ósammála.
+        Prices, service areas, opening hours and contact details live in
+        <code>src/config/site.ts</code> — not here. That is the only place they are
+        written, so the site and the build cannot disagree.
       </p>
     </section>
 
     <form class="se__out" method="POST" action="/api/admin/logout">
-      <button class="a-btn a-btn--plain a-btn--block" type="submit">Útskrá</button>
+      <button class="a-btn a-btn--plain a-btn--block" type="submit">Sign out</button>
     </form>
   </div>
 </Admin>

@@ -31,7 +31,7 @@ let dbError: string | null = null;
  * what to do next.
  */
 if (!DB) {
-  dbError = 'Gagnagrunnurinn er ekki tengdur.';
+  dbError = 'The database is not connected.';
 } else {
   try {
     const d0 = today();
@@ -49,7 +49,7 @@ if (!DB) {
       pendingReminders(DB),
     ]);
   } catch (e) {
-    dbError = `Gagnagrunnurinn svarar ekki. Keyrðu "npm run db:migrate:remote". (${String(e).slice(0, 100)})`;
+    dbError = `The database is not responding. Run "npm run db:migrate:remote". (${String(e).slice(0, 100)})`;
   }
 }
 
@@ -57,16 +57,16 @@ const d0 = today();
 const open = (counts.new ?? 0) + (counts.quoted ?? 0) + (counts.scheduled ?? 0);
 ---
 
-<Admin title="Í dag" current="today">
+<Admin title="Today" current="today">
   <div class="a-wrap">
     <header class="a-head">
       <div>
-        <h1 class="a-h1">Í dag</h1>
+        <h1 class="a-h1">Today</h1>
         <p class="a-sub">{longDate(d0, 'is')}</p>
       </div>
       <a class="a-btn a-btn--primary" href="/admin/new-visit/">
         <span set:html={ADMIN_ICONS.plus} />
-        Nýtt verk
+        New verk
       </a>
     </header>
 
@@ -75,26 +75,26 @@ const open = (counts.new ?? 0) + (counts.quoted ?? 0) + (counts.scheduled ?? 0);
     <div class="a-grid a-grid--2">
       <div class="a-card a-stat">
         <span class="a-stat__n">{todays.length}</span>
-        <span class="a-stat__l">Í dag</span>
+        <span class="a-stat__l">Today</span>
       </div>
       <div class="a-card a-stat">
         <span class="a-stat__n">{counts.new ?? 0}</span>
-        <span class="a-stat__l">Nýjar</span>
+        <span class="a-stat__l">New</span>
       </div>
       <div class="a-card a-stat">
         <span class="a-stat__n">{counts.scheduled ?? 0}</span>
-        <span class="a-stat__l">Á dagskrá</span>
+        <span class="a-stat__l">Scheduled</span>
       </div>
       <div class="a-card a-stat">
         <span class="a-stat__n">{open}</span>
-        <span class="a-stat__l">Opið</span>
+        <span class="a-stat__l">Open</span>
       </div>
     </div>
 
     {reminders.length > 0 && (
       <section class="a-sec">
         <h2 class="a-sec__h">
-          Áminningar
+          Reminders
           <span class="a-badge">{reminders.length}</span>
         </h2>
 
@@ -142,21 +142,21 @@ const open = (counts.new ?? 0) + (counts.quoted ?? 0) + (counts.scheduled ?? 0);
     )}
 
     <section class="a-sec">
-      <h2 class="a-sec__h">Dagskrá dagsins</h2>
-      <VisitCard rows={todays} empty="Ekkert bókað í dag." showTime />
+      <h2 class="a-sec__h">Today's schedule</h2>
+      <VisitCard rows={todays} empty="Nothing booked today." showTime />
     </section>
 
     <section class="a-sec">
-      <h2 class="a-sec__h">Á morgun</h2>
-      <VisitCard rows={tomorrows} empty="Ekkert bókað á morgun." showTime />
+      <h2 class="a-sec__h">Tomorrow</h2>
+      <VisitCard rows={tomorrows} empty="Nothing booked tomorrow." showTime />
     </section>
 
     <section class="a-sec">
       <h2 class="a-sec__h">
-        Nýjar fyrirspurnir
+        New enquiries
         {fresh.length > 0 && <span class="a-badge">{fresh.length}</span>}
       </h2>
-      <VisitCard rows={fresh} empty="Engar ósvaraðar fyrirspurnir." />
+      <VisitCard rows={fresh} empty="No unanswered enquiries." />
     </section>
   </div>
 </Admin>
