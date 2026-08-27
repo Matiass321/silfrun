@@ -265,8 +265,7 @@ const graph = [websiteLd, webPageLd, businessLd, ...extraLd];
       value was hardcoded.
     */}
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FBF9F5" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0B0D0F" />
+    <meta name="theme-color" content="#0B0D0F" />
 
     {/* One graph per page: fewer blocks, and the @id references resolve. */}
     <script type="application/ld+json" is:inline set:html={JSON.stringify(graph)} />

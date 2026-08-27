@@ -1,7 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
-import sitemap from '@astrojs/sitemap';
 
 import { SITE } from './src/config/site.ts';
 
@@ -42,25 +41,6 @@ export default defineConfig({
     },
   }),
 
-  integrations: [
-    sitemap({
-      /**
-       * Deliberately not using the integration's `i18n` option: it assumes one
-       * shared path per language under different prefixes, but our slugs are
-       * genuinely translated. hreflang is generated from the slug table in
-       * src/i18n/routes.ts instead, which is correct by construction.
-       */
-      filter: (page) => {
-        const path = new URL(page).pathname;
-        // '/' is a language chooser, not content. The admin is not public,
-        // and the booking confirmation exists for one visitor at one moment.
-        if (path === '/') return false;
-        if (path.startsWith('/booking-received')) return false;
-        if (path === '/404' || path === '/404/') return false;
-        return !path.startsWith('/admin');
-      },
-    }),
-  ],
 
   build: {
     format: 'directory',

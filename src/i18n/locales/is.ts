@@ -12,6 +12,7 @@ export const is = {
     work: 'Verkin okkar',
     areas: 'Þjónustusvæði',
     about: 'Um okkur',
+    faq: 'Algengar spurningar',
     contact: 'Hafa samband',
     quote: 'Fá tilboð',
     prices: 'Verðskrá',

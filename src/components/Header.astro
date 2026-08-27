@@ -82,6 +82,42 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
         ))}
       </ul>
       <a class="btn btn--primary head__cta" href={path('quote', locale)}>{s.nav.quote}</a>
+
+      {/*
+        The phone menu.
+
+        <details> rather than a button and a script: this site ships no
+        JavaScript, and the native disclosure is already keyboard operable,
+        already announced as expanded or collapsed, and already closes on Esc.
+        A hand-rolled one would be three of those things at best.
+      */}
+      <details class="menu">
+        <summary class="menu__button" aria-label={s.nav.menu}>
+          <span class="menu__bars" aria-hidden="true"><i></i><i></i><i></i></span>
+        </summary>
+
+        <div class="menu__sheet">
+          <nav aria-label={s.nav.menu}>
+            <ul class="menu__list">
+              {links.map((l) => (
+                <li>
+                  <a
+                    class:list={['menu__link', { 'menu__link--current': l.key === pageKey }]}
+                    href={path(l.key, locale)}
+                    aria-current={l.key === pageKey ? 'page' : undefined}
+                  >{l.label}</a>
+                </li>
+              ))}
+              <li>
+                <a class="menu__link" href={path('faq', locale)}>{s.nav.faq}</a>
+              </li>
+              <li>
+                <a class="menu__link" href={path('contact', locale)}>{s.nav.contact}</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </details>
     </div>
   </div>
 </header>
@@ -209,12 +245,96 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
     inset: -11px -8px;
   }
 
-  /* The nav collapses to the CTA on small screens. A hamburger for six links
-     costs more than it saves; the links all live in the footer as well. */
+  /* ---- the phone menu ------------------------------------------------ *
+   *
+   * This used to be nothing at all: below 64rem the inline nav was hidden and
+   * the header kept only the CTA, on the reasoning that the footer carried the
+   * same links. It does — at the bottom of a very long page. On a phone that
+   * is not a navigation, and the site was effectively a set of dead ends.
+   * ------------------------------------------------------------------- */
+
+  .menu { display: none; position: relative; }
+
+  .menu__button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin-inline-end: calc(var(--space-100) * -1);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    list-style: none;
+    color: var(--text-primary);
+  }
+
+  /* Safari draws its own triangle unless both of these are said. */
+  .menu__button::-webkit-details-marker { display: none; }
+  .menu__button::marker { content: ''; }
+
+  .menu__bars { display: block; width: 20px; }
+
+  .menu__bars i {
+    display: block;
+    height: 1.5px;
+    background: currentColor;
+    border-radius: 1px;
+    transition: transform var(--dur-base) var(--ease-glide), opacity var(--dur-fast) linear;
+  }
+
+  .menu__bars i + i { margin-top: 5px; }
+
+  /* Open: the bars become a cross. Cheap, and it tells the visitor that the
+     same control closes the thing it opened. */
+  .menu[open] .menu__bars i:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+  .menu[open] .menu__bars i:nth-child(2) { opacity: 0; }
+  .menu[open] .menu__bars i:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+  .menu__sheet {
+    position: absolute;
+    inset-inline-end: calc(var(--space-100) * -1);
+    top: calc(100% + var(--space-200));
+    min-width: 15rem;
+    padding: var(--space-200);
+    background: var(--surface-raised);
+    border: 1px solid var(--edge-hairline);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-300, 0 24px 48px rgba(0, 0, 0, .55));
+    animation: menu-in var(--dur-base) var(--ease-glide) both;
+  }
+
+  @keyframes menu-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .menu__list { display: flex; flex-direction: column; }
+
+  .menu__link {
+    display: flex;
+    align-items: center;
+    min-height: 3rem;
+    padding-inline: var(--space-150);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-md);
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color var(--dur-fast) var(--ease-glide), background var(--dur-fast) var(--ease-glide);
+  }
+
+  .menu__link:hover { color: var(--text-primary); background: var(--surface-hover); }
+  .menu__link--current { color: var(--text-primary); }
+
   @media (max-width: 64rem) {
     .head__nav { display: none; }
+    .menu { display: block; }
     .head__end { margin-inline-start: auto; }
     .head__inner { min-height: 4.5rem; gap: var(--space-200); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .menu__sheet { animation: none; }
+    .menu__bars i { transition: none; }
   }
 
   /**

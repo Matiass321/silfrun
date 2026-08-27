@@ -1,58 +1,76 @@
 ---
 import Marketing from '~/layouts/Marketing.astro';
-import ContactChannels from '~/components/ContactChannels.astro';
 import ClosingCta from '~/components/ClosingCta.astro';
 import HeroMedia from '~/components/HeroMedia.astro';
 import MediaSlot from '~/components/MediaSlot.astro';
-import Constructions from '~/components/home/Constructions.astro';
 import StainRegister from '~/components/home/StainRegister.astro';
-import FibreRegister from '~/components/home/FibreRegister.astro';
 
-import { LOCALES, SITE, type Locale } from '~/config/site';
+import { LOCALES, SITE, trackedUrl, type Locale } from '~/config/site';
 import { t, alternates } from '~/i18n';
-import { path, areaPath, SERVICE_KEYS } from '~/i18n/routes';
-import { slotMap, type MediaRow } from '~/lib/media';
+import { path, areaPath } from '~/i18n/routes';
+import { slotMap, bySlot, type MediaRow } from '~/lib/media';
 import { env } from '~/lib/admin-guard';
-import { HOME_COPY, CARE_CODES, REFUSALS, CONSTRUCTION_LABEL, type Construction } from '~/data/home';
-
-export function getStaticPaths() {
-  return LOCALES.map((locale) => ({ params: { lang: locale }, props: { locale } }));
-}
-
-const { locale } = Astro.props as { locale: Locale };
-const s = t(locale);
-const c = HOME_COPY[locale];
-const alt = alternates('home', locale);
+import { REFUSALS } from '~/data/home';
+import { HOME, STEPS, ASSURANCES, FIELDS } from '~/data/homepage';
 
 /**
- * The homepage sells without a price and without a single review, because
- * neither exists. What carries persuasion instead is specificity: the same
- * knowledge indexed twice — once on the stain the visitor is looking at, once
- * on the material it is sitting in — with the affirmative answer given first
- * and the limit given second.
+ * Rendered per request, not at build.
  *
- * The registers live in src/data/home.ts so both languages stay in lockstep.
+ * This page reads the media library, and a prerendered page reads it once — at
+ * deploy time — so a photograph uploaded in the admin was invisible until
+ * somebody redeployed the site. The whole point of having an upload screen is
+ * that it works without one. The HTML is cached at the edge instead, so the
+ * cost of the change is a D1 read on a cache miss rather than on every hit.
  */
+export const prerender = false;
+
+const langParam = String(Astro.params.lang ?? '');
+if (!(LOCALES as readonly string[]).includes(langParam)) {
+  return new Response(null, { status: 404 });
+}
+const locale = langParam as Locale;
+
+const s = t(locale);
+const c = HOME[locale];
+const alt = alternates('home', locale);
+
 let media: Record<string, MediaRow | undefined> = {};
+let proof: MediaRow[] = [];
 {
   const { DB } = env(Astro);
   if (DB) {
     try {
-      media = await slotMap(DB, ['hero', 'hero-mobile', 'home-label', 'home-fibre', 'home-1']);
-    } catch { /* reserved plates */ }
+      [media, proof] = await Promise.all([
+        slotMap(DB, ['hero', 'hero-mobile', 'home-fibre', 'sofa', 'rug', 'carpet', 'stains']),
+        bySlot(DB, 'gallery'),
+      ]);
+    } catch { /* every slot falls back to its marked plate */ }
   }
 }
 
-const heroDesktop = media['hero'];
-const heroMobile = media['hero-mobile'];
-const hasHeroImage = Boolean(heroDesktop || heroMobile);
+/* Two at a time reads as a comparison; three reads as a grid of stock. */
+const pairs = proof.slice(0, 4);
 
-/** The six constructions, as a strip of anchors into the fibre register. */
-const STRIP: Construction[] = ['plain', 'twill', 'cutpile', 'looppile', 'knotted', 'hide'];
-const SYMBOL: Record<Construction, string> = {
-  plain: 'c-plain', twill: 'c-twill', cutpile: 'c-cutpile',
-  looppile: 'c-looppile', knotted: 'c-knotted', hide: 'c-hide',
-};
+const wa = trackedUrl('whatsapp', {
+  from: `/${locale}/`,
+  text: locale === 'is'
+    ? 'Halló Silfrun. Ég sendi mynd — hverju má ég búast við?'
+    : 'Hello Silfrun. Sending a photo — what should I expect?',
+});
+
+/**
+ * Edge-cached HTML.
+ *
+ * s-maxage puts the rendered page in Cloudflare's cache so the common request
+ * never reaches the worker, and stale-while-revalidate means the one visitor
+ * who does hit an expired entry is served instantly while it refreshes behind
+ * them. A photograph therefore appears within a minute of being uploaded
+ * rather than within a deploy, and the page still costs a static page's time.
+ */
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=60, stale-while-revalidate=86400'
+);
 ---
 
 <Marketing
@@ -66,44 +84,109 @@ const SYMBOL: Record<Construction, string> = {
   prefill={s.contact.prefillGeneral}
   business
 >
-  <Constructions />
-
   <div class="home">
-    {/* ══ 1 · Hero ══════════════════════════════════════════════════ */}
-    <section class:list={['s-hero', { 's-hero--shot': hasHeroImage }]}>
-      <HeroMedia locale={locale} desktop={heroDesktop} mobile={heroMobile} scrim="left" />
-
-      <div class="wrap hero__inner">
-        <div class="hero__type">
-          <p class="eyebrow">{c.eyebrow}</p>
-          <h1 class="hero__title">{c.title}</h1>
-          <div class="silfrun-rule hero__rule"></div>
-          <p class="lead hero__lead">{c.lead}</p>
-        </div>
-
-        <div class="hero__act">
-          <ContactChannels locale={locale} variant="hero" prefill={s.contact.prefillGeneral} note={false} />
-          <p class="hero__secondary">
-            <a class="link-arrow" href="#blettaskra">{c.seeRegister}</a>
-          </p>
-          <p class="hero__note">{c.note}</p>
-        </div>
+    {/* ══ 1 · Hero ═══════════════════════════════════════════════════ */}
+    <section class="hero">
+      <div class="hero__media">
+        <HeroMedia locale={locale} desktop={media['hero']} mobile={media['hero-mobile']} scrim="bottom" />
       </div>
 
-      {/*
-        The construction strip is navigation into the register, not the hero
-        image. It sits at the foot of the hero deliberately: on a phone the
-        second row is half-cropped by the fold, and that partial row is the
-        only scroll signal on the page.
-      */}
-      <div class="wrap cstrip__wrap">
-        <p class="cstrip__label">{c.constructionsLabel}</p>
-        <ul class="cstrip">
-          {STRIP.map((k) => (
-            <li>
-              <a class="cstrip__item" href="#efnisskra">
-                <svg class="cstrip__fig" viewBox="0 0 64 40" aria-hidden="true"><use href={`#${SYMBOL[k]}`} /></svg>
-                <span class="cstrip__name">{CONSTRUCTION_LABEL[k][locale]}</span>
+      <div class="wrap hero__inner">
+        <p class="eyebrow hero__eyebrow">{c.heroEyebrow}</p>
+        <h1 class="hero__title">{c.heroTitle}</h1>
+        <p class="hero__lead">{c.heroLead}</p>
+
+        <div class="hero__acts">
+          <a class="btn btn--foil btn--lg" href={path('quote', locale)}>{c.heroPrimary}</a>
+          {wa && (
+            <a class="btn btn--ghost btn--lg" href={wa} target="_blank" rel="noopener nofollow">
+              {c.heroSecondary}
+            </a>
+          )}
+        </div>
+
+        <p class="hero__prompt">{c.heroPrompt}</p>
+      </div>
+
+      {/* Three checkable statements, sitting on the seam between the hero and
+          the page. Placed here because this is where the visitor decides
+          whether to keep scrolling at all. */}
+      <div class="wrap">
+        <ul class="assure reveal">
+          {ASSURANCES.map((a) => (
+            <li class="assure__item">
+              <h2 class="assure__title">{a.title[locale]}</h2>
+              <p class="assure__body">{a.body[locale]}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    {/* ══ 2 · Proof ══════════════════════════════════════════════════ */}
+    <section class="section s-proof">
+      <div class="wrap">
+        <header class="section-head reveal">
+          <p class="eyebrow">{c.proofEyebrow}</p>
+          <h2>{c.proofTitle}</h2>
+          <p class="lead">{c.proofLead}</p>
+        </header>
+
+        {pairs.length ? (
+          <ul class="proof">
+            {pairs.map((m, i) => (
+              <li class="proof__item reveal">
+                <MediaSlot slot="gallery" locale={locale} media={m} ratio="4 / 5" priority={i === 0} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div class="proof proof--empty">
+            {[0, 1].map((i) => (
+              <div class="proof__item reveal">
+                <MediaSlot
+                  slot="gallery"
+                  locale={locale}
+                  ratio="4 / 5"
+                  label={locale === 'is'
+                    ? (i === 0 ? 'Áður · sama ljós og sjónarhorn' : 'Eftir · sama ljós og sjónarhorn')
+                    : (i === 0 ? 'Before · same light and angle' : 'After · same light and angle')}
+                />
+              </div>
+            ))}
+            <p class="proof__note">{c.proofEmpty}</p>
+          </div>
+        )}
+
+        <p class="reveal"><a class="link-arrow" href={path('results', locale)}>{c.proofCta}</a></p>
+      </div>
+    </section>
+
+    {/* ══ 3 · What we clean ══════════════════════════════════════════ */}
+    <section class="section section--sunk s-fields">
+      <div class="wrap">
+        <header class="section-head reveal">
+          <p class="eyebrow">{c.fieldsEyebrow}</p>
+          <h2>{c.fieldsTitle}</h2>
+          <p class="lead">{c.fieldsLead}</p>
+        </header>
+
+        <ul class="fields">
+          {FIELDS.map((f) => (
+            <li class="fields__item reveal">
+              <a class="field" href={path(f.key, locale)}>
+                <MediaSlot
+                  slot={f.slot}
+                  locale={locale}
+                  media={media[f.slot]}
+                  ratio="4 / 5"
+                  label={s.services[f.key].name}
+                  class="field__shot"
+                />
+                <span class="field__body">
+                  <span class="field__name">{s.services[f.key].name}</span>
+                  <span class="field__lead">{s.services[f.key].body}</span>
+                </span>
               </a>
             </li>
           ))}
@@ -111,140 +194,106 @@ const SYMBOL: Record<Construction, string> = {
       </div>
     </section>
 
-    {/* ══ 2 · Blettaskráin — the question they actually arrived with ══ */}
-    <section class="section s-stain" id="blettaskra">
+    {/* ══ 4 · Will the stain come out ════════════════════════════════ */}
+    <section class="section s-stain">
       <div class="wrap">
-        <header class="section-head">
+        <header class="section-head reveal">
           <p class="eyebrow">{c.stainEyebrow}</p>
           <h2>{c.stainTitle}</h2>
           <p class="lead">{c.stainLead}</p>
         </header>
-        <StainRegister locale={locale} />
+
+        <div class="reveal">
+          <StainRegister locale={locale} />
+        </div>
       </div>
     </section>
 
-    {/* ══ 3 · The care label — a task that takes half a minute ═══════ */}
-    <section class="section section--sunk s-label">
-      <div class="wrap label__wrap">
-        <div class="label__body">
-          <h2>{c.labelTitle}</h2>
-          <p class="lead label__lead">{c.labelLead}</p>
-
-          <ul class="codes">
-            {CARE_CODES.map((code) => (
-              <li class="code">
-                <span class="code__letter" aria-hidden="true">{code.code}</span>
-                <span class="code__meaning">{code.meaning[locale]}</span>
-              </li>
-            ))}
-          </ul>
-
-          <p class="label__closing">{c.labelClosing}</p>
+    {/* ══ 5 · The material decides ═══════════════════════════════════ */}
+    <section class="section section--deep s-care">
+      <div class="wrap care">
+        <div class="care__text reveal">
+          <p class="eyebrow">{c.careEyebrow}</p>
+          <h2>{c.careTitle}</h2>
+          <p class="lead">{c.careLead}</p>
+          <p><a class="link-arrow" href={path('process', locale)}>{c.careCta}</a></p>
         </div>
 
-        <div class="label__plate">
+        <div class="care__shot reveal">
           <MediaSlot
-            slot="home-label"
+            slot="home-fibre"
             locale={locale}
-            media={media['home-label']}
-            ratio="1 / 1"
+            media={media['home-fibre']}
+            ratio="4 / 5"
             label={locale === 'is'
-              ? 'Umhirðumerking undir sessu · nærmynd í dagsbirtu'
-              : 'Care label under a cushion · daylight macro'}
+              ? 'Nærmynd af ló í ská-birtu · engin hönd í ramma'
+              : 'Macro of pile in raking light · no hand in frame'}
           />
         </div>
       </div>
     </section>
 
-    {/* ══ 4 · What we do not do — each refusal answered ══════════════ */}
-    <section class="section section--deep s-refuse">
+    {/* ══ 6 · What we will not do ════════════════════════════════════ */}
+    <section class="section s-refuse">
       <div class="wrap">
-        <h2 class="refuse__title">{c.refuseTitle}</h2>
+        <header class="section-head reveal">
+          <p class="eyebrow">{c.refuseEyebrow}</p>
+          <h2>{c.refuseTitle}</h2>
+          <p class="lead">{c.refuseLead}</p>
+        </header>
 
-        <div class="refuse">
+        <ul class="refuse">
           {REFUSALS.map((r) => (
-            <div class="refuse__row">
+            <li class="refuse__item reveal">
               <p class="refuse__no">{r.no[locale]}</p>
-              <div class="refuse__yes">
-                <p class="refuse__label">{c.refuseInstead}</p>
-                <p class="refuse__body">{r.instead[locale]}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <p class="refuse__closing">{c.refuseClosing}</p>
-      </div>
-    </section>
-
-    {/* ══ 5 · Efnisskráin — desktop pulls this up to position 2 ══════ */}
-    <section class="section s-fibre" id="efnisskra">
-      <div class="wrap">
-        <header class="section-head fibre__head">
-          <div>
-            <p class="eyebrow">{c.fibreEyebrow}</p>
-            <h2>{c.fibreTitle}</h2>
-            <p class="lead">{c.fibreLead}</p>
-          </div>
-          <div class="fibre__plate">
-            <MediaSlot
-              slot="home-fibre"
-              locale={locale}
-              media={media['home-fibre']}
-              ratio="1 / 1"
-              label={locale === 'is'
-                ? 'Nærmynd af ló í ská-birtu · engin hönd í ramma'
-                : 'Macro of pile in raking light · no hand in frame'}
-            />
-          </div>
-        </header>
-
-        <FibreRegister locale={locale} />
-      </div>
-    </section>
-
-    {/* ══ 6 · Services ══════════════════════════════════════════════ */}
-    <section class="section section--sunk s-fields">
-      <div class="wrap stack stack--32">
-        <header class="section-head">
-          <p class="eyebrow">{s.services.eyebrow}</p>
-          <h2>{s.services.title}</h2>
-        </header>
-
-        <ul class="fields">
-          {SERVICE_KEYS.map((key) => (
-            <li>
-              <a class="field" href={path(key, locale)}>
-                <span class="field__name">{s.services[key].name}</span>
-                <span class="field__lead">{s.services[key].body}</span>
-                <span class="field__go" aria-hidden="true">→</span>
-              </a>
+              <p class="refuse__label">{c.refuseInstead}</p>
+              <p class="refuse__yes">{r.instead[locale]}</p>
             </li>
           ))}
         </ul>
       </div>
     </section>
 
-    {/* ══ 7 · Areas ═════════════════════════════════════════════════ */}
-    <section class="section section--tight s-areas">
-      <div class="wrap stack stack--24">
-        <header class="section-head">
-          <p class="eyebrow">{s.areas.eyebrow}</p>
-          <h2>{s.areas.title}</h2>
-          <p class="lead">{s.areas.lead}</p>
+    {/* ══ 7 · How it works ═══════════════════════════════════════════ */}
+    <section class="section section--sunk s-steps">
+      <div class="wrap">
+        <header class="section-head reveal">
+          <p class="eyebrow">{c.stepsEyebrow}</p>
+          <h2>{c.stepsTitle}</h2>
         </header>
 
-        <ul class="areas">
+        <ol class="steps">
+          {STEPS.map((st) => (
+            <li class="steps__item reveal">
+              <p class="steps__n" aria-hidden="true">{st.n}</p>
+              <h3 class="steps__title">{st.title[locale]}</h3>
+              <p class="steps__body">{st.body[locale]}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    {/* ══ 8 · Areas ══════════════════════════════════════════════════ */}
+    <section class="section section--tight s-areas">
+      <div class="wrap stack stack--24">
+        <header class="section-head reveal">
+          <p class="eyebrow">{c.areasEyebrow}</p>
+          <h2>{c.areasTitle}</h2>
+          <p class="lead">{c.areasLead}</p>
+        </header>
+
+        <ul class="areas reveal">
           {SITE.areas.map((area) => (
             <li><a class="area" href={areaPath(area.slug, locale)}>{area.name}</a></li>
           ))}
         </ul>
 
-        <p><a class="link-arrow" href={path('areas', locale)}>{s.areas.cta}</a></p>
+        <p class="reveal"><a class="link-arrow" href={path('areas', locale)}>{c.areasCta}</a></p>
       </div>
     </section>
 
-    {/* ══ 8 · Close ═════════════════════════════════════════════════ */}
+    {/* ══ 9 · Close ══════════════════════════════════════════════════ */}
     <div class="s-close">
       <ClosingCta locale={locale} prefill={s.contact.prefillGeneral} />
     </div>
@@ -252,161 +301,195 @@ const SYMBOL: Record<Construction, string> = {
 </Marketing>
 
 <style>
-  /**
-   * The page is a flex column so desktop can re-rank exactly one section.
-   *
-   * On a phone the stain register comes first, because the visitor is holding
-   * the stain. On a desktop the fibre register jumps to position two, because
-   * a four-column aligned table is a breadth-in-one-glance impression that
-   * only exists at width — on a phone it is eleven cards and makes no such
-   * impression, so it earns its place later.
-   *
-   * Tab order follows DOM order, which is the phone order. Acceptable here
-   * because every section is self-contained and none depends on the last.
-   */
   .home { display: flex; flex-direction: column; }
 
-  @media (min-width: 64rem) {
-    .home > .s-hero   { order: 1; }
-    .home > .s-fibre  { order: 2; }
-    .home > .s-stain  { order: 3; }
-    .home > .s-label  { order: 4; }
-    .home > .s-refuse { order: 5; }
-    .home > .s-fields { order: 6; }
-    .home > .s-areas  { order: 7; }
-    .home > .s-close  { order: 8; }
+  /* ------------------------------------------------------------------ *
+   * Scroll reveal.
+   *
+   * Scroll-driven CSS animation, so this costs no JavaScript at all — the
+   * site ships none and a reveal effect is not worth breaking that for. In a
+   * browser without animation-timeline the @supports block never applies and
+   * the content is simply there, which is the correct fallback rather than a
+   * degraded one.
+   *
+   * 14px and 700ms: far enough to register as movement, near enough that
+   * nothing appears to fly. Anything larger is what makes a page feel like a
+   * template.
+   * ------------------------------------------------------------------ */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .reveal {
+        animation: reveal linear both;
+        animation-timeline: view();
+        animation-range: entry 8% cover 26%;
+      }
+
+      @keyframes reveal {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: none; }
+      }
+    }
   }
 
-  /* ══ hero ═══════════════════════════════════════════════════════ */
+  /* ------------------------------------------------------------------ *
+   * Hero
+   *
+   * The photograph is the page's first argument, so it gets the frame and the
+   * copy sits on it. min-height rather than 100vh: a hero that exactly fills
+   * a phone screen hides the fact that there is anything below it, and the
+   * one thing this page needs is for people to keep going.
+   * ------------------------------------------------------------------ */
+  .hero { position: relative; padding-block-end: var(--space-800); }
 
-  .s-hero {
+  .hero__media {
+    position: absolute;
+    inset: 0 0 auto;
+    height: min(88svh, 46rem);
+    overflow: hidden;
+  }
+
+  .hero__inner {
     position: relative;
-    isolation: isolate;
-    padding-block: var(--space-1000) var(--space-500);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-300);
+    min-height: min(78svh, 40rem);
+    padding-block: var(--space-800) var(--space-600);
+    justify-content: flex-end;
   }
 
-  .hero__inner,
-  .cstrip__wrap { position: relative; z-index: 1; }
-
-  .hero__type { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-200); }
+  .hero__eyebrow { color: var(--text-accent); }
 
   .hero__title {
-    font-size: var(--display-2xl);
-    letter-spacing: var(--tracking-display-tight);
-    line-height: var(--leading-display);
-    max-width: 9em;
-    margin-block-start: var(--space-100);
+    font-family: var(--font-display);
+    font-size: var(--display-xl, clamp(2.5rem, 7vw, 4.75rem));
+    line-height: 1.03;
+    letter-spacing: -0.015em;
+    color: var(--text-primary);
+    max-width: 15ch;
+    text-wrap: balance;
+    margin: 0;
   }
 
-  .hero__rule { max-width: 8rem; margin-block: var(--space-200); }
-  .hero__lead { max-width: 36ch; }
-
-  .hero__act { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-250); margin-block-start: var(--space-400); }
-  .hero__secondary { margin: 0; }
-  .hero__note { font: var(--type-mono); color: var(--text-muted); max-width: 34ch; }
-
-  /* With a photograph the hero becomes a stage rather than type on the page. */
-  .s-hero--shot { min-height: 82svh; display: flex; flex-direction: column; justify-content: flex-end; }
-  .s-hero--shot .hero__title,
-  .s-hero--shot .hero__lead { color: var(--plate-text); }
-  .s-hero--shot .eyebrow,
-  .s-hero--shot .hero__note { color: var(--plate-text-secondary); }
-
-  /* ---- construction strip ---- */
-
-  .cstrip__wrap {
-    margin-block-start: var(--space-600);
-    padding-block-start: var(--space-400);
-    border-block-start: 1px solid var(--edge-hairline);
+  .hero__lead {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 46ch;
+    text-wrap: pretty;
   }
 
-  .cstrip__label {
-    font: var(--type-eyebrow);
-    letter-spacing: var(--tracking-eyebrow);
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-block-end: var(--space-300);
-    max-width: none;
-  }
+  .hero__acts { display: flex; flex-wrap: wrap; gap: var(--space-200); }
 
-  .cstrip { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-300) var(--space-200); }
-
-  .cstrip__item {
-    display: grid;
-    gap: var(--space-150);
-    min-height: 44px;
-    text-decoration: none;
-  }
-
-  .cstrip__fig {
-    width: 100%;
-    height: 84px;
-    color: var(--text-muted);
-    transition: color var(--dur-base) var(--ease-glide);
-  }
-
-  .cstrip__item:hover .cstrip__fig { color: var(--text-primary); }
-
-  .cstrip__name {
+  .hero__prompt {
     font: var(--type-mono);
-    font-size: 10.5px;
-    letter-spacing: .06em;
-    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: var(--tracking-label);
     color: var(--text-muted);
   }
 
-  /* ══ care label ══════════════════════════════════════════════════ */
+  /* ---- the three assurances ---- */
 
-  .label__wrap { display: grid; grid-template-columns: 1fr; gap: var(--space-500); }
-  .label__lead { max-width: 44ch; margin-block-start: var(--space-250); }
-
-  .codes { display: flex; flex-direction: column; margin-block: var(--space-500) var(--space-400); }
-
-  .code {
+  .assure {
     display: grid;
-    grid-template-columns: 48px minmax(0, 1fr);
-    gap: var(--space-250);
-    align-items: center;
-    padding-block: var(--space-250);
+    gap: var(--space-400);
+    padding-block-start: var(--space-500);
     border-block-start: 1px solid var(--edge-quiet);
   }
 
-  .code__letter {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 34px;
-    border: 1px solid var(--edge-strong);
-    border-radius: var(--radius-xs);
-    font: var(--type-mono);
+  .assure__title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--text-primary);
+    margin: 0 0 var(--space-100);
+  }
+
+  .assure__body { font-size: var(--text-sm); color: var(--text-muted); max-width: 40ch; }
+
+  /* ------------------------------------------------------------------ *
+   * Proof
+   * ------------------------------------------------------------------ */
+  .proof {
+    display: grid;
+    gap: var(--space-300);
+    margin-block: var(--space-500);
+  }
+
+  .proof__note {
+    grid-column: 1 / -1;
     font-size: var(--text-sm);
-    letter-spacing: .08em;
+    color: var(--text-muted);
+    max-width: 52ch;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Fields — a photograph each, because "sofa cleaning" as a word does not
+   * sell and a photograph of a clean sofa does.
+   * ------------------------------------------------------------------ */
+  .fields {
+    display: grid;
+    gap: var(--space-400);
+    margin-block-start: var(--space-500);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-250);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .field__shot { overflow: hidden; border-radius: var(--radius-sm); }
+
+  .field__shot :global(img),
+  .field__shot :global(video) {
+    transition: transform var(--dur-slow, 640ms) var(--ease-glide);
+  }
+
+  .field:hover .field__shot :global(img),
+  .field:hover .field__shot :global(video) { transform: scale(1.03); }
+
+  .field__body { display: flex; flex-direction: column; gap: var(--space-100); }
+
+  .field__name {
+    font-family: var(--font-display);
+    font-size: var(--display-xs);
     color: var(--text-primary);
   }
 
-  .code__meaning { font-size: var(--text-sm); color: var(--text-secondary); }
+  .field__lead { font-size: var(--text-sm); color: var(--text-muted); max-width: 40ch; }
 
-  .label__closing { font-size: var(--text-sm); color: var(--text-muted); max-width: 50ch; }
+  /* ------------------------------------------------------------------ *
+   * Care — text and one photograph, side by side on a wide screen.
+   * ------------------------------------------------------------------ */
+  .care { display: grid; gap: var(--space-500); align-items: center; }
+  .care__text { display: flex; flex-direction: column; gap: var(--space-250); }
 
-  /* On a phone the instruction must arrive before the illustration of it. */
-  .label__plate { order: 2; }
+  /* ------------------------------------------------------------------ *
+   * Refusals
+   *
+   * The one section that argues by subtraction. Each entry is a refusal and
+   * the thing done instead, so it never reads as a list of things the
+   * business cannot manage.
+   * ------------------------------------------------------------------ */
+  .refuse {
+    display: grid;
+    gap: var(--space-400);
+    margin-block-start: var(--space-500);
+  }
 
-  /* ══ refusals ════════════════════════════════════════════════════ */
-
-  .refuse__title { font-size: var(--display-lg); max-width: var(--measure-display); margin-block-end: var(--space-500); }
-
-  .refuse { display: flex; flex-direction: column; }
-
-  .refuse__row { padding-block: var(--space-500); border-block-start: 1px solid var(--plate-edge); }
+  .refuse__item {
+    padding-block-start: var(--space-300);
+    border-block-start: 1px solid var(--edge-quiet);
+  }
 
   .refuse__no {
     font-family: var(--font-display);
-    font-size: var(--display-sm);
-    line-height: var(--leading-display-loose);
-    color: var(--plate-text);
-    max-width: var(--measure-display);
+    font-size: var(--display-xs);
+    color: var(--text-primary);
+    margin-block-end: var(--space-200);
     text-wrap: balance;
-    margin-block-end: var(--space-250);
   }
 
   .refuse__label {
@@ -414,136 +497,59 @@ const SYMBOL: Record<Construction, string> = {
     letter-spacing: var(--tracking-eyebrow);
     text-transform: uppercase;
     color: var(--text-accent);
-    margin-block-end: var(--space-150);
-    max-width: none;
+    margin-block-end: var(--space-075);
   }
 
-  .refuse__body { font-size: var(--text-sm); color: var(--plate-text-secondary); max-width: 46ch; }
+  .refuse__yes { font-size: var(--text-sm); color: var(--text-secondary); max-width: 44ch; }
 
-  .refuse__closing {
-    margin-block-start: var(--space-600);
-    padding-block-start: var(--space-400);
-    border-block-start: 1px solid var(--plate-edge);
-    font: var(--type-mono);
-    color: var(--plate-text-secondary);
-    max-width: 56ch;
-  }
-
-  /* ══ fibre register head ═════════════════════════════════════════ */
-
-  .fibre__head { display: grid; grid-template-columns: 1fr; gap: var(--space-400); }
-
-  /* A phone does not spend a square on an absence; the section reads fine
-     without it, and a real photograph appears at every width. */
-  @media (max-width: 63.99rem) {
-    .fibre__plate :global(.ms--empty) { display: none; }
-  }
-
-  /* ══ services ════════════════════════════════════════════════════ */
-
-  .fields { display: grid; grid-template-columns: 1fr; }
-
-  .field {
+  /* ------------------------------------------------------------------ *
+   * Steps
+   * ------------------------------------------------------------------ */
+  .steps {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--space-100) var(--space-300);
-    align-items: baseline;
-    padding-block: var(--space-400);
+    gap: var(--space-400);
+    margin-block-start: var(--space-500);
+    counter-reset: none;
+  }
+
+  .steps__item {
+    padding-block-start: var(--space-300);
     border-block-start: 1px solid var(--edge-quiet);
-    transition: var(--transition-control);
   }
 
-  .field:hover { padding-inline-start: var(--space-200); }
-
-  .field__name { font-family: var(--font-display); font-size: var(--display-xs); color: var(--text-primary); }
-  .field__lead { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--text-muted); max-width: 52ch; }
-  .field__go { color: var(--text-accent); }
-
-  /* ══ areas ═══════════════════════════════════════════════════════ */
-
-  .areas { display: flex; flex-wrap: wrap; gap: var(--space-150); }
-
-  .area {
-    display: inline-flex;
-    align-items: center;
-    height: var(--control-h);
-    padding: 0 var(--pad-control-x);
-    border: 1px solid var(--edge-hairline);
-    border-radius: var(--radius-pill);
-    font-size: var(--text-sm);
-    color: var(--text-secondary);
-    transition: var(--transition-control);
+  .steps__n {
+    font: var(--type-mono);
+    font-size: 12px;
+    letter-spacing: var(--tracking-label);
+    color: var(--text-accent);
+    margin-block-end: var(--space-200);
   }
 
-  .area:hover { border-color: var(--edge-strong); color: var(--text-primary); }
+  .steps__title {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--text-primary);
+    margin: 0 0 var(--space-100);
+  }
 
-  /* ══════════════════════════════════════════════════════════════════
-     Desktop. Not the same layout widened — different composition per
-     section, and one section re-ranked.
-     ══════════════════════════════════════════════════════════════════ */
+  .steps__body { font-size: var(--text-sm); color: var(--text-muted); max-width: 38ch; }
+
+  /* ------------------------------------------------------------------ *
+   * Wide screens
+   * ------------------------------------------------------------------ */
+  @media (min-width: 48rem) {
+    .assure { grid-template-columns: repeat(3, 1fr); }
+    .proof { grid-template-columns: repeat(2, 1fr); gap: var(--space-400); }
+    .fields { grid-template-columns: repeat(2, 1fr); gap: var(--space-500); }
+    .refuse { grid-template-columns: repeat(2, 1fr); gap: var(--space-500); }
+    .steps { grid-template-columns: repeat(2, 1fr); gap: var(--space-500); }
+  }
 
   @media (min-width: 64rem) {
-    .s-hero {
-      min-height: min(84svh, 54rem);
-      display: grid;
-      grid-template-rows: 1fr auto;
-      padding-block: clamp(var(--space-1200), 12vw, var(--space-2000)) var(--space-600);
-    }
-
-    .hero__inner {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      column-gap: var(--space-400);
-      align-content: center;
-    }
-
-    /* Left seven of twelve. The right five stay empty — that emptiness is
-       what the width is for, and it is the whole restraint argument. */
-    .hero__type { grid-column: 1 / 8; }
-    .hero__act  { grid-column: 1 / 7; margin-block-start: var(--space-500); }
-
-    .hero__title { font-size: var(--display-3xl); max-width: var(--measure-display-tight); }
-    .hero__lead { max-width: 42ch; }
-
-    .cstrip { grid-template-columns: repeat(6, 1fr); column-gap: var(--space-400); }
-    .cstrip__fig { height: 56px; }
-
-    .label__wrap { grid-template-columns: minmax(0, 1fr) 22rem; column-gap: var(--space-1000); align-items: start; }
-    .label__plate { order: 0; position: sticky; top: var(--space-800); }
-
-    .codes { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--space-500); }
-
-    .refuse__row {
-      display: grid;
-      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-      column-gap: var(--space-1000);
-      align-items: start;
-    }
-
-    .refuse__no { margin-block-end: 0; }
-    .refuse__yes { align-self: center; }
-
-    .fibre__head { grid-template-columns: minmax(0, 1fr) 14rem; gap: var(--space-800); align-items: start; }
-
-    .fields { grid-template-columns: 1fr 1fr; column-gap: var(--space-800); }
-  }
-
-  /*
-   * A CSS-only reveal on the refusals, guarded twice: the feature query keeps
-   * it out of browsers without scroll-driven animation, and the motion query
-   * keeps it away from anyone who has asked for less movement.
-   */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .refuse__no {
-        animation: settle linear both;
-        animation-timeline: view();
-        animation-range: entry 10% entry 55%;
-      }
-      @keyframes settle {
-        from { opacity: 0; transform: translateY(1.25rem); }
-        to   { opacity: 1; transform: none; }
-      }
-    }
+    .hero__inner { padding-block: var(--space-1000) var(--space-800); }
+    .fields { grid-template-columns: repeat(4, 1fr); gap: var(--space-400); }
+    .steps { grid-template-columns: repeat(4, 1fr); }
+    .care { grid-template-columns: 1fr minmax(0, 22rem); gap: var(--space-800); }
+    .proof { grid-template-columns: repeat(4, 1fr); }
   }
 </style>

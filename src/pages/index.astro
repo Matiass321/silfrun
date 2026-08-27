@@ -49,36 +49,23 @@ const LABEL: Record<string, string> = { is: 'Íslenska', en: 'English' };
         chooser is not content; it is a fork.
       */}
     <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} type="image/svg+xml" />
-    <meta name="theme-color" content="#FBF9F5" media="(prefers-color-scheme: light)" />
-      <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0B0D0F" />
+      <meta name="theme-color" content="#0B0D0F" />
     <meta name="color-scheme" content="light dark" />
     <style>
       *, *::before, *::after { box-sizing: border-box; }
 
-      /* This page does not load tokens.css, so it carries its own pair.
-         Light is the default; dark applies on preference. */
+      /* This page does not load tokens.css, so it carries its own copy of the
+         handful of values it needs. One ground, matching the site. */
       :root {
-        --c-bg: #FBF9F5;
-        --c-ink: #0B0D0F;
-        --c-mark: #6B655C;
-        --c-edge: rgba(11, 13, 15, .30);
-        --c-hover: rgba(11, 13, 15, .045);
-        --c-grain: 0.05;
-        --c-foil: linear-gradient(103deg, #6B737B 0%, #99A1A9 15%, #464E56 33%, #8C949C 51%, #3C444C 69%, #7E868E 85%, #545C64 100%);
-        --c-rule: linear-gradient(90deg, rgba(107,101,92,0) 0%, rgba(107,101,92,.28) 30%, rgba(45,42,38,.46) 50%, rgba(107,101,92,.28) 70%, rgba(107,101,92,0) 100%);
-      }
-
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --c-bg: #0B0D0F;
-          --c-ink: #F2F4F6;
-          --c-mark: #BAC1C8;
-          --c-edge: rgba(226, 232, 238, .28);
-          --c-hover: rgba(242, 244, 246, .06);
-          --c-grain: 0.32;
-          --c-foil: linear-gradient(103deg, #5D656E 0%, #BAC1C8 16%, #F2F4F6 31%, #9AA2AA 46%, #E4E8EB 62%, #7B838C 80%, #D2D7DC 100%);
-          --c-rule: linear-gradient(90deg, rgba(226,232,238,0) 0%, rgba(226,232,238,.55) 30%, rgba(255,255,255,.85) 50%, rgba(226,232,238,.55) 70%, rgba(226,232,238,0) 100%);
-        }
+        color-scheme: dark;
+        --c-bg: #0B0D0F;
+        --c-ink: #F2F4F6;
+        --c-mark: #BAC1C8;
+        --c-edge: rgba(226, 232, 238, .28);
+        --c-hover: rgba(242, 244, 246, .06);
+        --c-grain: 0.32;
+        --c-foil: linear-gradient(103deg, #5D656E 0%, #BAC1C8 16%, #F2F4F6 31%, #9AA2AA 46%, #E4E8EB 62%, #7B838C 80%, #D2D7DC 100%);
+        --c-rule: linear-gradient(90deg, rgba(226,232,238,0) 0%, rgba(226,232,238,.55) 30%, rgba(255,255,255,.85) 50%, rgba(226,232,238,.55) 70%, rgba(226,232,238,0) 100%);
       }
 
       body {

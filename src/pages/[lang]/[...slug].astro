@@ -9,7 +9,7 @@ import ProcessPage from '~/components/pages/ProcessPage.astro';
 import GalleryPage from '~/components/pages/GalleryPage.astro';
 
 import { LOCALES, SITE, type Locale } from '~/config/site';
-import { SLUGS, SERVICE_KEYS, type PageKey, type ServiceKey } from '~/i18n/routes';
+import { SLUGS, SERVICE_KEYS, resolveRoute, type PageKey, type ServiceKey } from '~/i18n/routes';
 
 import { t, alternates, areaAlternates } from '~/i18n';
 import { PAGE_META, AREA_META } from '~/i18n/meta';
@@ -18,59 +18,42 @@ import { slotMap, bySlot, type MediaRow } from '~/lib/media';
 import { env } from '~/lib/admin-guard';
 
 /**
- * Resolves every translated slug to the page that owns it.
+ * Rendered per request, not at build.
  *
- * Routing is driven by the slug table rather than by the filesystem, because
- * the filesystem cannot produce translated path segments — /is/sofahreinsun/
- * and /en/sofa-cleaning/ are the same page. Service-area pages are emitted
- * here too, beneath the translated areas slug.
+ * These pages read the media library, and a prerendered page reads it once —
+ * at deploy time — so a photograph uploaded in the admin stayed invisible
+ * until somebody redeployed. The HTML is edge-cached instead, so the common
+ * request still never reaches the worker.
  *
- * Only keys listed in `built` are emitted. Anything else 404s until its
- * template exists, rather than shipping an empty shell.
+ * getStaticPaths could hand the page its key as a prop. A request cannot, so
+ * the slug is resolved back to a page key through the same table that built
+ * those paths. Anything unresolvable 404s rather than falling back to a
+ * default page — a URL that always resolves to *something* is how a site
+ * accumulates soft 404s, and Google keeps those indexed.
  */
-export function getStaticPaths() {
-  const built: PageKey[] = [
-    ...SERVICE_KEYS,
-    'services',
-    'process',
-    'results',
-    'areas',
-    'about',
-    'faq',
-    'quote',
-    'contact',
-    'privacy',
-    'terms',
-  ];
+export const prerender = false;
 
-  const paths = [];
-
-  for (const locale of LOCALES) {
-    for (const key of built) {
-      paths.push({
-        params: { lang: locale, slug: SLUGS[key][locale] },
-        props: { locale, pageKey: key, area: null },
-      });
-    }
-
-    for (const area of SITE.areas) {
-      paths.push({
-        params: { lang: locale, slug: `${SLUGS.areas[locale]}/${area.slug}` },
-        props: { locale, pageKey: 'areas' as PageKey, area },
-      });
-    }
-  }
-
-  return paths;
+const langParam = String(Astro.params.lang ?? '');
+if (!(LOCALES as readonly string[]).includes(langParam)) {
+  return new Response(null, { status: 404 });
 }
+const locale = langParam as Locale;
 
-type AreaProp = { slug: string; name: string; dative: string; prep: string; primary: boolean } | null;
+const hit = resolveRoute(locale, String(Astro.params.slug ?? ''));
+if (!hit) return new Response(null, { status: 404 });
 
-const { locale, pageKey, area } = Astro.props as {
-  locale: Locale;
-  pageKey: PageKey;
-  area: AreaProp;
-};
+const pageKey = hit.pageKey;
+const area = hit.areaSlug
+  ? SITE.areas.find((a) => a.slug === hit.areaSlug) ?? null
+  : null;
+
+/* An areas URL with a slug we do not serve is a 404, not the hub. */
+if (hit.areaSlug && !area) return new Response(null, { status: 404 });
+
+Astro.response.headers.set(
+  'Cache-Control',
+  'public, max-age=0, s-maxage=60, stale-while-revalidate=86400'
+);
 
 const s = t(locale);
 const c = CONTENT[locale];
@@ -109,9 +92,9 @@ if (area) {
  * Only the slots this page can actually show are asked for. A page requesting
  * every slot would read the whole library to render four frames.
  *
- * Prerendered pages have no runtime binding, so this is empty at build time
- * and the slots render their marked plates — which is the correct state until
- * photographs exist. Once they do, the page is rebuilt and they appear.
+ * With the page rendering per request this reads the live library, so an
+ * upload appears on the next cache miss. Empty slots render their marked
+ * plates, which is the correct state until photographs exist.
  */
 const wantedSlots = isService
   ? [pageKey]

@@ -506,21 +506,8 @@ strong { font-weight: var(--weight-medium); }
 .sf-btn--foil:hover, .btn--foil:hover { filter: brightness(1.08); }
 .sf-btn--foil:active, .btn--foil:active { filter: brightness(.94); transform: translateY(1px); }
 
-/* The theme guard is wrapped in :where() so it adds no specificity. Without
-   that, :root[data-theme="light"] .btn--foil:hover is (0,4,0) and outranks
-   the plate rule below at (0,3,0) no matter which comes last — which is how
-   the plate's foil button kept being repainted in the plate's own colour on
-   hover. Declared for the media query AND the stamp so an explicit light
-   choice on a dark OS also gets the ink hover instead of brightness()
-   washing flat ink. */
-@media (prefers-color-scheme: light) {
-  :where(:root:not([data-theme="dark"])) .sf-btn--foil:hover,
-  :where(:root:not([data-theme="dark"])) .btn--foil:hover { filter: none; background: var(--basalt-700); }
-}
-
-:where(:root[data-theme="light"]) .sf-btn--foil:hover,
-:where(:root[data-theme="light"]) .btn--foil:hover { filter: none; background: var(--basalt-700); }
-
+/* One theme, so the foil hover is one gesture. The light-theme variant that
+   flattened this to solid ink is gone with the light theme. */
 /* …except on the plate, where the button is foil in BOTH themes. */
 .section--deep .btn--foil:hover,
 .section--deep .sf-btn--foil:hover,

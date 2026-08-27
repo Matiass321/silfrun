@@ -16,6 +16,7 @@ export const en: typeof is = {
     work: 'Our work',
     areas: 'Service areas',
     about: 'About',
+    faq: 'FAQ',
     contact: 'Contact',
     quote: 'Request a quote',
     prices: 'Prices',

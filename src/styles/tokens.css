@@ -167,89 +167,7 @@
   --signal-caution-surface:  rgba(168, 130, 62, .15);
   --signal-negative:         var(--oxide-700);
   --signal-negative-surface: rgba(168, 85, 67, .11);
-}
 
-/* ---------------------------------------------------------------------
- * DARK — the obsidian ground. The brand's original world.
- *
- * Guarded with :not([data-theme='light']) so an explicit light choice beats
- * a dark operating system.
- * ------------------------------------------------------------------- */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --surface-page:    var(--basalt-900);
-    --surface-raised:  var(--basalt-850);
-    --surface-sunken:  var(--basalt-950);
-    --surface-inset:   rgba(242, 244, 246, .035);
-    --surface-hover:   rgba(242, 244, 246, .06);
-    --surface-active:  rgba(242, 244, 246, .10);
-    --surface-inverse: var(--stone-050);
-    --surface-scrim:   rgba(7, 8, 10, .72);
-
-    --text-primary:    var(--silver-050);
-    --text-secondary:  var(--silver-300);
-    --text-muted:      var(--silver-500);
-    --text-inverse:    var(--basalt-900);
-    --text-accent:     var(--glacier-200);
-    --text-link:       var(--glacier-200);
-    --text-link-hover: var(--silver-050);
-
-    --edge-hairline: rgba(226, 232, 238, .12);
-    --edge-quiet:    rgba(226, 232, 238, .07);
-    --edge-strong:   rgba(226, 232, 238, .28);
-    --edge-accent:   rgba(188, 209, 217, .45);
-    --edge-control:  rgba(226, 232, 238, .42);   /* 3.54:1 on the field fill */
-    --edge-focus:    rgba(188, 209, 217, .65);
-
-    --accent:       var(--glacier-200);
-    --accent-quiet: var(--glacier-700);
-    --focus-ring:   rgba(155, 184, 195, .55);
-
-    --signal-positive:         var(--kelp-300);
-    --signal-positive-surface: rgba(76, 110, 98, .20);
-    --signal-caution:          var(--ochre-300);
-    --signal-caution-surface:  rgba(168, 130, 62, .18);
-    --signal-negative:         var(--oxide-300);
-    --signal-negative-surface: rgba(168, 85, 67, .18);
-  }
-}
-
-/* The toggle must win in both directions, so dark is declared again. */
-:root[data-theme='dark'] {
-  --surface-page:    var(--basalt-900);
-  --surface-raised:  var(--basalt-850);
-  --surface-sunken:  var(--basalt-950);
-  --surface-inset:   rgba(242, 244, 246, .035);
-  --surface-hover:   rgba(242, 244, 246, .06);
-  --surface-active:  rgba(242, 244, 246, .10);
-  --surface-inverse: var(--stone-050);
-  --surface-scrim:   rgba(7, 8, 10, .72);
-
-  --text-primary:    var(--silver-050);
-  --text-secondary:  var(--silver-300);
-  --text-muted:      var(--silver-500);
-  --text-inverse:    var(--basalt-900);
-  --text-accent:     var(--glacier-200);
-  --text-link:       var(--glacier-200);
-  --text-link-hover: var(--silver-050);
-
-  --edge-hairline: rgba(226, 232, 238, .12);
-  --edge-quiet:    rgba(226, 232, 238, .07);
-  --edge-strong:   rgba(226, 232, 238, .28);
-  --edge-accent:   rgba(188, 209, 217, .45);
-  --edge-control:  rgba(226, 232, 238, .42);
-  --edge-focus:    rgba(188, 209, 217, .65);
-
-  --accent:       var(--glacier-200);
-  --accent-quiet: var(--glacier-700);
-  --focus-ring:   rgba(155, 184, 195, .55);
-
-  --signal-positive:         var(--kelp-300);
-  --signal-positive-surface: rgba(76, 110, 98, .20);
-  --signal-caution:          var(--ochre-300);
-  --signal-caution-surface:  rgba(168, 130, 62, .18);
-  --signal-negative:         var(--oxide-300);
-  --signal-negative-surface: rgba(168, 85, 67, .18);
 }
 
 /**
@@ -475,74 +393,6 @@
 }
 
 /**
- * Material physics per theme.
- *
- * The colour roles above are only half of a theme. These are the other half:
- * how a surface rises, how metal catches light, how much tooth a ground has.
- * They work in opposite directions, which is the reason the two themes read as
- * two designed worlds rather than one with its brightness reversed.
- *
- *   light : ink cut into unbleached paper. Surfaces rise by casting a shadow;
- *           the wordmark is engraved; the tooth is barely there.
- *   dark  : polished metal in an unlit room. Surfaces rise by catching a lit
- *           top edge; the wordmark reflects; grain hides banding on black.
- *
- * Declared for the media query AND the explicit stamp so the toggle wins in
- * both directions.
- */
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    /* Reflection, not engraving: bright highlights against a dark ground. */
-    --foil-silver: linear-gradient(103deg, #5D656E 0%, #BAC1C8 16%, #F2F4F6 31%, #9AA2AA 46%, #E4E8EB 62%, #7B838C 80%, #D2D7DC 100%);
-    --foil-silver-soft: linear-gradient(103deg, #7B838C 0%, #E4E8EB 38%, #9AA2AA 62%, #D2D7DC 100%);
-    --foil-hairline: linear-gradient(90deg, rgba(226,232,238,0) 0%, rgba(226,232,238,.55) 30%, rgba(255,255,255,.85) 50%, rgba(226,232,238,.55) 70%, rgba(226,232,238,0) 100%);
-
-    --foil-silver-text: linear-gradient(100deg, #C9D0D7 0%, #8C949C 100%);
-
-    --btn-hero-bg: var(--foil-silver-soft);
-    --btn-hero-ink: var(--basalt-900);
-    --btn-hero-edge: var(--sheen-vellum);
-
-    /* A lit top edge does the elevation; the cast shadow is nearly invisible
-       on black and is there only to seat the object. */
-    --sheen-top:        inset 0 1px 0 rgba(242, 244, 246, .10);
-    --sheen-top-strong: inset 0 1px 0 rgba(242, 244, 246, .22);
-
-    --shadow-100: 0 1px 2px rgba(7,8,10,.28), 0 6px 18px -10px rgba(7,8,10,.40);
-    --shadow-200: 0 2px 6px rgba(7,8,10,.32), 0 22px 44px -20px rgba(7,8,10,.55);
-    --shadow-300: 0 4px 12px rgba(7,8,10,.34), 0 48px 96px -32px rgba(7,8,10,.70);
-
-    --veil-dark: rgba(11, 13, 15, .62);
-
-    /* Full tooth: large flat blacks band without it. */
-    --grain-opacity: 0.32;
-  }
-}
-
-:root[data-theme='dark'] {
-  --foil-silver: linear-gradient(103deg, #5D656E 0%, #BAC1C8 16%, #F2F4F6 31%, #9AA2AA 46%, #E4E8EB 62%, #7B838C 80%, #D2D7DC 100%);
-  --foil-silver-soft: linear-gradient(103deg, #7B838C 0%, #E4E8EB 38%, #9AA2AA 62%, #D2D7DC 100%);
-  --foil-hairline: linear-gradient(90deg, rgba(226,232,238,0) 0%, rgba(226,232,238,.55) 30%, rgba(255,255,255,.85) 50%, rgba(226,232,238,.55) 70%, rgba(226,232,238,0) 100%);
-
-  --foil-silver-text: linear-gradient(100deg, #C9D0D7 0%, #8C949C 100%);
-
-  --btn-hero-bg: var(--foil-silver-soft);
-  --btn-hero-ink: var(--basalt-900);
-  --btn-hero-edge: var(--sheen-vellum);
-
-  --sheen-top:        inset 0 1px 0 rgba(242, 244, 246, .10);
-  --sheen-top-strong: inset 0 1px 0 rgba(242, 244, 246, .22);
-
-  --shadow-100: 0 1px 2px rgba(7,8,10,.28), 0 6px 18px -10px rgba(7,8,10,.40);
-  --shadow-200: 0 2px 6px rgba(7,8,10,.32), 0 22px 44px -20px rgba(7,8,10,.55);
-  --shadow-300: 0 4px 12px rgba(7,8,10,.34), 0 48px 96px -32px rgba(7,8,10,.70);
-
-  --veil-dark: rgba(11, 13, 15, .62);
-  --grain-opacity: 0.32;
-}
-
-/**
  * The deep closing plate.
  *
  * On dark it is basalt-950 — deeper than the page, the darkest thing on the
@@ -621,18 +471,67 @@
   --plate-foil-text: linear-gradient(100deg, #C9D0D7 0%, #8C949C 100%);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --plate-surface: var(--basalt-950);
-    --plate-text: var(--silver-050);
-    --plate-text-secondary: var(--silver-300);
-    --plate-edge: rgba(226, 232, 238, .12);
-    --plate-grain-opacity: 0.32;
-    --foot-surface: var(--basalt-850);
-  }
-}
-
-:root[data-theme='dark'] {
+/* ==========================================================================
+ * THE GROUND
+ *
+ * The site had two themes and now has one. These were the dark theme's
+ * overrides, and they live at the END of the file on purpose: tokens.css
+ * declares :root several times over — palette, then space, then type, then
+ * effects — and an override merged into the first block is silently beaten by
+ * any later block that names the same token.
+ *
+ * That is not hypothetical. --veil-dark was declared again in the effects
+ * block, so the sticky header kept its paper-coloured veil over a black page
+ * and the language switch sat on it at 2.34:1.
+ *
+ * Anything added here must stay last.
+ * ========================================================================== */
+:root {
+  color-scheme: dark;
+  --surface-page: var(--basalt-900);
+  --surface-raised: var(--basalt-850);
+  --surface-sunken: var(--basalt-950);
+  --surface-inset: rgba(242, 244, 246, .035);
+  --surface-hover: rgba(242, 244, 246, .06);
+  --surface-active: rgba(242, 244, 246, .10);
+  --surface-inverse: var(--stone-050);
+  --surface-scrim: rgba(7, 8, 10, .72);
+  --text-primary: var(--silver-050);
+  --text-secondary: var(--silver-300);
+  --text-muted: var(--silver-500);
+  --text-inverse: var(--basalt-900);
+  --text-accent: var(--glacier-200);
+  --text-link: var(--glacier-200);
+  --text-link-hover: var(--silver-050);
+  --edge-hairline: rgba(226, 232, 238, .12);
+  --edge-quiet: rgba(226, 232, 238, .07);
+  --edge-strong: rgba(226, 232, 238, .28);
+  --edge-accent: rgba(188, 209, 217, .45);
+  --edge-control: rgba(226, 232, 238, .42);
+  --edge-focus: rgba(188, 209, 217, .65);
+  --accent: var(--glacier-200);
+  --accent-quiet: var(--glacier-700);
+  --focus-ring: rgba(155, 184, 195, .55);
+  --signal-positive: var(--kelp-300);
+  --signal-positive-surface: rgba(76, 110, 98, .20);
+  --signal-caution: var(--ochre-300);
+  --signal-caution-surface: rgba(168, 130, 62, .18);
+  --signal-negative: var(--oxide-300);
+  --signal-negative-surface: rgba(168, 85, 67, .18);
+  --foil-silver: linear-gradient(103deg, #5D656E 0%, #BAC1C8 16%, #F2F4F6 31%, #9AA2AA 46%, #E4E8EB 62%, #7B838C 80%, #D2D7DC 100%);
+  --foil-silver-soft: linear-gradient(103deg, #7B838C 0%, #E4E8EB 38%, #9AA2AA 62%, #D2D7DC 100%);
+  --foil-hairline: linear-gradient(90deg, rgba(226,232,238,0) 0%, rgba(226,232,238,.55) 30%, rgba(255,255,255,.85) 50%, rgba(226,232,238,.55) 70%, rgba(226,232,238,0) 100%);
+  --foil-silver-text: linear-gradient(100deg, #C9D0D7 0%, #8C949C 100%);
+  --btn-hero-bg: var(--foil-silver-soft);
+  --btn-hero-ink: var(--basalt-900);
+  --btn-hero-edge: var(--sheen-vellum);
+  --sheen-top: inset 0 1px 0 rgba(242, 244, 246, .10);
+  --sheen-top-strong: inset 0 1px 0 rgba(242, 244, 246, .22);
+  --shadow-100: 0 1px 2px rgba(7,8,10,.28), 0 6px 18px -10px rgba(7,8,10,.40);
+  --shadow-200: 0 2px 6px rgba(7,8,10,.32), 0 22px 44px -20px rgba(7,8,10,.55);
+  --shadow-300: 0 4px 12px rgba(7,8,10,.34), 0 48px 96px -32px rgba(7,8,10,.70);
+  --veil-dark: rgba(11, 13, 15, .62);
+  --grain-opacity: 0.32;
   --plate-surface: var(--basalt-950);
   --plate-text: var(--silver-050);
   --plate-text-secondary: var(--silver-300);

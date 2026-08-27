@@ -81,3 +81,58 @@ export function areaPath(areaSlug: string, locale: Locale): string {
 export const SERVICE_KEYS = ['sofa', 'rug', 'carpet', 'stains'] as const satisfies readonly PageKey[];
 
 export type ServiceKey = (typeof SERVICE_KEYS)[number];
+
+/**
+ * The reverse of SLUGS: a translated path back to the page that owns it.
+ *
+ * getStaticPaths could hand the page its key as a prop because the route was
+ * built ahead of time. These routes render per request now — so that photographs
+ * uploaded in the admin appear without a redeploy — and a request arrives with
+ * nothing but a language and a slug. This is what turns those two back into a
+ * page key.
+ *
+ * Built once at module scope rather than per request: it is a fixed table of
+ * about thirty entries and rebuilding it on every render would be pure waste.
+ */
+const BUILT: PageKey[] = [
+  ...SERVICE_KEYS,
+  'services', 'process', 'results', 'areas', 'about',
+  'faq', 'quote', 'contact', 'privacy', 'terms',
+];
+
+const SLUG_LOOKUP: Record<string, PageKey> = (() => {
+  const out: Record<string, PageKey> = {};
+  for (const locale of ['is', 'en'] as const) {
+    for (const key of BUILT) out[`${locale}/${SLUGS[key][locale]}`] = key;
+  }
+  return out;
+})();
+
+export interface ResolvedRoute {
+  pageKey: PageKey;
+  /** Set only for a single service-area page, e.g. /is/thjonustusvaedi/kopavogur/. */
+  areaSlug: string | null;
+}
+
+/**
+ * Resolves one request, or returns null so the caller can 404.
+ *
+ * Returning null rather than falling back to a default page is the point: a
+ * URL that resolves to *something* is how a site accumulates soft 404s, which
+ * Google keeps indexed and which quietly outrank the real pages.
+ */
+export function resolveRoute(locale: Locale, slug: string): ResolvedRoute | null {
+  const clean = slug.replace(/^\/+|\/+$/g, '');
+
+  const direct = SLUG_LOOKUP[`${locale}/${clean}`];
+  if (direct) return { pageKey: direct, areaSlug: null };
+
+  /* A service area sits one level under the translated areas slug. */
+  const areasPrefix = `${SLUGS.areas[locale]}/`;
+  if (clean.startsWith(areasPrefix)) {
+    const areaSlug = clean.slice(areasPrefix.length);
+    if (areaSlug && !areaSlug.includes('/')) return { pageKey: 'areas', areaSlug };
+  }
+
+  return null;
+}
