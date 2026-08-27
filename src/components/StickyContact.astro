@@ -83,7 +83,7 @@ const show = primary !== null || secondary !== null;
   <style is:global>
     /* Reserve the bar's height so the footer is never trapped beneath it. */
     @media (max-width: 48rem) {
-      body { padding-block-end: 5.5rem; }
+      body { padding-block-end: var(--sticky-h); }
     }
   </style>
 )}

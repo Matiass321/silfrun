@@ -164,6 +164,23 @@ strong { font-weight: var(--weight-medium); }
  */
 :root { --head-h: 5.25rem; }
 
+/**
+ * The contact bar's height, reserved rather than guessed at.
+ *
+ * The bar floats over the bottom of the screen below 48rem. Anything laid out
+ * against the bottom of the VIEWPORT — as opposed to the end of the document,
+ * which body padding already covers — has to subtract it, or the bar simply
+ * sits on top. That is what was happening to the hero's two buttons: they
+ * ended at 780px and the bar started at 778px.
+ *
+ * Zero above the breakpoint, so the same expression is safe everywhere.
+ */
+:root { --sticky-h: 0rem; }
+
+@media (max-width: 48rem) {
+  :root { --sticky-h: 5.5rem; }
+}
+
 @media (max-width: 64rem) {
   :root { --head-h: 4.5rem; }
 }

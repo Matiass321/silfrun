@@ -100,6 +100,8 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
 
         <div class="menu__sheet">
           <nav aria-label={s.nav.menu}>
+            <a class="btn btn--primary menu__cta" href={path('quote', locale)}>{s.nav.quote}</a>
+
             <ul class="menu__list">
               {links.map((l) => (
                 <li>
@@ -363,6 +365,22 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
     .menu { display: block; }
     .head__end { margin-inline-start: auto; }
     .head__inner { gap: var(--space-200); }
+  }
+
+  /* The contact bar carries the actions on a phone, and the hero carries them
+     again one screen up. A third copy beside the menu button was noise. It
+     moves into the menu sheet, where it is the first thing in the list. */
+  @media (max-width: 48rem) {
+    .head__cta { display: none; }
+  }
+
+  .menu__cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    margin-block-end: var(--space-150);
+    padding-inline: var(--space-200);
   }
 
   @media (prefers-reduced-motion: reduce) {

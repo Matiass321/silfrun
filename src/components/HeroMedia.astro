@@ -12,7 +12,7 @@ interface Props {
   scrim?: 'bottom' | 'left' | 'none';
 }
 
-const { locale, desktop, mobile, scrim = 'bottom' } = Astro.props;
+const { locale, desktop, mobile, scrim = 'none' } = Astro.props;
 
 /**
  * The hero image.
@@ -84,7 +84,6 @@ const has = Boolean(only);
     )}
 
     {scrim !== 'none' && <div class="hm__scrim" aria-hidden="true"></div>}
-    <div class="hm__grain" aria-hidden="true"></div>
   </div>
 )}
 
@@ -130,18 +129,6 @@ const has = Boolean(only);
       rgba(7, 8, 10, .62) 34%,
       rgba(7, 8, 10, 0) 72%
     );
-  }
-
-  /* The same tooth the flat surfaces carry, so a photograph belongs to the
-     page rather than sitting on top of it. */
-  .hm__grain {
-    position: absolute;
-    inset: 0;
-    background-image: var(--grain-url);
-    background-size: var(--grain-size);
-    opacity: calc(var(--grain-opacity) * 0.6);
-    pointer-events: none;
-    mix-blend-mode: overlay;
   }
 
   /* On a phone the copy sits over the lower half, so the scrim rises further. */
