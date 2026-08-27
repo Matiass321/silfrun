@@ -36,7 +36,7 @@ const MESSAGES: Record<string, string> = {
     <h1 class="lg__h">Admin</h1>
 
     {!ADMIN_SESSION_SECRET && (
-      <p class="a-msg a-msg--warn">ADMIN_SESSION_SECRET er ekki stillt. Sign-in virkar ekki.</p>
+      <p class="a-msg a-msg--warn">ADMIN_SESSION_SECRET is not set. Sign-in will not work.</p>
     )}
     {err && MESSAGES[err] && <p class="a-msg a-msg--err">{MESSAGES[err]}</p>}
 

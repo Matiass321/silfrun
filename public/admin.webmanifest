@@ -1,15 +1,15 @@
 {
   "id": "/admin/",
-  "name": "Silfrun stjórnborð",
+  "name": "Silfrun Admin",
   "short_name": "Silfrun",
-  "description": "Bókanir, dagatal og viðskiptavinir.",
+  "description": "Bookings, calendar and customers.",
   "start_url": "/admin/",
   "scope": "/admin/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#f6f7f8",
   "theme_color": "#ffffff",
-  "lang": "is",
+  "lang": "en",
   "dir": "ltr",
   "categories": ["business", "productivity"],
   "icons": [
@@ -19,7 +19,7 @@
     { "src": "/admin-icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Ný heimsókn", "short_name": "Ný", "url": "/admin/new-visit/" },
-    { "name": "Dagatal", "short_name": "Dagatal", "url": "/admin/calendar/" }
+    { "name": "New job", "short_name": "New", "url": "/admin/new-visit/" },
+    { "name": "Calendar", "short_name": "Calendar", "url": "/admin/calendar/" }
   ]
 }

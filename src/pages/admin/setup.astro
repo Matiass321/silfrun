@@ -11,7 +11,7 @@ const { DB, ADMIN_PASSWORD_HASH, ADMIN_SESSION_SECRET } = env(Astro);
  *
  * Once a password exists this page closes for good — otherwise it is an
  * unauthenticated endpoint that overwrites the admin password, which is the
- * entire security model given away. Changing it later goes through Stillingar,
+ * entire security model given away. Changing it later goes through Settings,
  * behind the session and the current password.
  */
 const existing = await resolvePasswordHash(DB, ADMIN_PASSWORD_HASH);

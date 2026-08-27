@@ -5,6 +5,10 @@ import { type Locale } from '~/config/site';
 import { t } from '~/i18n';
 import { path, SERVICE_KEYS, type ServiceKey } from '~/i18n/routes';
 import { SERVICE_CONTENT } from '~/data/services';
+import Constructions from '~/components/home/Constructions.astro';
+import StainRegister from '~/components/home/StainRegister.astro';
+import FibreRegister from '~/components/home/FibreRegister.astro';
+import { HOME_COPY } from '~/data/home';
 
 interface Props {
   locale: Locale;
@@ -16,6 +20,22 @@ const s = t(locale);
 const c = SERVICE_CONTENT[locale][service];
 
 const others = SERVICE_KEYS.filter((k) => k !== service);
+
+/**
+ * The registers live on the pages devoted to them.
+ *
+ * They were on the homepage — a ten-row stain table and an eleven-row fibre
+ * table before the visitor had asked anything. Somebody wondering whether red
+ * wine comes out of wool is on the stains page or the rug page; that is where
+ * the answer belongs, and moving it there is what let the homepage stop
+ * reading like a datasheet.
+ *
+ * Stains gets the outcome register, and the material pages get the fibre one,
+ * because those are the two different questions.
+ */
+const showStains = service === 'stains';
+const showFibres = service === 'sofa' || service === 'rug' || service === 'carpet';
+const reg = HOME_COPY[locale];
 
 /** Opens the conversation already naming the service being read about. */
 const prefill = s.contact.prefillService.replace('{service}', s.services[service].name.toLowerCase());
@@ -103,6 +123,33 @@ const faqLd = {
       </div>
     </div>
   </section>
+
+  {showStains && (
+    <section class="section section--tight">
+      <div class="wrap stack stack--24">
+        <header class="section-head">
+          <p class="eyebrow">{reg.stainEyebrow}</p>
+          <h2>{reg.stainTitle}</h2>
+          <p class="lead">{reg.stainLead}</p>
+        </header>
+        <StainRegister locale={locale} />
+      </div>
+    </section>
+  )}
+
+  {showFibres && (
+    <section class="section section--tight">
+      <Constructions />
+      <div class="wrap stack stack--24">
+        <header class="section-head">
+          <p class="eyebrow">{reg.fibreEyebrow}</p>
+          <h2>{reg.fibreTitle}</h2>
+          <p class="lead">{reg.fibreLead}</p>
+        </header>
+        <FibreRegister locale={locale} />
+      </div>
+    </section>
+  )}
 
   <section class="section section--tight">
     <div class="wrap wrap--narrow stack stack--16">

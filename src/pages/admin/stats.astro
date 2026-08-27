@@ -71,16 +71,16 @@ const contacts = wa + (t.messenger ?? 0) + (t.call ?? 0) + (t.email ?? 0);
 const pct = (n: number) => (views > 0 ? ((n / views) * 100).toFixed(1) : '0.0');
 
 const RANGES = [
-  { d: 7, l: '7 dagar' },
-  { d: 30, l: '30 dagar' },
-  { d: 90, l: '90 dagar' },
+  { d: 7, l: '7 days' },
+  { d: 30, l: '30 days' },
+  { d: 90, l: '90 days' },
 ];
 
 const PAGE_LABEL: Record<string, string> = {
   [`/is/${SLUGS.quote.is}/`]: 'Request a quote',
   [`/en/${SLUGS.quote.en}/`]: 'Request a quote (EN)',
-  [`/is/${SLUGS.contact.is}/`]: 'Hafa samband',
-  [`/en/${SLUGS.contact.en}/`]: 'Hafa samband (EN)',
+  [`/is/${SLUGS.contact.is}/`]: 'Contact',
+  [`/en/${SLUGS.contact.en}/`]: 'Contact (EN)',
   '/is/': 'Home',
   '/en/': 'Home (EN)',
   [`/is/${SLUGS.sofa.is}/`]: 'Sofa cleaning',

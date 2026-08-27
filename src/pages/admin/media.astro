@@ -21,7 +21,7 @@ const MESSAGES: Record<string, string> = {
   big: 'That file is too large. The maximum is 25 MB.',
   dupe: 'That file is already in the library.',
   alt: 'Images shown on the website must have Icelandic alt text.',
-  nokv: 'Myndageymslan er ekki tengd.',
+  nokv: 'The media store is not connected.',
   bad: 'Invalid request.',
 };
 
@@ -49,11 +49,11 @@ const emptySlots = SLOTS.filter((s) => !filledSlots.has(s.key));
 const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.round(n / 1024) + ' kB');
 ---
 
-<Admin title="Myndir" current="media">
+<Admin title="Photos" current="media">
   <div class="a-wrap">
     <header class="a-head">
       <div>
-        <h1 class="a-h1">Myndir</h1>
+        <h1 class="a-h1">Photos</h1>
         <p class="a-sub">{items.length} files · {placed} placed · {totalMb} MB</p>
       </div>
     </header>
@@ -152,8 +152,8 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
                 <span class="a-label">Before or after</span>
                 <select class="a-in" name="pair_role">
                   <option value="">—</option>
-                  <option value="before" selected={current.pair_role === 'before'}>Fyrir</option>
-                  <option value="after" selected={current.pair_role === 'after'}>Eftir</option>
+                  <option value="before" selected={current.pair_role === 'before'}>Before</option>
+                  <option value="after" selected={current.pair_role === 'after'}>After</option>
                 </select>
               </label>
               <label class="a-field">
