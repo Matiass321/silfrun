@@ -1,0 +1,252 @@
+---
+import type { Locale } from '~/config/site';
+import { trackedUrl } from '~/config/site';
+import { STAINS, STAIN_OPEN, OUTCOME_LABEL, OUTCOME_MEANING, HOME_COPY, type Outcome } from '~/data/home';
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const c = HOME_COPY[locale];
+
+/**
+ * The stain register.
+ *
+ * This is the section that answers the question the visitor actually arrived
+ * with — not "are you competent" but "will MY stain come out". It sits first
+ * after the hero on a phone for that reason.
+ *
+ * The outcome marks are geometric, never colour. A colour-coded outcome loses
+ * its meaning entirely for a colourblind reader, and would additionally have to
+ * survive both a near-black and a paper ground.
+ */
+const MARK: Record<Outcome, string> = {
+  out: '<svg viewBox="0 0 10 10" aria-hidden="true"><rect x="1" y="1" width="8" height="8" fill="currentColor"/></svg>',
+  lighter: '<svg viewBox="0 0 10 10" aria-hidden="true"><rect x="1" y="1" width="8" height="8" fill="none" stroke="currentColor"/><path d="M1 1h4v8H1z" fill="currentColor"/></svg>',
+  stays: '<svg viewBox="0 0 10 10" aria-hidden="true"><rect x="1.5" y="1.5" width="7" height="7" fill="none" stroke="currentColor"/></svg>',
+  unknown: '<svg viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.6" fill="none" stroke="currentColor" stroke-dasharray="2 2"/></svg>',
+};
+
+const wa = trackedUrl('whatsapp', {
+  from: `/${locale}/`,
+  text: locale === 'is'
+    ? 'Halló Silfrun. Ég er með blett og sendi mynd — fer hann úr?'
+    : 'Hello Silfrun. I have a stain and am sending a photo — will it come out?',
+});
+
+const LEGEND: Outcome[] = ['out', 'lighter', 'stays'];
+---
+
+<div class="sr">
+  {/* Legend. Three tokens, so the column can be scanned without being read. */}
+  <ul class="sr__legend">
+    {LEGEND.map((o) => (
+      <li class="sr__leg">
+        <span class="sr__mark" aria-hidden="true" set:html={MARK[o]} />
+        <span class="sr__legword">{OUTCOME_LABEL[o][locale]}</span>
+        <span class="sr__legmean">{OUTCOME_MEANING[o][locale]}</span>
+      </li>
+    ))}
+  </ul>
+
+  <div class="sr__table" role="table" aria-label={c.stainTitle}>
+    <div class="sr__head" role="row">
+      <span role="columnheader">{c.headStain}</span>
+      <span role="columnheader">{c.headOutcome}</span>
+      <span role="columnheader">{c.headNote}</span>
+    </div>
+
+    {STAINS.map((row) => (
+      <div class:list={['sr__row', { 'sr__row--quiet': row.outcome === 'stays' }]} role="row">
+        <span class="sr__name" role="cell">{row.stain[locale]}</span>
+        <span class="sr__out" role="cell">
+          <span class="sr__mark" aria-hidden="true" set:html={MARK[row.outcome]} />
+          <span>{OUTCOME_LABEL[row.outcome][locale]}</span>
+        </span>
+        <span class="sr__note" role="cell">{row.note[locale]}</span>
+      </div>
+    ))}
+  </div>
+
+  {/*
+    The open row. It is the only row set in the display face, which is what
+    marks it as the unfinished one — the register describes what is known, and
+    this is the invitation to add the visitor's own case to it.
+  */}
+  <div class="sr__open">
+    <p class="sr__openname">{STAIN_OPEN.stain[locale]}</p>
+    <p class="sr__opennote">
+      {STAIN_OPEN.note[locale]}
+      {wa && (
+        <>
+          {' '}
+          <a class="link-arrow sr__openlink" href={wa} target="_blank" rel="noopener nofollow">
+            WhatsApp
+          </a>
+        </>
+      )}
+    </p>
+  </div>
+
+  {/* Drying time. "When can I sit on it again" is the second question. */}
+  <aside class="sr__dry">
+    <p class="sr__dryhead">{c.dryHead}</p>
+    <p class="sr__drybody">{c.dryBody}</p>
+  </aside>
+</div>
+
+<style>
+  .sr { display: flex; flex-direction: column; }
+
+  /* ---- legend ---- */
+
+  .sr__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-150) var(--space-400);
+    padding-block-end: var(--space-300);
+    margin-block-end: var(--space-200);
+  }
+
+  .sr__leg { display: flex; align-items: baseline; gap: var(--space-150); }
+
+  .sr__mark { display: inline-flex; width: 10px; height: 10px; flex: none; align-self: center; }
+  .sr__mark :global(svg) { width: 100%; height: 100%; display: block; }
+
+  .sr__legword {
+    font: var(--type-mono);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-primary);
+  }
+
+  .sr__legmean { font-size: var(--text-xs); color: var(--text-muted); }
+
+  /* ---- phone: two-line rows, still tabular ---- */
+
+  .sr__head { display: none; }
+
+  .sr__row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: var(--space-250);
+    padding-block: var(--space-300);
+    border-block-start: 1px solid var(--edge-quiet);
+  }
+
+  .sr__name { font-size: var(--text-md); color: var(--text-primary); }
+
+  .sr__out {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-100);
+    justify-self: end;
+    font: var(--type-mono);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .sr__note {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-100);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    max-width: 46ch;
+    text-wrap: balance;
+  }
+
+  /* One value step quieter, so the eye lands on the affirmative block first.
+     No colour is used — the ordering does the work. */
+  .sr__row--quiet .sr__name { color: var(--text-secondary); }
+
+  /* ---- the open row ---- */
+
+  .sr__open {
+    margin-block-start: var(--space-400);
+    padding-block-start: var(--space-400);
+    border-block-start: 1px solid var(--edge-hairline);
+  }
+
+  .sr__openname {
+    font-family: var(--font-display);
+    font-size: var(--display-xs);
+    color: var(--text-primary);
+    margin-block-end: var(--space-150);
+  }
+
+  .sr__opennote { font-size: var(--text-sm); color: var(--text-secondary); max-width: 48ch; }
+  .sr__openlink { white-space: nowrap; }
+
+  /* ---- drying band ---- */
+
+  .sr__dry {
+    margin-block-start: var(--space-500);
+    padding: var(--space-400);
+    background: var(--surface-inset);
+    border-radius: var(--radius-sm);
+  }
+
+  .sr__dryhead {
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-accent);
+    margin-block-end: var(--space-200);
+    max-width: none;
+  }
+
+  .sr__drybody { font-size: var(--text-sm); color: var(--text-secondary); max-width: 62ch; }
+
+  /* ------------------------------------------------------------------ *
+   * Desktop: a real three-column table.
+   *
+   * display: contents promotes each row's cells into the parent grid, which
+   * gives true column alignment across every row without subgrid. The rules
+   * are drawn on the CELLS rather than the row, because in this state the row
+   * has no box of its own to draw on.
+   * ------------------------------------------------------------------ */
+  @media (min-width: 64rem) {
+    .sr__table {
+      display: grid;
+      grid-template-columns: 20rem 12rem minmax(0, 1fr);
+      column-gap: var(--space-500);
+    }
+
+    .sr__head,
+    .sr__row { display: contents; }
+
+    .sr__head > * {
+      font: var(--type-eyebrow);
+      letter-spacing: var(--tracking-eyebrow);
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding-block-end: var(--space-200);
+      border-block-end: 1px solid var(--edge-strong);
+    }
+
+    .sr__name,
+    .sr__out,
+    .sr__note {
+      padding-block: var(--space-300);
+      border-block-end: 1px solid var(--edge-quiet);
+      margin-block-start: 0;
+      align-self: start;
+    }
+
+    .sr__out { justify-self: start; }
+    .sr__note { max-width: 46ch; }
+
+    .sr__dry {
+      display: grid;
+      grid-template-columns: 12rem minmax(0, 1fr);
+      gap: var(--space-500);
+      align-items: start;
+      background: none;
+      padding: var(--space-500) 0 0;
+      border-block-start: 1px solid var(--edge-quiet);
+      border-radius: 0;
+      margin-block-start: var(--space-600);
+    }
+
+    .sr__dryhead { margin-block-end: 0; }
+  }
+</style>

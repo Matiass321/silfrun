@@ -1,16 +1,19 @@
 ---
 import Marketing from '~/layouts/Marketing.astro';
-import Pending from '~/components/Pending.astro';
 import ContactChannels from '~/components/ContactChannels.astro';
 import ClosingCta from '~/components/ClosingCta.astro';
 import HeroMedia from '~/components/HeroMedia.astro';
 import MediaSlot from '~/components/MediaSlot.astro';
+import Constructions from '~/components/home/Constructions.astro';
+import StainRegister from '~/components/home/StainRegister.astro';
+import FibreRegister from '~/components/home/FibreRegister.astro';
 
-import { LOCALES, SITE, hasInstantChannel, type Locale } from '~/config/site';
+import { LOCALES, SITE, type Locale } from '~/config/site';
 import { t, alternates } from '~/i18n';
 import { path, areaPath, SERVICE_KEYS } from '~/i18n/routes';
 import { slotMap, type MediaRow } from '~/lib/media';
 import { env } from '~/lib/admin-guard';
+import { HOME_COPY, CARE_CODES, REFUSALS, CONSTRUCTION_LABEL, type Construction } from '~/data/home';
 
 export function getStaticPaths() {
   return LOCALES.map((locale) => ({ params: { lang: locale }, props: { locale } }));
@@ -18,22 +21,25 @@ export function getStaticPaths() {
 
 const { locale } = Astro.props as { locale: Locale };
 const s = t(locale);
+const c = HOME_COPY[locale];
 const alt = alternates('home', locale);
 
 /**
- * Homepage media, in one query.
+ * The homepage sells without a price and without a single review, because
+ * neither exists. What carries persuasion instead is specificity: the same
+ * knowledge indexed twice — once on the stain the visitor is looking at, once
+ * on the material it is sitting in — with the affirmative answer given first
+ * and the limit given second.
  *
- * Prerendered, so at build time there is no binding and every slot renders its
- * marked plate — which is the correct state until photographs exist. A rebuild
- * after uploading is what puts them on the page.
+ * The registers live in src/data/home.ts so both languages stay in lockstep.
  */
 let media: Record<string, MediaRow | undefined> = {};
 {
   const { DB } = env(Astro);
   if (DB) {
     try {
-      media = await slotMap(DB, ['hero', 'hero-mobile', 'home-1', 'home-2', 'home-3']);
-    } catch { /* marked plates */ }
+      media = await slotMap(DB, ['hero', 'hero-mobile', 'home-label', 'home-fibre', 'home-1']);
+    } catch { /* reserved plates */ }
   }
 }
 
@@ -41,39 +47,12 @@ const heroDesktop = media['hero'];
 const heroMobile = media['hero-mobile'];
 const hasHeroImage = Boolean(heroDesktop || heroMobile);
 
-/** Step numbers are written out here so the markup stays declarative. */
-const steps = s.process.steps.map((step, i) => ({ ...step, num: String(i + 1).padStart(2, '0') }));
-
-/**
- * Image positions.
- *
- * No photography exists and none is invented, so each position renders as a
- * hatched plate carrying the brief for the shot to commission. This is more
- * useful than a stock photograph — it is a shot list a photographer can work
- * from — and at this weight it reads as deliberate rather than as a gap.
- */
-const PLATES: Record<Locale, { ratio: string; note: string }[]> = {
-  is: [
-    { ratio: '4 / 5', note: 'Ullarsófi · fyrir og eftir · sama birta, sami rammi' },
-    { ratio: '4 / 5', note: 'Handhnýtt teppi · nærmynd af trefjum' },
-    { ratio: '4 / 5', note: 'Blettameðferð · smáatriði í dagsbirtu' },
-  ],
-  en: [
-    { ratio: '4 / 5', note: 'Wool sofa · before and after · matched light and frame' },
-    { ratio: '4 / 5', note: 'Hand-knotted rug · fibre close-up' },
-    { ratio: '4 / 5', note: 'Stain treatment · detail in daylight' },
-  ],
+/** The six constructions, as a strip of anchors into the fibre register. */
+const STRIP: Construction[] = ['plain', 'twill', 'cutpile', 'looppile', 'knotted', 'hide'];
+const SYMBOL: Record<Construction, string> = {
+  plain: 'c-plain', twill: 'c-twill', cutpile: 'c-cutpile',
+  looppile: 'c-looppile', knotted: 'c-knotted', hide: 'c-hide',
 };
-
-const plates = PLATES[locale];
-
-/**
- * When messaging is live it becomes the hero action, because sending a
- * photograph from the sofa you are looking at is a smaller step than opening a
- * quote page and reading it. The quote page stays available as the considered
- * route for anyone who wants to read first.
- */
-const instant = hasInstantChannel();
 ---
 
 <Marketing
@@ -84,429 +63,487 @@ const instant = hasInstantChannel();
   canonical={alt.canonical}
   alternates={alt.list}
   xDefault={alt.xDefault}
+  prefill={s.contact.prefillGeneral}
   business
 >
-  <section class:list={['hero', { 'hero--shot': hasHeroImage }]}>
-    <HeroMedia locale={locale} desktop={heroDesktop} mobile={heroMobile} scrim="left" />
+  <Constructions />
 
-    <div class="wrap hero__inner">
-      <p class="eyebrow">{s.hero.eyebrow}</p>
-      <h1 class="hero__title">{s.hero.title}</h1>
-      <div class="silfrun-rule hero__rule"></div>
-      <p class="lead hero__lead">{s.hero.lead}</p>
+  <div class="home">
+    {/* ══ 1 · Hero ══════════════════════════════════════════════════ */}
+    <section class:list={['s-hero', { 's-hero--shot': hasHeroImage }]}>
+      <HeroMedia locale={locale} desktop={heroDesktop} mobile={heroMobile} scrim="left" />
 
-      {instant ? (
-        <div class="hero__contact">
+      <div class="wrap hero__inner">
+        <div class="hero__type">
+          <p class="eyebrow">{c.eyebrow}</p>
+          <h1 class="hero__title">{c.title}</h1>
+          <div class="silfrun-rule hero__rule"></div>
+          <p class="lead hero__lead">{c.lead}</p>
+        </div>
+
+        <div class="hero__act">
           <ContactChannels locale={locale} variant="hero" prefill={s.contact.prefillGeneral} note={false} />
           <p class="hero__secondary">
-            <a class="link-arrow" href={path('services', locale)}>{s.hero.ctaSecondary}</a>
+            <a class="link-arrow" href="#blettaskra">{c.seeRegister}</a>
           </p>
+          <p class="hero__note">{c.note}</p>
         </div>
-      ) : (
-        <div class="hero__actions">
-          <a class="btn btn--foil btn--lg" href={path('quote', locale)}>{s.hero.ctaPrimary}</a>
-          <a class="btn btn--ghost btn--lg" href={path('services', locale)}>{s.hero.ctaSecondary}</a>
-        </div>
-      )}
-
-      <p class="hero__note">{s.hero.note}</p>
-    </div>
-  </section>
-
-  <section class="trust">
-    <div class="wrap trust__grid">
-      <div class="trust__item">
-        <h2 class="trust__title">{s.trust.equipmentTitle}</h2>
-        <p class="trust__body">{s.trust.equipmentBody}</p>
       </div>
-      <div class="trust__item">
-        <h2 class="trust__title">{s.trust.onSiteTitle}</h2>
-        <p class="trust__body">{s.trust.onSiteBody}</p>
-      </div>
-      <div class="trust__item">
-        <h2 class="trust__title">{s.trust.materialTitle}</h2>
-        <p class="trust__body">{s.trust.materialBody}</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="section section--sunk">
-    <div class="wrap stack stack--32">
-      <header class="section-head">
-        <p class="eyebrow">{s.services.eyebrow}</p>
-        <h2>{s.services.title}</h2>
-        <p class="lead">{s.services.lead}</p>
-      </header>
-
-      <ul class="cards">
-        {SERVICE_KEYS.map((key, i) => (
-          <li class="card">
-            <a class="card__link sf-card sf-card--interactive" href={path(key, locale)}>
-              <span class="card__index">{String(i + 1).padStart(2, '0')}</span>
-              <h3 class="card__title">{s.services[key].name}</h3>
-              <p class="card__body">{s.services[key].body}</p>
-              <span class="card__more" aria-hidden="true">→</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="wrap stack stack--32">
-      <header class="section-head">
-        <p class="eyebrow">{s.process.eyebrow}</p>
-        <h2>{s.process.title}</h2>
-      </header>
-
-      <ol class="steps">
-        {steps.map((step) => (
-          <li class="step">
-            <span class="step__num">{step.num}</span>
-            <h3 class="step__title">{step.title}</h3>
-            <p class="step__body">{step.body}</p>
-          </li>
-        ))}
-      </ol>
-    </div>
-  </section>
-
-  <section class="section section--sunk">
-    <div class="wrap stack stack--32">
-      <header class="section-head">
-        <p class="eyebrow">{s.why.eyebrow}</p>
-        <h2>{s.why.title}</h2>
-        <p class="lead">{s.why.lead}</p>
-      </header>
-
-      <ul class="whys">
-        {s.why.points.map((p) => (
-          <li class="why">
-            <h3 class="why__title">{p.title}</h3>
-            <p class="why__body">{p.body}</p>
-          </li>
-        ))}
-      </ul>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="wrap stack stack--32">
-      <header class="section-head">
-        <p class="eyebrow">{s.work.eyebrow}</p>
-        <h2>{s.work.title}</h2>
-        <p class="lead">{s.work.lead}</p>
-      </header>
 
       {/*
-        Real slots. Empty, each carries the brief for the shot to commission;
-        filled, it becomes the photograph at the crop the brief asked for.
-        Uploading in the admin is the only step.
+        The construction strip is navigation into the register, not the hero
+        image. It sits at the foot of the hero deliberately: on a phone the
+        second row is half-cropped by the fold, and that partial row is the
+        only scroll signal on the page.
       */}
-      <ul class="plates">
-        {plates.map((plate, i) => (
-          <li>
+      <div class="wrap cstrip__wrap">
+        <p class="cstrip__label">{c.constructionsLabel}</p>
+        <ul class="cstrip">
+          {STRIP.map((k) => (
+            <li>
+              <a class="cstrip__item" href="#efnisskra">
+                <svg class="cstrip__fig" viewBox="0 0 64 40" aria-hidden="true"><use href={`#${SYMBOL[k]}`} /></svg>
+                <span class="cstrip__name">{CONSTRUCTION_LABEL[k][locale]}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    {/* ══ 2 · Blettaskráin — the question they actually arrived with ══ */}
+    <section class="section s-stain" id="blettaskra">
+      <div class="wrap">
+        <header class="section-head">
+          <p class="eyebrow">{c.stainEyebrow}</p>
+          <h2>{c.stainTitle}</h2>
+          <p class="lead">{c.stainLead}</p>
+        </header>
+        <StainRegister locale={locale} />
+      </div>
+    </section>
+
+    {/* ══ 3 · The care label — a task that takes half a minute ═══════ */}
+    <section class="section section--sunk s-label">
+      <div class="wrap label__wrap">
+        <div class="label__body">
+          <h2>{c.labelTitle}</h2>
+          <p class="lead label__lead">{c.labelLead}</p>
+
+          <ul class="codes">
+            {CARE_CODES.map((code) => (
+              <li class="code">
+                <span class="code__letter" aria-hidden="true">{code.code}</span>
+                <span class="code__meaning">{code.meaning[locale]}</span>
+              </li>
+            ))}
+          </ul>
+
+          <p class="label__closing">{c.labelClosing}</p>
+        </div>
+
+        <div class="label__plate">
+          <MediaSlot
+            slot="home-label"
+            locale={locale}
+            media={media['home-label']}
+            ratio="1 / 1"
+            label={locale === 'is'
+              ? 'Umhirðumerking undir sessu · nærmynd í dagsbirtu'
+              : 'Care label under a cushion · daylight macro'}
+          />
+        </div>
+      </div>
+    </section>
+
+    {/* ══ 4 · What we do not do — each refusal answered ══════════════ */}
+    <section class="section section--deep s-refuse">
+      <div class="wrap">
+        <h2 class="refuse__title">{c.refuseTitle}</h2>
+
+        <div class="refuse">
+          {REFUSALS.map((r) => (
+            <div class="refuse__row">
+              <p class="refuse__no">{r.no[locale]}</p>
+              <div class="refuse__yes">
+                <p class="refuse__label">{c.refuseInstead}</p>
+                <p class="refuse__body">{r.instead[locale]}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p class="refuse__closing">{c.refuseClosing}</p>
+      </div>
+    </section>
+
+    {/* ══ 5 · Efnisskráin — desktop pulls this up to position 2 ══════ */}
+    <section class="section s-fibre" id="efnisskra">
+      <div class="wrap">
+        <header class="section-head fibre__head">
+          <div>
+            <p class="eyebrow">{c.fibreEyebrow}</p>
+            <h2>{c.fibreTitle}</h2>
+            <p class="lead">{c.fibreLead}</p>
+          </div>
+          <div class="fibre__plate">
             <MediaSlot
-              slot={`home-${i + 1}`}
+              slot="home-fibre"
               locale={locale}
-              media={media[`home-${i + 1}`]}
-              ratio={plate.ratio}
-              label={plate.note}
+              media={media['home-fibre']}
+              ratio="1 / 1"
+              label={locale === 'is'
+                ? 'Nærmynd af ló í ská-birtu · engin hönd í ramma'
+                : 'Macro of pile in raking light · no hand in frame'}
             />
-          </li>
-        ))}
-      </ul>
+          </div>
+        </header>
 
-      {/* Marked pending only while nothing has actually been placed. */}
-      {!media['home-1'] && !media['home-2'] && !media['home-3'] && (
-        <p class="plates__caption"><Pending label={s.work.pending} locale={locale} /></p>
-      )}
+        <FibreRegister locale={locale} />
+      </div>
+    </section>
+
+    {/* ══ 6 · Services ══════════════════════════════════════════════ */}
+    <section class="section section--sunk s-fields">
+      <div class="wrap stack stack--32">
+        <header class="section-head">
+          <p class="eyebrow">{s.services.eyebrow}</p>
+          <h2>{s.services.title}</h2>
+        </header>
+
+        <ul class="fields">
+          {SERVICE_KEYS.map((key) => (
+            <li>
+              <a class="field" href={path(key, locale)}>
+                <span class="field__name">{s.services[key].name}</span>
+                <span class="field__lead">{s.services[key].body}</span>
+                <span class="field__go" aria-hidden="true">→</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    {/* ══ 7 · Areas ═════════════════════════════════════════════════ */}
+    <section class="section section--tight s-areas">
+      <div class="wrap stack stack--24">
+        <header class="section-head">
+          <p class="eyebrow">{s.areas.eyebrow}</p>
+          <h2>{s.areas.title}</h2>
+          <p class="lead">{s.areas.lead}</p>
+        </header>
+
+        <ul class="areas">
+          {SITE.areas.map((area) => (
+            <li><a class="area" href={areaPath(area.slug, locale)}>{area.name}</a></li>
+          ))}
+        </ul>
+
+        <p><a class="link-arrow" href={path('areas', locale)}>{s.areas.cta}</a></p>
+      </div>
+    </section>
+
+    {/* ══ 8 · Close ═════════════════════════════════════════════════ */}
+    <div class="s-close">
+      <ClosingCta locale={locale} prefill={s.contact.prefillGeneral} />
     </div>
-  </section>
-
-  <section class="section section--sunk">
-    <div class="wrap stack stack--32">
-      <header class="section-head">
-        <p class="eyebrow">{s.areas.eyebrow}</p>
-        <h2>{s.areas.title}</h2>
-        <p class="lead">{s.areas.lead}</p>
-      </header>
-
-      <ul class="areas">
-        {SITE.areas.map((area) => (
-          <li><a class="chip" href={areaPath(area.slug, locale)}>{area.name}</a></li>
-        ))}
-      </ul>
-
-      <p><a class="link-arrow" href={path('areas', locale)}>{s.areas.cta}</a></p>
-    </div>
-  </section>
-
-  <ClosingCta locale={locale} prefill={s.contact.prefillGeneral} />
+  </div>
 </Marketing>
 
 <style>
-  /* ---------- hero ---------- */
-
   /**
-   * The hero is mostly air. The display face is given the full 3xl step and a
-   * 15ch measure so it breaks into three or four short lines — a wide single
-   * line reads as a banner, and a banner is not what an expensive service
-   * looks like.
+   * The page is a flex column so desktop can re-rank exactly one section.
+   *
+   * On a phone the stain register comes first, because the visitor is holding
+   * the stain. On a desktop the fibre register jumps to position two, because
+   * a four-column aligned table is a breadth-in-one-glance impression that
+   * only exists at width — on a phone it is eleven cards and makes no such
+   * impression, so it earns its place later.
+   *
+   * Tab order follows DOM order, which is the phone order. Acceptable here
+   * because every section is self-contained and none depends on the last.
    */
-  .hero {
+  .home { display: flex; flex-direction: column; }
+
+  @media (min-width: 64rem) {
+    .home > .s-hero   { order: 1; }
+    .home > .s-fibre  { order: 2; }
+    .home > .s-stain  { order: 3; }
+    .home > .s-label  { order: 4; }
+    .home > .s-refuse { order: 5; }
+    .home > .s-fields { order: 6; }
+    .home > .s-areas  { order: 7; }
+    .home > .s-close  { order: 8; }
+  }
+
+  /* ══ hero ═══════════════════════════════════════════════════════ */
+
+  .s-hero {
     position: relative;
     isolation: isolate;
-    padding-block: clamp(var(--space-1000), 13vw, var(--space-2600)) clamp(var(--space-800), 9vw, var(--space-1600));
+    padding-block: var(--space-1000) var(--space-500);
   }
 
-  .hero__inner { position: relative; z-index: 1; }
+  .hero__inner,
+  .cstrip__wrap { position: relative; z-index: 1; }
 
-  /**
-   * With a photograph behind it the hero becomes a stage rather than a block
-   * of type on the page ground.
-   *
-   * Phone and desktop want different shapes here, and not because of width.
-   * On a phone the image is portrait and the copy sits over its lower third,
-   * so the section takes a minimum height and the text is pushed down to meet
-   * the scrim. On a desktop the image is landscape and the copy sits in the
-   * left third against a horizontal scrim, so the section is capped by
-   * viewport height instead and the text stays vertically centred.
-   */
-  .hero--shot {
-    display: flex;
-    align-items: flex-end;
-    min-height: 82svh;
-    padding-block: var(--space-1000) var(--space-800);
-  }
-
-  .hero--shot .hero__inner { width: 100%; }
-
-  @media (min-width: 48rem) {
-    .hero--shot {
-      align-items: center;
-      min-height: min(74svh, 46rem);
-      padding-block: var(--space-1000);
-    }
-    .hero--shot .hero__inner { max-width: var(--container-max); }
-    .hero--shot .hero__title,
-    .hero--shot .hero__lead { max-width: 15em; }
-    .hero--shot .hero__lead { max-width: 38ch; }
-  }
-
-  /* Over a photograph the copy takes the plate colours, because the ground is
-     now the image rather than the page. */
-  .hero--shot .hero__title,
-  .hero--shot .eyebrow,
-  .hero--shot .hero__lead,
-  .hero--shot .hero__note { color: var(--plate-text); }
-  .hero--shot .eyebrow,
-  .hero--shot .hero__note { color: var(--plate-text-secondary); }
-
-  .hero__inner { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-300); }
+  .hero__type { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-200); }
 
   .hero__title {
     font-size: var(--display-2xl);
     letter-spacing: var(--tracking-display-tight);
     line-height: var(--leading-display);
-    max-width: var(--measure-display);
+    max-width: 9em;
     margin-block-start: var(--space-100);
   }
 
   .hero__rule { max-width: 8rem; margin-block: var(--space-200); }
+  .hero__lead { max-width: 36ch; }
 
-  .hero__lead { max-width: 46ch; }
+  .hero__act { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-250); margin-block-start: var(--space-400); }
+  .hero__secondary { margin: 0; }
+  .hero__note { font: var(--type-mono); color: var(--text-muted); max-width: 34ch; }
 
-  .hero__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-200);
-    margin-block-start: var(--space-300);
+  /* With a photograph the hero becomes a stage rather than type on the page. */
+  .s-hero--shot { min-height: 82svh; display: flex; flex-direction: column; justify-content: flex-end; }
+  .s-hero--shot .hero__title,
+  .s-hero--shot .hero__lead { color: var(--plate-text); }
+  .s-hero--shot .eyebrow,
+  .s-hero--shot .hero__note { color: var(--plate-text-secondary); }
+
+  /* ---- construction strip ---- */
+
+  .cstrip__wrap {
+    margin-block-start: var(--space-600);
+    padding-block-start: var(--space-400);
+    border-block-start: 1px solid var(--edge-hairline);
   }
 
-  /* The note is mono because it is a condition of service, not prose. */
-  .hero__note {
-    font: var(--type-mono);
+  .cstrip__label {
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
     color: var(--text-muted);
-    max-width: 46ch;
-    margin-block-start: var(--space-300);
+    margin-block-end: var(--space-300);
+    max-width: none;
   }
 
-  /* ---------- trust strip ---------- */
+  .cstrip { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-300) var(--space-200); }
 
-  /**
-   * Three claims on a single ruled band. Hairlines between them rather than
-   * cards — the band should read as one instrument panel, not three boxes.
-   */
-  .trust { padding-block: var(--space-800); border-block: 1px solid var(--edge-quiet); }
-
-  .trust__grid {
+  .cstrip__item {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
-    gap: var(--space-600);
-  }
-
-  .trust__item {
-    display: flex;
-    flex-direction: column;
     gap: var(--space-150);
-    padding-inline-start: var(--space-400);
-    border-inline-start: 1px solid var(--edge-hairline);
-  }
-
-  .trust__title {
-    font-family: var(--font-text);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-medium);
-    letter-spacing: var(--tracking-eyebrow);
-    text-transform: uppercase;
-    line-height: 1.2;
-    color: var(--text-primary);
-  }
-
-  .trust__body { font-size: var(--text-sm); color: var(--text-muted); max-width: 34ch; }
-
-  @media (max-width: 34rem) {
-    .trust__item { padding-inline-start: var(--space-300); }
-  }
-
-  /* ---------- service cards ---------- */
-
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
-    gap: var(--space-300);
-  }
-
-  .card { display: flex; }
-
-  .card__link {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-150);
-    width: 100%;
+    min-height: 44px;
     text-decoration: none;
-    color: inherit;
   }
 
-  /* The index is mono — a catalogue number, not decoration. */
-  .card__index {
+  .cstrip__fig {
+    width: 100%;
+    height: 84px;
+    color: var(--text-muted);
+    transition: color var(--dur-base) var(--ease-glide);
+  }
+
+  .cstrip__item:hover .cstrip__fig { color: var(--text-primary); }
+
+  .cstrip__name {
     font: var(--type-mono);
     font-size: 10.5px;
-    color: var(--silver-500);
-    margin-block-end: var(--space-200);
-  }
-
-  .card__title { font-size: var(--display-xs); }
-  .card__body { font-size: var(--text-sm); color: var(--text-muted); flex: 1; }
-
-  .card__more {
-    color: var(--text-accent);
-    font-size: var(--text-md);
-    margin-block-start: var(--space-200);
-    transition: transform var(--dur-base) var(--ease-glide);
-  }
-
-  .card__link:hover .card__more { transform: translateX(4px); }
-
-  /* ---------- process ---------- */
-
-  .steps {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
-    gap: var(--space-600) var(--space-500);
-  }
-
-  .step {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-150);
-    padding-block-start: var(--space-300);
-    border-block-start: 1px solid var(--edge-hairline);
-  }
-
-  /**
-   * Step numerals are Marcellus at display size in a quiet silver — large
-   * enough to structure the row, quiet enough not to compete with the headings.
-   */
-  .step__num {
-    font-family: var(--font-display);
-    font-size: var(--display-md);
-    line-height: 1;
-    color: var(--silver-600);
-    letter-spacing: var(--tracking-display);
-    margin-block-end: var(--space-150);
-  }
-
-  .step__title {
-    font-family: var(--font-text);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-medium);
-    letter-spacing: var(--tracking-eyebrow);
+    letter-spacing: .06em;
     text-transform: uppercase;
-    line-height: 1.2;
+    color: var(--text-muted);
+  }
+
+  /* ══ care label ══════════════════════════════════════════════════ */
+
+  .label__wrap { display: grid; grid-template-columns: 1fr; gap: var(--space-500); }
+  .label__lead { max-width: 44ch; margin-block-start: var(--space-250); }
+
+  .codes { display: flex; flex-direction: column; margin-block: var(--space-500) var(--space-400); }
+
+  .code {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: var(--space-250);
+    align-items: center;
+    padding-block: var(--space-250);
+    border-block-start: 1px solid var(--edge-quiet);
+  }
+
+  .code__letter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    border: 1px solid var(--edge-strong);
+    border-radius: var(--radius-xs);
+    font: var(--type-mono);
+    font-size: var(--text-sm);
+    letter-spacing: .08em;
     color: var(--text-primary);
   }
 
-  .step__body { font-size: var(--text-sm); color: var(--text-muted); }
+  .code__meaning { font-size: var(--text-sm); color: var(--text-secondary); }
 
-  /* ---------- why ---------- */
+  .label__closing { font-size: var(--text-sm); color: var(--text-muted); max-width: 50ch; }
 
-  .whys {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
-    gap: var(--space-600) var(--space-500);
+  /* On a phone the instruction must arrive before the illustration of it. */
+  .label__plate { order: 2; }
+
+  /* ══ refusals ════════════════════════════════════════════════════ */
+
+  .refuse__title { font-size: var(--display-lg); max-width: var(--measure-display); margin-block-end: var(--space-500); }
+
+  .refuse { display: flex; flex-direction: column; }
+
+  .refuse__row { padding-block: var(--space-500); border-block-start: 1px solid var(--plate-edge); }
+
+  .refuse__no {
+    font-family: var(--font-display);
+    font-size: var(--display-sm);
+    line-height: var(--leading-display-loose);
+    color: var(--plate-text);
+    max-width: var(--measure-display);
+    text-wrap: balance;
+    margin-block-end: var(--space-250);
   }
 
-  .why {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-150);
-    padding-block-start: var(--space-300);
-    border-block-start: 1px solid var(--edge-hairline);
+  .refuse__label {
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-accent);
+    margin-block-end: var(--space-150);
+    max-width: none;
   }
 
-  .why__title { font-size: var(--display-xs); }
-  .why__body { font-size: var(--text-sm); color: var(--text-muted); }
+  .refuse__body { font-size: var(--text-sm); color: var(--plate-text-secondary); max-width: 46ch; }
 
-  /* ---------- work plates ---------- */
-
-  .plates {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
-    gap: var(--space-300);
-  }
-
-  .plates__plate { height: 100%; }
-
-  .plates__label { color: var(--silver-500); }
-
-  .plates__brief {
+  .refuse__closing {
+    margin-block-start: var(--space-600);
+    padding-block-start: var(--space-400);
+    border-block-start: 1px solid var(--plate-edge);
     font: var(--type-mono);
-    font-size: 10.5px;
-    letter-spacing: 0.02em;
-    text-transform: none;
-    color: var(--silver-500);
-    max-width: var(--measure-display-wide);
-    line-height: 1.6;
+    color: var(--plate-text-secondary);
+    max-width: 56ch;
   }
 
-  .plates__caption { font: var(--type-mono); color: var(--text-muted); max-width: 56ch; }
+  /* ══ fibre register head ═════════════════════════════════════════ */
 
-  /* ---------- areas ---------- */
+  .fibre__head { display: grid; grid-template-columns: 1fr; gap: var(--space-400); }
+
+  /* A phone does not spend a square on an absence; the section reads fine
+     without it, and a real photograph appears at every width. */
+  @media (max-width: 63.99rem) {
+    .fibre__plate :global(.ms--empty) { display: none; }
+  }
+
+  /* ══ services ════════════════════════════════════════════════════ */
+
+  .fields { display: grid; grid-template-columns: 1fr; }
+
+  .field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-100) var(--space-300);
+    align-items: baseline;
+    padding-block: var(--space-400);
+    border-block-start: 1px solid var(--edge-quiet);
+    transition: var(--transition-control);
+  }
+
+  .field:hover { padding-inline-start: var(--space-200); }
+
+  .field__name { font-family: var(--font-display); font-size: var(--display-xs); color: var(--text-primary); }
+  .field__lead { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--text-muted); max-width: 52ch; }
+  .field__go { color: var(--text-accent); }
+
+  /* ══ areas ═══════════════════════════════════════════════════════ */
 
   .areas { display: flex; flex-wrap: wrap; gap: var(--space-150); }
 
-  /* ---------- hero contact cluster ---------- */
-
-  .hero__contact {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-300);
-    margin-block-start: var(--space-300);
+  .area {
+    display: inline-flex;
+    align-items: center;
+    height: var(--control-h);
+    padding: 0 var(--pad-control-x);
+    border: 1px solid var(--edge-hairline);
+    border-radius: var(--radius-pill);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    transition: var(--transition-control);
   }
 
-  .hero__secondary { margin: 0; }
+  .area:hover { border-color: var(--edge-strong); color: var(--text-primary); }
+
+  /* ══════════════════════════════════════════════════════════════════
+     Desktop. Not the same layout widened — different composition per
+     section, and one section re-ranked.
+     ══════════════════════════════════════════════════════════════════ */
+
+  @media (min-width: 64rem) {
+    .s-hero {
+      min-height: min(84svh, 54rem);
+      display: grid;
+      grid-template-rows: 1fr auto;
+      padding-block: clamp(var(--space-1200), 12vw, var(--space-2000)) var(--space-600);
+    }
+
+    .hero__inner {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      column-gap: var(--space-400);
+      align-content: center;
+    }
+
+    /* Left seven of twelve. The right five stay empty — that emptiness is
+       what the width is for, and it is the whole restraint argument. */
+    .hero__type { grid-column: 1 / 8; }
+    .hero__act  { grid-column: 1 / 7; margin-block-start: var(--space-500); }
+
+    .hero__title { font-size: var(--display-3xl); max-width: var(--measure-display-tight); }
+    .hero__lead { max-width: 42ch; }
+
+    .cstrip { grid-template-columns: repeat(6, 1fr); column-gap: var(--space-400); }
+    .cstrip__fig { height: 56px; }
+
+    .label__wrap { grid-template-columns: minmax(0, 1fr) 22rem; column-gap: var(--space-1000); align-items: start; }
+    .label__plate { order: 0; position: sticky; top: var(--space-800); }
+
+    .codes { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--space-500); }
+
+    .refuse__row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      column-gap: var(--space-1000);
+      align-items: start;
+    }
+
+    .refuse__no { margin-block-end: 0; }
+    .refuse__yes { align-self: center; }
+
+    .fibre__head { grid-template-columns: minmax(0, 1fr) 14rem; gap: var(--space-800); align-items: start; }
+
+    .fields { grid-template-columns: 1fr 1fr; column-gap: var(--space-800); }
+  }
+
+  /*
+   * A CSS-only reveal on the refusals, guarded twice: the feature query keeps
+   * it out of browsers without scroll-driven animation, and the motion query
+   * keeps it away from anyone who has asked for less movement.
+   */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .refuse__no {
+        animation: settle linear both;
+        animation-timeline: view();
+        animation-range: entry 10% entry 55%;
+      }
+      @keyframes settle {
+        from { opacity: 0; transform: translateY(1.25rem); }
+        to   { opacity: 1; transform: none; }
+      }
+    }
+  }
 </style>

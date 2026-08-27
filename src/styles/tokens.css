@@ -142,9 +142,24 @@
   --edge-strong:   rgba(11, 13, 15, .32);
   --edge-accent:   rgba(52, 78, 88, .38);
 
+  /**
+   * The boundary of a CONTROL, as opposed to a rule between blocks.
+   *
+   * Separate from --edge-hairline because it is load-bearing: a field's fill
+   * is --surface-inset, which measures 1.08:1 against the page, so the border
+   * is the only thing that says a field is there. WCAG 1.4.11 asks 3:1 of it.
+   * At --edge-hairline it was 1.32:1 and the booking form read as bare labels
+   * over paper.
+   *
+   * --edge-focus is likewise split from --edge-accent, which is decorative in
+   * four other places and would have gone heavy if raised to clear 3:1 here.
+   */
+  --edge-control:  rgba(11, 13, 15, .48);   /* 3.34:1 on the field fill */
+  --edge-focus:    rgba(52, 78, 88, .80);   /* 4.70:1 on the field fill */
+
   --accent:       var(--glacier-700);
   --accent-quiet: var(--glacier-100);
-  --focus-ring:   rgba(52, 78, 88, .50);
+  --focus-ring:   rgba(52, 78, 88, .80);
 
   --signal-positive:         var(--kelp-700);
   --signal-positive-surface: rgba(76, 110, 98, .13);
@@ -183,6 +198,8 @@
     --edge-quiet:    rgba(226, 232, 238, .07);
     --edge-strong:   rgba(226, 232, 238, .28);
     --edge-accent:   rgba(188, 209, 217, .45);
+    --edge-control:  rgba(226, 232, 238, .42);   /* 3.54:1 on the field fill */
+    --edge-focus:    rgba(188, 209, 217, .65);
 
     --accent:       var(--glacier-200);
     --accent-quiet: var(--glacier-700);
@@ -220,6 +237,8 @@
   --edge-quiet:    rgba(226, 232, 238, .07);
   --edge-strong:   rgba(226, 232, 238, .28);
   --edge-accent:   rgba(188, 209, 217, .45);
+  --edge-control:  rgba(226, 232, 238, .42);
+  --edge-focus:    rgba(188, 209, 217, .65);
 
   --accent:       var(--glacier-200);
   --accent-quiet: var(--glacier-700);
@@ -407,7 +426,6 @@
   --sheen-top:        inset 0 1px 0 rgba(255, 255, 255, .9);
   --sheen-top-strong: inset 0 1px 0 rgba(255, 255, 255, 1);
   --sheen-vellum:     inset 0 1px 0 rgba(255, 255, 255, .9);
-  --ring-focus:       0 0 0 1px var(--surface-page), 0 0 0 3px var(--focus-ring);
 
   /* Glass. Only for elements that float over content. */
   --blur-veil:  blur(14px) saturate(1.05);
@@ -557,6 +575,50 @@
    * that carry no closing plate at all.
    */
   --foot-surface: var(--basalt-950);
+
+  /**
+   * Accent and muted INSIDE the plate.
+   *
+   * The plate is dark in both themes — on light it is the one inked band on a
+   * paper page. So anything inside it needs light-on-dark values, and the page
+   * tokens are exactly wrong there: on the light theme --text-accent is a deep
+   * slate that lands at 2.2:1 against the plate.
+   *
+   * These are remapped onto the standard token names by .section--deep and
+   * .foot, so every descendant inherits correct colour without a single
+   * component needing to know it is sitting on a plate.
+   */
+  --plate-accent: var(--glacier-200);
+  --plate-muted: var(--silver-500);
+
+  /**
+   * The plate's non-text roles.
+   *
+   * These matter more than they look. On the LIGHT theme --btn-hero-bg is
+   * var(--text-primary) — basalt-900 — and --plate-surface is ALSO basalt-900,
+   * so the primary call to action rendered as an invisible button on the plate
+   * with only its label showing. Same class of fault for the focus ring (a
+   * 50%-alpha dark slate on near-black), the confirm dot (kelp-700), and the
+   * footer wordmark (the engraved-pewter foil, which only reads on paper).
+   *
+   * Custom properties resolve their own var()s where they are DECLARED, so
+   * redefining --text-primary on the plate does not retarget a --btn-hero-bg
+   * that was already computed on :root. Each derived token has to be remapped
+   * by name, which is what the two blocks in base.css and Footer.astro do.
+   */
+  /* All three signals, not just the affirmative one — the pending Messenger
+     chip is set in --signal-caution and was reading at 2.71:1 on the plate. */
+  --plate-edge-control: rgba(226, 232, 238, .42);
+  --plate-edge-focus: rgba(188, 209, 217, .65);
+  --plate-signal-positive: var(--kelp-300);
+  --plate-signal-positive-surface: rgba(76, 110, 98, .20);
+  --plate-signal-caution: var(--ochre-300);
+  --plate-signal-caution-surface: rgba(168, 130, 62, .18);
+  --plate-signal-negative: var(--oxide-300);
+  --plate-signal-negative-surface: rgba(168, 85, 67, .18);
+  --plate-focus-ring: rgba(155, 184, 195, .55);
+  --plate-foil-soft: linear-gradient(103deg, #7B838C 0%, #E4E8EB 38%, #9AA2AA 62%, #D2D7DC 100%);
+  --plate-foil-text: linear-gradient(100deg, #C9D0D7 0%, #8C949C 100%);
 }
 
 @media (prefers-color-scheme: dark) {

@@ -54,6 +54,8 @@ export const SLOTS: { key: string; label: string; ratio: string; kinds: MediaKin
    */
   { key: 'hero',        label: 'Forsíða — aðalmynd (tölva)', ratio: '16 / 9', kinds: ['image', 'video'] },
   { key: 'hero-mobile', label: 'Forsíða — aðalmynd (sími)',  ratio: '4 / 5',  kinds: ['image', 'video'] },
+  { key: 'home-label', label: 'Forsíða — merkimiði',        ratio: '1 / 1',  kinds: ['image'] },
+  { key: 'home-fibre', label: 'Forsíða — nærmynd af ló',    ratio: '1 / 1',  kinds: ['image'] },
   { key: 'home-1',     label: 'Forsíða — plata 1',          ratio: '4 / 5',  kinds: ['image'] },
   { key: 'home-2',     label: 'Forsíða — plata 2',          ratio: '4 / 5',  kinds: ['image'] },
   { key: 'home-3',     label: 'Forsíða — plata 3',          ratio: '4 / 5',  kinds: ['image'] },

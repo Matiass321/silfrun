@@ -117,7 +117,16 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
     min-height: 5.25rem;
   }
 
-  .head__brand { text-decoration: none; flex-shrink: 0; font-size: 20px; }
+  .head__brand { text-decoration: none; flex-shrink: 0; font-size: 20px; position: relative; }
+
+  /* The wordmark shrinks to 12px at the narrowest breakpoint, which leaves a
+     22px target. Grown with a pseudo-element so the mark itself does not move
+     — the CTA is far to the right, so the overlay cannot steal its clicks. */
+  .head__brand::after {
+    content: '';
+    position: absolute;
+    inset: -11px -6px;
+  }
 
   .head__nav { margin-inline-start: auto; }
 
@@ -188,6 +197,17 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
   }
 
   .head__lang:hover { color: var(--text-primary); border-bottom-color: var(--edge-accent); }
+
+  /* The hit area is grown with a pseudo-element rather than by padding the
+     box, because the hover underline is drawn on the box's own bottom edge
+     and padding would strand it well below the word. */
+  .head__lang { position: relative; }
+
+  .head__lang::after {
+    content: '';
+    position: absolute;
+    inset: -11px -8px;
+  }
 
   /* The nav collapses to the CTA on small screens. A hamburger for six links
      costs more than it saves; the links all live in the footer as well. */

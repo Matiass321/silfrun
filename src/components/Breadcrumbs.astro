@@ -74,5 +74,15 @@ const jsonLd = {
 
   .crumbs__link:hover { color: var(--text-primary); }
 
-  .crumbs__sep { color: var(--silver-500); }
+  /* 11px type gives a 13px target. Grown vertically, and only barely sideways
+     so the overlay stops short of the neighbouring crumb. */
+  .crumbs__link { position: relative; }
+
+  .crumbs__link::after {
+    content: '';
+    position: absolute;
+    inset: -6px -2px;
+  }
+
+  .crumbs__sep { color: var(--text-muted); }
 </style>

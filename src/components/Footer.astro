@@ -107,6 +107,32 @@ const legalLinks = [
     position: relative;
     background: var(--foot-surface);
     color: var(--plate-text-secondary);
+
+    /* Same reason as .section--deep: the footer ground is dark in both
+       themes, so the page tokens are redefined rather than patched. */
+    --text-primary: var(--plate-text);
+    --text-secondary: var(--plate-text-secondary);
+    --text-muted: var(--plate-muted);
+    --text-accent: var(--plate-accent);
+    --text-link: var(--plate-accent);
+    --edge-hairline: var(--plate-edge);
+    --edge-control: var(--plate-edge-control);
+    --edge-focus: var(--plate-edge-focus);
+    --edge-strong: rgba(226, 232, 238, .28);
+    --accent: var(--plate-accent);
+    /* Derived tokens, remapped by name — see the note in tokens.css. */
+    --btn-hero-bg: var(--plate-foil-soft);
+    --btn-hero-ink: var(--basalt-900);
+    --btn-hero-edge: var(--sheen-vellum);
+    --foil-silver-text: var(--plate-foil-text);
+    --foil-hairline: var(--plate-hairline);
+    --signal-positive: var(--plate-signal-positive);
+    --signal-positive-surface: var(--plate-signal-positive-surface);
+    --signal-caution: var(--plate-signal-caution);
+    --signal-caution-surface: var(--plate-signal-caution-surface);
+    --signal-negative: var(--plate-signal-negative);
+    --signal-negative-surface: var(--plate-signal-negative-surface);
+    --focus-ring: var(--plate-focus-ring);
     padding-block: var(--space-1200) var(--space-500);
     margin-block-start: auto;
     isolation: isolate;
@@ -153,14 +179,35 @@ const legalLinks = [
     border-block-end: 1px solid var(--edge-quiet);
   }
 
-  .foot__list { display: flex; flex-direction: column; gap: var(--space-150); }
-  .foot__list--inline { flex-direction: row; flex-wrap: wrap; gap: var(--space-300); }
+  .foot__list { display: flex; flex-direction: column; gap: var(--space-025); }
+  .foot__list--inline { flex-direction: row; flex-wrap: wrap; gap: var(--space-200); }
 
+  /**
+   * Tap targets.
+   *
+   * The header nav is hidden below 64rem, so on a phone the footer IS the
+   * site's navigation — and these links were 15px boxes. WCAG 2.5.8 asks for
+   * 24px; a thumb wants more. The row gap comes off as the link grows, so the
+   * visual pitch of the list moves very little.
+   *
+   * Growing the box is safe here only because the hover state is a colour
+   * change and nothing else. Where a link carries a rule or an underline the
+   * box has to stay put and the target is grown with a pseudo-element instead
+   * — which is what --head__lang and the logo do.
+   */
   .foot__link {
+    display: flex;
+    align-items: center;
+    min-height: 2.25rem;
     font-size: var(--text-sm);
     color: var(--plate-text-secondary);
     text-decoration: none;
     transition: color var(--dur-fast) var(--ease-glide);
+  }
+
+  @media (min-width: 48rem) {
+    .foot__list { gap: var(--space-050); }
+    .foot__link { min-height: 1.75rem; }
   }
 
   .foot__link:hover { color: var(--plate-text); }
@@ -173,7 +220,7 @@ const legalLinks = [
     font-size: 10.5px;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--silver-500);
+    color: var(--text-muted);
   }
 
   .foot__hours { color: var(--plate-text-secondary); font-variant-numeric: tabular-nums; }
@@ -194,7 +241,7 @@ const legalLinks = [
     font: var(--type-mono);
     font-size: 11px;
     letter-spacing: 0;
-    color: var(--silver-500);
+    color: var(--text-muted);
     max-width: none;
   }
 

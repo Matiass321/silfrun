@@ -1,0 +1,103 @@
+---
+/**
+ * The six construction diagrams, as one inline SVG sprite.
+ *
+ * These replace what would otherwise be CSS gradient swatches. The distinction
+ * matters: a captioned stroke drawing is read as a FIGURE — something that
+ * describes a thing — while a gradient fill is read as decoration, and the
+ * whole point of this section is that it is describing real constructions.
+ *
+ * Six drawings rather than eleven, because materials that share a construction
+ * share the diagram. That is also why silk and velvet can never look alike
+ * here: one is a grid, the other is verticals on a baseline, and those are
+ * geometrically unmistakable at 56px.
+ *
+ * Every stroke is currentColor at width 1 with vector-effect non-scaling-stroke,
+ * so a diagram drawn at 56px and the same diagram at 84px have identical line
+ * weight. Without that, the phone version reads as a heavier drawing than the
+ * desktop one and the set stops looking like a set.
+ *
+ * Emitted once per page; every usage is <use href="#c-…" />.
+ */
+---
+
+<svg class="csprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="c-defs" fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke"></g>
+  </defs>
+
+  {/* ── Plain weave. Warps and wefts with the crossings punched out, so it
+        reads as interlacing rather than as a plain grid. ── */}
+  <symbol id="c-plain" viewBox="0 0 64 40">
+    <g fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke">
+      <path d="M8 4v32M16 4v32M24 4v32M32 4v32M40 4v32M48 4v32M56 4v32" />
+      <path d="M4 9h3M11 9h3M19 9h3M27 9h3M35 9h3M43 9h3M51 9h3M59 9h1" />
+      <path d="M4 16h7M15 16h3M23 16h3M31 16h3M39 16h3M47 16h3M55 16h5" />
+      <path d="M4 23h3M11 23h3M19 23h3M27 23h3M35 23h3M43 23h3M51 23h3M59 23h1" />
+      <path d="M4 30h7M15 30h3M23 30h3M31 30h3M39 30h3M47 30h3M55 30h5" />
+    </g>
+  </symbol>
+
+  {/* ── Twill. Parallel diagonals with two faint perpendicular guides. ── */}
+  <symbol id="c-twill" viewBox="0 0 64 40">
+    <g fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke">
+      <path d="M2 34 22 4M10 34 30 4M18 34 38 4M26 34 46 4M34 34 54 4M42 34 62 4M50 34 64 13M2 25 16 4M58 34 64 26" />
+      <path d="M4 13h56M4 27h56" opacity=".35" />
+    </g>
+  </symbol>
+
+  {/* ── Cut pile. Equal verticals ending flat on one top rule. ── */}
+  <symbol id="c-cutpile" viewBox="0 0 64 40">
+    <g fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke">
+      <path d="M4 10h56" />
+      <path d="M6 10v22M10 10v22M14 10v22M18 10v22M22 10v22M26 10v22M30 10v22M34 10v22M38 10v22M42 10v22M46 10v22M50 10v22M54 10v22M58 10v22" />
+      <path d="M4 32h56" />
+    </g>
+  </symbol>
+
+  {/* ── Loop pile. Arcs seated on a baseline. Cannot be mistaken for cut. ── */}
+  <symbol id="c-looppile" viewBox="0 0 64 40">
+    <g fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke">
+      <path d="M6 32a3.5 8 0 0 1 7 0M15 32a3.5 8 0 0 1 7 0M24 32a3.5 8 0 0 1 7 0M33 32a3.5 8 0 0 1 7 0M42 32a3.5 8 0 0 1 7 0M51 32a3.5 8 0 0 1 7 0" />
+      <path d="M4 32h56" />
+    </g>
+  </symbol>
+
+  {/* ── Hand-knotted. Knot glyphs crossing paired warps. ── */}
+  <symbol id="c-knotted" viewBox="0 0 64 40">
+    <g fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke">
+      <path d="M12 4v32M20 4v32M30 4v32M38 4v32M48 4v32M56 4v32" opacity=".5" />
+      <path d="M12 11c0 3 8 3 8 0M12 21c0 3 8 3 8 0M12 31c0 3 8 3 8 0" />
+      <path d="M30 11c0 3 8 3 8 0M30 21c0 3 8 3 8 0M30 31c0 3 8 3 8 0" />
+      <path d="M48 11c0 3 8 3 8 0M48 21c0 3 8 3 8 0M48 31c0 3 8 3 8 0" />
+    </g>
+  </symbol>
+
+  {/* ── Hide. No weave at all — an irregular outline and follicle ticks. That
+        absence of structure IS the information for the row it belongs to. ── */}
+  <symbol id="c-hide" viewBox="0 0 64 40">
+    <g fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke">
+      <path d="M14 6c9-3 20-2 28 2 7 3 10 9 8 15-2 5-9 9-17 10-9 1-19-1-24-6-4-4-4-11 1-15 1-2 2-4 4-6z" />
+      <path d="M20 16v2M27 13v2M34 17v2M41 14v2M47 19v2M23 24v2M31 27v2M39 24v2M45 28v2" opacity=".65" />
+    </g>
+  </symbol>
+
+  {/* ── The unknown row. A drawn question, not one of the six. ── */}
+  <symbol id="c-unknown" viewBox="0 0 64 40">
+    <g fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke">
+      <path d="M26 15a6 6 0 1 1 6 6v4" />
+      <path d="M32 31v.5" stroke-linecap="round" />
+      <path d="M8 6h6M8 34h6M50 6h6M50 34h6" opacity=".4" />
+    </g>
+  </symbol>
+</svg>
+
+<style>
+  /* Out of flow entirely — it is a definition, not content. */
+  .csprite {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+</style>

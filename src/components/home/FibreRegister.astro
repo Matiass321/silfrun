@@ -1,0 +1,190 @@
+---
+import type { Locale } from '~/config/site';
+import { trackedUrl } from '~/config/site';
+import {
+  FIBRES, FIBRE_OPEN, METHOD_LABEL, CONSTRUCTION_LABEL, HOME_COPY, type Construction,
+} from '~/data/home';
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const c = HOME_COPY[locale];
+
+/** Symbol ids in the sprite emitted by Constructions.astro. */
+const SYMBOL: Record<Construction, string> = {
+  plain: 'c-plain',
+  twill: 'c-twill',
+  cutpile: 'c-cutpile',
+  looppile: 'c-looppile',
+  knotted: 'c-knotted',
+  hide: 'c-hide',
+};
+
+const wa = trackedUrl('whatsapp', {
+  from: `/${locale}/`,
+  text: locale === 'is'
+    ? 'Halló Silfrun. Ég veit ekki hvaða efni þetta er — sendi mynd.'
+    : 'Hello Silfrun. I am not sure what this material is — sending a photo.',
+});
+---
+
+<div class="fr">
+  <div class="fr__table" role="table" aria-label={c.fibreTitle}>
+    <div class="fr__head" role="row">
+      <span role="columnheader">{c.headMaterial}</span>
+      <span role="columnheader">{c.headForm}</span>
+      <span role="columnheader">{c.headMethod}</span>
+      <span role="columnheader">{c.headLimit}</span>
+    </div>
+
+    {FIBRES.map((row) => (
+      <div class="fr__row" role="row">
+        <span class="fr__name" role="cell">{row.material[locale]}</span>
+
+        <span class="fr__form" role="cell">
+          <svg class="cfig" viewBox="0 0 64 40" aria-hidden="true"><use href={`#${SYMBOL[row.construction]}`} /></svg>
+          <span class="fr__formname">{CONSTRUCTION_LABEL[row.construction][locale]}</span>
+        </span>
+
+        <span class="fr__method" role="cell">{METHOD_LABEL[row.method][locale]}</span>
+        <span class="fr__limit" role="cell">{row.limit[locale]}</span>
+      </div>
+    ))}
+
+    {/* The unknown row. Its construction cell holds a drawn question rather
+        than one of the six, because that is exactly what is not yet known. */}
+    <div class="fr__row fr__row--open" role="row">
+      <span class="fr__name fr__name--open" role="cell">{FIBRE_OPEN.material[locale]}</span>
+
+      <span class="fr__form" role="cell">
+        <svg class="cfig" viewBox="0 0 64 40" aria-hidden="true"><use href="#c-unknown" /></svg>
+        <span class="fr__formname">—</span>
+      </span>
+
+      <span class="fr__method" role="cell">
+        {wa ? (
+          <a class="link-arrow" href={wa} target="_blank" rel="noopener nofollow">{FIBRE_OPEN.action[locale]}</a>
+        ) : (
+          FIBRE_OPEN.action[locale]
+        )}
+      </span>
+
+      <span class="fr__limit" role="cell">{FIBRE_OPEN.limit[locale]}</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ---- phone: cards, because four columns cannot align at 375px ---- */
+
+  .fr__head { display: none; }
+
+  .fr__row {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    column-gap: var(--space-300);
+    row-gap: var(--space-100);
+    padding-block: var(--space-350, var(--space-300));
+    border-block-start: 1px solid var(--edge-quiet);
+    align-items: start;
+  }
+
+  .fr__form {
+    grid-row: 1 / 4;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-100);
+  }
+
+  .cfig {
+    display: block;
+    width: 100%;
+    height: 72px;
+    color: var(--text-muted);
+    transition: color var(--dur-base) var(--ease-glide);
+  }
+
+  .fr__row:hover .cfig { color: var(--text-primary); }
+
+  .fr__formname {
+    font: var(--type-mono);
+    font-size: 10.5px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .fr__name {
+    font-family: var(--font-display);
+    font-size: var(--display-xs);
+    color: var(--text-primary);
+    line-height: 1.15;
+  }
+
+  .fr__method {
+    font: var(--type-mono);
+    color: var(--text-accent);
+    letter-spacing: var(--tracking-label);
+  }
+
+  .fr__limit {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    max-width: 34ch;
+    text-wrap: balance;
+  }
+
+  .fr__name--open { color: var(--text-secondary); }
+
+  /* ------------------------------------------------------------------ *
+   * Desktop: four aligned columns.
+   *
+   * display: contents on the row promotes its four cells into the parent
+   * grid, which is what produces true alignment across eleven rows without
+   * subgrid. Because the row then has no box, the hairline is drawn on each
+   * cell's border-block-end instead.
+   *
+   * The construction diagram shrinks to 56px and its caption is dropped —
+   * in the table the column head already says what the column is, so the
+   * per-cell label would be said twice.
+   * ------------------------------------------------------------------ */
+  @media (min-width: 64rem) {
+    .fr__table {
+      display: grid;
+      grid-template-columns: 12rem 7rem 15rem minmax(0, 1fr);
+      column-gap: var(--space-500);
+    }
+
+    .fr__head,
+    .fr__row { display: contents; }
+
+    .fr__head > * {
+      font: var(--type-eyebrow);
+      letter-spacing: var(--tracking-eyebrow);
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding-block-end: var(--space-200);
+      border-block-end: 1px solid var(--edge-strong);
+    }
+
+    .fr__name,
+    .fr__form,
+    .fr__method,
+    .fr__limit {
+      padding-block: var(--space-300);
+      border-block-end: 1px solid var(--edge-quiet);
+      align-self: center;
+    }
+
+    .fr__name { font-size: var(--text-lg); font-family: var(--font-display); }
+
+    /* The phone layout pins this cell across three rows. Left unreset, grid
+       auto-placement pushes every later cell into an implicit column and the
+       four-column table silently becomes twelve — which is what made the
+       columns disagree and the page scroll sideways. */
+    .fr__form { grid-row: auto; flex-direction: row; align-items: center; }
+    .fr__formname { display: none; }
+    .cfig { height: 40px; width: 64px; }
+    .fr__limit { max-width: 34ch; }
+  }
+</style>

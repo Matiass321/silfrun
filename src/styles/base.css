@@ -75,10 +75,21 @@ small { font-size: var(--text-xs); }
 code, kbd { font: var(--type-mono); }
 strong { font-weight: var(--weight-medium); }
 
+/**
+ * The focus ring is an OUTLINE, not a box-shadow.
+ *
+ * As a box-shadow it was (0,1,0) — the same specificity as .btn--foil, which
+ * sets its own box-shadow for the foil edge and appears later in the sheet.
+ * The later rule won, so the site's primary call to action had no visible
+ * keyboard focus at all. Any component that paints a shadow would have
+ * silently swallowed the ring the same way.
+ *
+ * outline cannot be overridden by a component's box-shadow, and it follows
+ * the element's own border-radius, so the radius override is gone too.
+ */
 :focus-visible {
-  outline: none;
-  box-shadow: var(--ring-focus);
-  border-radius: var(--radius-sm);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -227,6 +238,46 @@ strong { font-weight: var(--weight-medium); }
   isolation: isolate;
 }
 
+/**
+ * Inside the plate, the page tokens are REDEFINED rather than overridden per
+ * element. Custom properties inherit, so one declaration here fixes every
+ * descendant — buttons, links, notes, eyebrows — including components that
+ * have no idea they are being rendered on an inked band.
+ *
+ * Patching selectors instead was what left an 11px accent label at 2.2:1 on
+ * the light theme.
+ */
+.section--deep {
+  --text-primary: var(--plate-text);
+  --text-secondary: var(--plate-text-secondary);
+  --text-muted: var(--plate-muted);
+  --text-accent: var(--plate-accent);
+  --text-link: var(--plate-accent);
+  --text-link-hover: var(--plate-text);
+  --edge-hairline: var(--plate-edge);
+  --edge-control: var(--plate-edge-control);
+  --edge-focus: var(--plate-edge-focus);
+  --edge-quiet: rgba(226, 232, 238, .07);
+  --edge-strong: rgba(226, 232, 238, .28);
+  --surface-inset: rgba(242, 244, 246, .045);
+  --surface-page: var(--plate-surface);
+  --accent: var(--plate-accent);
+
+  /* Derived tokens, remapped by name — see the note in tokens.css. */
+  --btn-hero-bg: var(--plate-foil-soft);
+  --btn-hero-ink: var(--basalt-900);
+  --btn-hero-edge: var(--sheen-vellum);
+  --foil-silver-text: var(--plate-foil-text);
+  --foil-hairline: var(--plate-hairline);
+  --signal-positive: var(--plate-signal-positive);
+  --signal-positive-surface: var(--plate-signal-positive-surface);
+  --signal-caution: var(--plate-signal-caution);
+  --signal-caution-surface: var(--plate-signal-caution-surface);
+  --signal-negative: var(--plate-signal-negative);
+  --signal-negative-surface: var(--plate-signal-negative-surface);
+  --focus-ring: var(--plate-focus-ring);
+}
+
 .section--deep .lead,
 .section--deep p { color: var(--plate-text-secondary); }
 .section--deep h1,
@@ -356,7 +407,7 @@ strong { font-weight: var(--weight-medium); }
   font: var(--type-eyebrow);
   letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
-  color: var(--silver-500);
+  color: var(--plate-muted);
   text-align: center;
   padding: var(--space-300);
   max-width: none;
@@ -455,12 +506,26 @@ strong { font-weight: var(--weight-medium); }
 .sf-btn--foil:hover, .btn--foil:hover { filter: brightness(1.08); }
 .sf-btn--foil:active, .btn--foil:active { filter: brightness(.94); transform: translateY(1px); }
 
+/* The theme guard is wrapped in :where() so it adds no specificity. Without
+   that, :root[data-theme="light"] .btn--foil:hover is (0,4,0) and outranks
+   the plate rule below at (0,3,0) no matter which comes last — which is how
+   the plate's foil button kept being repainted in the plate's own colour on
+   hover. Declared for the media query AND the stamp so an explicit light
+   choice on a dark OS also gets the ink hover instead of brightness()
+   washing flat ink. */
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) .sf-btn--foil:hover,
-  :root:not([data-theme="dark"]) .btn--foil:hover { filter: none; background: var(--basalt-700); }
+  :where(:root:not([data-theme="dark"])) .sf-btn--foil:hover,
+  :where(:root:not([data-theme="dark"])) .btn--foil:hover { filter: none; background: var(--basalt-700); }
 }
-:root[data-theme="light"] .sf-btn--foil:hover,
-:root[data-theme="light"] .btn--foil:hover { filter: none; background: var(--basalt-700); }
+
+:where(:root[data-theme="light"]) .sf-btn--foil:hover,
+:where(:root[data-theme="light"]) .btn--foil:hover { filter: none; background: var(--basalt-700); }
+
+/* …except on the plate, where the button is foil in BOTH themes. */
+.section--deep .btn--foil:hover,
+.section--deep .sf-btn--foil:hover,
+.foot .btn--foil:hover,
+.foot .sf-btn--foil:hover { filter: brightness(1.08); background: var(--btn-hero-bg); }
 
 .sf-btn--outline,
 .btn--ghost {
@@ -502,7 +567,9 @@ strong { font-weight: var(--weight-medium); }
   transition: color var(--dur-fast) var(--ease-glide), border-color var(--dur-fast) var(--ease-glide);
 }
 
-.link-arrow:hover { color: var(--text-primary); border-bottom-color: var(--silver-300); }
+.link-arrow:hover { color: var(--text-primary); border-bottom-color: var(--text-accent); }
+.link-arrow { position: relative; }
+.link-arrow::before { content: ''; position: absolute; inset: -8px -4px; }
 .link-arrow::after { content: '→'; transition: transform var(--dur-base) var(--ease-glide); }
 .link-arrow:hover::after { transform: translateX(4px); }
 
@@ -748,7 +815,7 @@ strong { font-weight: var(--weight-medium); }
   height: var(--control-h);
   padding: var(--pad-field-y) var(--pad-field-x);
   background: var(--surface-inset);
-  border: 1px solid var(--edge-hairline);
+  border: 1px solid var(--edge-control);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   font: var(--type-body);
@@ -762,7 +829,7 @@ strong { font-weight: var(--weight-medium); }
 
 .sf-input::placeholder { color: var(--text-muted); }
 .sf-input:hover, .sf-select:hover { border-color: var(--edge-strong); }
-.sf-input:focus, .sf-select:focus { outline: none; border-color: var(--edge-accent); box-shadow: var(--ring-focus); }
+.sf-input:focus, .sf-select:focus { border-color: var(--edge-focus); outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 .sf-input--invalid, .sf-input--invalid:hover { border-color: var(--signal-negative); }
 .sf-input[disabled], .sf-select[disabled] { opacity: .4; pointer-events: none; }
 .sf-input--textarea { height: auto; min-height: 104px; resize: vertical; line-height: var(--leading-body); }
@@ -770,7 +837,7 @@ strong { font-weight: var(--weight-medium); }
 .sf-input--underline {
   background: none;
   border: 0;
-  border-bottom: 1px solid var(--edge-strong);
+  border-bottom: 1px solid var(--edge-control);
   border-radius: 0;
   padding-left: 0;
   padding-right: 0;
@@ -821,7 +888,7 @@ strong { font-weight: var(--weight-medium); }
   gap: var(--space-150);
   min-height: var(--control-h);
   padding: 0 var(--space-200);
-  border: 1px solid var(--edge-hairline);
+  border: 1px solid var(--edge-control);
   border-radius: var(--radius-sm);
   background: var(--surface-inset);
   cursor: pointer;
@@ -843,7 +910,7 @@ strong { font-weight: var(--weight-medium); }
   flex: none;
   width: 18px;
   height: 18px;
-  border: 1px solid var(--edge-strong);
+  border: 1px solid var(--edge-control);
   border-radius: var(--radius-xs);
   background: var(--surface-page);
   transition: var(--transition-control);
