@@ -52,6 +52,8 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
 ---
 
 <header class="head">
+  <div class="head__veil" aria-hidden="true"></div>
+
   <div class="wrap head__inner">
     <a class="head__brand" href={path('home', locale)} aria-label={s.nav.home}>
       <Logo foil />
@@ -124,20 +126,37 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
 
 <style>
   /**
-   * The bar floats over the content on a blurred veil rather than sitting on an
-   * opaque band, so the grain of the page reads through it. The bottom edge is
-   * a foil hairline — the one place the metal appears without being asked for.
+   * The bar is glass, and at the very top of the page it is nothing at all.
+   *
+   * A hero photograph that runs to the top of the screen is the whole first
+   * impression, and a solid band sitting across it cuts the image in two. So
+   * the veil and the hairline both start at zero opacity and fade in over the
+   * first 120px of scroll — the header only asserts itself once there is
+   * content behind it that needs separating.
+   *
+   * Driven by animation-timeline: scroll(), so it costs no JavaScript. Where
+   * that is unsupported the veil is simply always on, which is the previous
+   * behaviour and perfectly fine — the enhancement is the fade, not the bar.
    */
   .head {
     position: sticky;
     top: 0;
     z-index: 50;
+  }
+
+  /* The veil is a layer rather than a background on .head itself, because
+     opacity animates and backdrop-filter does not. Fading the layer takes the
+     blur with it. */
+  .head__veil {
+    position: absolute;
+    inset: 0;
     background: var(--veil-dark);
     backdrop-filter: var(--blur-veil);
     -webkit-backdrop-filter: var(--blur-veil);
+    pointer-events: none;
   }
 
-  .head::after {
+  .head__veil::after {
     content: '';
     position: absolute;
     inset: auto 0 0;
@@ -146,11 +165,25 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
     opacity: 0.6;
   }
 
+  @supports (animation-timeline: scroll()) {
+    .head__veil {
+      opacity: 0;
+      animation: head-veil linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 120px;
+    }
+
+    @keyframes head-veil {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+  }
+
   .head__inner {
     display: flex;
     align-items: center;
     gap: var(--space-500);
-    min-height: 5.25rem;
+    min-height: var(--head-h);
   }
 
   .head__brand { text-decoration: none; flex-shrink: 0; font-size: 20px; position: relative; }
@@ -329,7 +362,7 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
     .head__nav { display: none; }
     .menu { display: block; }
     .head__end { margin-inline-start: auto; }
-    .head__inner { min-height: 4.5rem; gap: var(--space-200); }
+    .head__inner { gap: var(--space-200); }
   }
 
   @media (prefers-reduced-motion: reduce) {

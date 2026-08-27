@@ -5,6 +5,8 @@ import { type Locale } from '~/config/site';
 import { t } from '~/i18n';
 import { path, SERVICE_KEYS, type ServiceKey } from '~/i18n/routes';
 import { SERVICE_CONTENT } from '~/data/services';
+import MediaSlot from '~/components/MediaSlot.astro';
+import type { MediaRow } from '~/lib/media';
 import Constructions from '~/components/home/Constructions.astro';
 import StainRegister from '~/components/home/StainRegister.astro';
 import FibreRegister from '~/components/home/FibreRegister.astro';
@@ -13,9 +15,11 @@ import { HOME_COPY } from '~/data/home';
 interface Props {
   locale: Locale;
   service: ServiceKey;
+  /** Media rows keyed by slot, resolved by the page. */
+  media?: Record<string, MediaRow | undefined>;
 }
 
-const { locale, service } = Astro.props;
+const { locale, service, media = {} } = Astro.props;
 const s = t(locale);
 const c = SERVICE_CONTENT[locale][service];
 
@@ -71,6 +75,19 @@ const faqLd = {
       <p class="lead">{c.lead}</p>
     </div>
   </header>
+
+  {/* The one photograph on the page, full width under the title. A service
+      page with no image of the service was asking somebody to imagine it. */}
+  <div class="wrap svc__shot">
+    <MediaSlot
+      slot={service}
+      locale={locale}
+      media={media[service]}
+      ratio="3 / 2"
+      priority
+      label={s.services[service].name}
+    />
+  </div>
 
   <section class="section section--tight">
     <div class="wrap wrap--narrow prose">
@@ -166,6 +183,8 @@ const faqLd = {
 </article>
 
 <style>
+  .svc__shot { margin-block-end: var(--space-700, var(--space-600)); }
+
   .page__title { max-width: 18ch; }
   .page__rule { max-width: 7rem; margin-block: var(--space-300); }
 

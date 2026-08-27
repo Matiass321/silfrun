@@ -9,7 +9,7 @@ export const is = {
   nav: {
     services: 'Þjónusta',
     process: 'Ferlið',
-    work: 'Verkin okkar',
+    work: 'Fyrir og eftir',
     areas: 'Þjónustusvæði',
     about: 'Um okkur',
     faq: 'Algengar spurningar',
@@ -84,7 +84,7 @@ export const is = {
   },
 
   work: {
-    eyebrow: 'Verkin okkar',
+    eyebrow: 'Fyrir og eftir',
     title: 'Sjáðu muninn.',
     lead: 'Raunveruleg verk, mynduð fyrir og eftir í sömu birtu og sama ramma.',
     cta: 'Sjá fleiri verk',

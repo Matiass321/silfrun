@@ -70,33 +70,30 @@ export const CONTENT: Record<Locale, LocaleContent> = {
     ],
 
     process: {
-      lead: 'Frá fyrstu myndum að þurru áklæði — hvernig verkið gengur fyrir sig og hvers vegna hvert skref er eins og það er.',
+      lead: 'Frá fyrstu mynd að þurru áklæði.',
       sections: [
         {
-          heading: 'Af hverju við byrjum á myndum',
+          heading: 'Myndirnar',
           paragraphs: [
-            'Tvær eða þrjár myndir segja okkur meira en löng lýsing. Af þeim sjáum við gerð stykkisins, hvernig efnið liggur, hvar álagið er mest og hversu umfangsmikið verkið er. Það gerir okkur kleift að meta verðið áður en við komum í stað þess að standa í stofunni hjá þér og nefna tölu.',
-            'Sé eitthvað óljóst biðjum við um mynd af merkimiðanum. Hann segir til um hvaða meðferð efnið þolir og er oftast falinn undir sessunni eða á neðri brún áklæðisins.',
+            'Tvær eða þrjár myndir sýna okkur gerðina, hvernig efnið liggur og hvar álagið er. Það nægir til að verðleggja verkið áður en við komum. Sé eitthvað óljóst biðjum við um mynd af merkimiðanum — hann er oftast undir sessunni.',
           ],
         },
         {
           heading: 'Matið á staðnum',
           paragraphs: [
-            'Áður en nokkuð er borið á skoðum við merkinguna, þreifum á trefjunum og prófum litheldni á stað sem ekki sést. Þetta tekur nokkrar mínútur og ræður öllu sem á eftir kemur: hvaða efni má nota, í hvaða styrk og hversu mikinn raka stykkið þolir.',
-            'Komi í ljós að ástandið sé annað en myndirnar sýndu segjum við frá því strax og áður en vinna hefst — ekki eftir á.',
+            'Við lesum merkinguna, þreifum á trefjunum og prófum litheldni þar sem ekki sést. Það ræður öllu sem á eftir kemur. Reynist ástandið annað en myndirnar sýndu heyrir þú það áður en byrjað er, ekki eftir á.',
           ],
         },
         {
-          heading: 'Hreinsunin sjálf',
+          heading: 'Hreinsunin',
           paragraphs: [
-            'Fyrst eru laus óhreinindi fjarlægð þurr. Þetta er ekki formsatriði: sandur og möl sem eftir sitja breytast í leðju um leið og vökvi kemur nærri, og skera trefjarnar í leiðinni.',
-            'Því næst er hreinsilausn úðað ofan í trefjarnar og strax dregin upp aftur ásamt óhreinindunum. Farið er hóflega í raka og frekar tvisvar yfir en einu sinni of blautt. Að lokum eru gerðar aukaferðir án lausnar til að draga út eins mikinn raka og hægt er.',
+            'Laus óhreinindi fara fyrst, þurr — sandur sem eftir situr verður að leðju um leið og vökvi kemur nærri. Svo úðaútdráttur: lausn ofan í trefjarnar og strax upp aftur. Frekar tvisvar létt en einu sinni of blautt.',
           ],
         },
         {
           heading: 'Áður en við förum',
           paragraphs: [
-            'Við segjum þér hversu lengi við teljum að stykkið sé að þorna og hvernig má flýta fyrir með loftræstingu. Við bendum líka á hvað varð eftir, sé eitthvað sem ekki náðist, svo þú vitir af því frá okkur en ekki þegar þú uppgötvar það sjálf eða sjálfur.',
+            'Þú færð að vita hvenær stykkið verður þurrt og hvernig má flýta fyrir. Sé eitthvað eftir sem ekki náðist bendum við á það sjálf.',
           ],
         },
       ],
@@ -253,33 +250,30 @@ export const CONTENT: Record<Locale, LocaleContent> = {
     ],
 
     process: {
-      lead: 'From the first photographs to dry upholstery — how the work runs, and why each step is the way it is.',
+      lead: 'From the first photograph to dry upholstery.',
       sections: [
         {
-          heading: 'Why we start with photographs',
+          heading: 'The photographs',
           paragraphs: [
-            'Two or three photographs tell us more than a long description. From them we can see the construction, how the fabric sits, where the load has fallen and how large the job is. That lets us price the work before arriving, rather than standing in your living room naming a figure.',
-            'If anything is unclear we ask for a photograph of the care label. It tells us what treatment the material will take, and it is usually tucked under a cushion or along the lower edge of the cover.',
+            'Two or three photographs show us the construction, how the fabric sits and where the load has fallen. That is enough to price the work before we arrive. If anything is unclear we ask for a shot of the care label — it is usually under the cushion.',
           ],
         },
         {
-          heading: 'The assessment on site',
+          heading: 'The assessment',
           paragraphs: [
-            'Before anything is applied we check the label, feel the fibre and test colourfastness somewhere out of sight. It takes a few minutes and governs everything that follows: which products may be used, at what strength, and how much moisture the piece will take.',
-            'If the condition turns out to differ from what the photographs showed, we say so straight away and before work begins — not afterwards.',
+            'We read the label, feel the fibres and test for colourfastness somewhere out of sight. That decides everything after it. If the condition turns out to differ from the photographs, you hear so before we start, not afterwards.',
           ],
         },
         {
-          heading: 'The cleaning itself',
+          heading: 'The clean',
           paragraphs: [
-            'Loose soil is removed dry first. This is not a formality: grit and sand left in place turn to mud the moment liquid reaches them, and cut the fibres on the way.',
-            'Then cleaning solution is sprayed into the fibres and immediately drawn back out with the soil. Moisture is kept measured — two passes rather than one that is too wet. Finally we make additional passes without solution to pull out as much moisture as possible.',
+            'Loose soil comes out first, dry — grit left in place turns to slurry the moment liquid reaches it. Then extraction: solution into the fibres and straight back out. Two light passes rather than one wet one.',
           ],
         },
         {
           heading: 'Before we leave',
           paragraphs: [
-            'We tell you how long we think the piece will take to dry and how to speed it up with ventilation. We also point out anything that did not come out, so you hear it from us rather than discovering it yourself later.',
+            'You are told when the piece will be dry and how to speed that up. If anything did not come out, we point at it ourselves.',
           ],
         },
       ],

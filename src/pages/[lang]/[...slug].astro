@@ -217,7 +217,7 @@ if (area) {
   jsonLd={pageLd}
   prefill={prefill}
 >
-  {isService && <ServicePage locale={locale} service={pageKey as ServiceKey} />}
+  {isService && <ServicePage locale={locale} service={pageKey as ServiceKey} media={media} />}
 
   {pageKey === 'services' && <ListPage locale={locale} variant="services" />}
   {pageKey === 'areas' && !area && <ListPage locale={locale} variant="areas" />}

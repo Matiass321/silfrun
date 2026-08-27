@@ -1,0 +1,283 @@
+---
+import { mediaUrl, altFor, captionFor, type MediaRow } from '~/lib/media';
+import type { Locale } from '~/config/site';
+
+interface Props {
+  locale: Locale;
+  before?: MediaRow;
+  after?: MediaRow;
+  /** Shown on the empty plates until photographs exist. */
+  label?: string;
+  ratio?: string;
+  priority?: boolean;
+}
+
+const { locale, before, after, label, ratio = '4 / 5', priority = false } = Astro.props;
+
+/**
+ * A before/after wipe.
+ *
+ * This is the one place on the site that earns JavaScript. Everything else is
+ * a document and works as one; this is a control, and a control that does not
+ * respond to being dragged is not a control.
+ *
+ * The fallback is the point of the markup order. With no script — and before
+ * the script runs — both photographs are simply visible, stacked, each with
+ * its own label. That is a worse version of the same information rather than
+ * an empty box, which is what a div-and-a-script implementation degrades to.
+ *
+ * The handle is an <input type="range">. Not a div with pointer handlers: the
+ * range is draggable by mouse, by touch, and by arrow key; it is announced as
+ * a slider with a value; and it is focusable without anything being added. A
+ * custom handle would need all of that written by hand and would still be
+ * worse at it.
+ */
+const has = Boolean(before && after);
+
+const EMPTY: Record<Locale, { before: string; after: string; hint: string }> = {
+  is: { before: 'Áður', after: 'Eftir', hint: 'Dragðu til að sjá muninn' },
+  en: { before: 'Before', after: 'After', hint: 'Drag to compare' },
+};
+const c = EMPTY[locale];
+
+const caption = captionFor(after, locale) || captionFor(before, locale);
+---
+
+{has ? (
+  <figure class="ba" style={`--ba-ratio: ${ratio}`}>
+    <div class="ba__frame js-ba">
+      {/* After sits underneath and is fully visible; before is clipped over
+          it. That way the "cleaned" state is what shows at rest on a browser
+          where the script never runs. */}
+      <img
+        class="ba__img"
+        src={mediaUrl(after!.key)}
+        alt={altFor(after, locale)}
+        width={after!.width ?? undefined}
+        height={after!.height ?? undefined}
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+        fetchpriority={priority ? 'high' : 'auto'}
+      />
+
+      <div class="ba__clip">
+        <img
+          class="ba__img"
+          src={mediaUrl(before!.key)}
+          alt={altFor(before, locale)}
+          width={before!.width ?? undefined}
+          height={before!.height ?? undefined}
+          loading={priority ? 'eager' : 'lazy'}
+          decoding="async"
+        />
+      </div>
+
+      <span class="ba__tag ba__tag--before">{c.before}</span>
+      <span class="ba__tag ba__tag--after">{c.after}</span>
+
+      <div class="ba__handle" aria-hidden="true"><span></span></div>
+
+      <input
+        class="ba__range"
+        type="range"
+        min="0"
+        max="100"
+        value="50"
+        step="0.1"
+        aria-label={c.hint}
+      />
+    </div>
+
+    {caption && <figcaption class="ba__cap">{caption}</figcaption>}
+  </figure>
+) : (
+  <div class="ba ba--empty" style={`--ba-ratio: ${ratio}`}>
+    <div class="ba__plate"><span>{label ?? c.before}</span></div>
+    <div class="ba__plate"><span>{c.after}</span></div>
+  </div>
+)}
+
+<style>
+  .ba { display: flex; flex-direction: column; gap: var(--space-200); }
+
+  .ba__frame {
+    position: relative;
+    aspect-ratio: var(--ba-ratio);
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--surface-inset);
+    /* --ba-pos is what the script moves; 50% is the resting split and also
+       the value a no-script browser is left holding. */
+    --ba-pos: 50%;
+  }
+
+  .ba__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* clip-path rather than width: the image inside keeps its own full width,
+     so the two halves stay in register instead of the top one squashing as
+     the split moves. */
+  .ba__clip {
+    position: absolute;
+    inset: 0;
+    clip-path: inset(0 calc(100% - var(--ba-pos)) 0 0);
+  }
+
+  .ba__tag {
+    position: absolute;
+    bottom: var(--space-200);
+    z-index: 2;
+    padding: 4px var(--space-150);
+    border-radius: var(--radius-pill);
+    background: rgba(11, 13, 15, .66);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    font: var(--type-mono);
+    font-size: 10.5px;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--plate-text);
+    pointer-events: none;
+  }
+
+  .ba__tag--before { inset-inline-start: var(--space-200); }
+  .ba__tag--after { inset-inline-end: var(--space-200); }
+
+  /* ---- the seam ---- */
+
+  .ba__handle {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: var(--ba-pos);
+    width: 1px;
+    z-index: 3;
+    background: rgba(242, 244, 246, .85);
+    pointer-events: none;
+    transform: translateX(-0.5px);
+  }
+
+  .ba__handle span {
+    position: absolute;
+    top: 50%;
+    inset-inline-start: 50%;
+    width: 40px;
+    height: 40px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 1px solid rgba(242, 244, 246, .85);
+    background: rgba(11, 13, 15, .5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  /* The two arrowheads, drawn rather than typed, so they cannot pick up a
+     font that does not have the glyph. */
+  .ba__handle span::before,
+  .ba__handle span::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    border-top: 1.5px solid rgba(242, 244, 246, .9);
+    border-inline-start: 1.5px solid rgba(242, 244, 246, .9);
+  }
+
+  .ba__handle span::before { inset-inline-start: 12px; transform: translateY(-50%) rotate(-45deg); }
+  .ba__handle span::after { inset-inline-end: 12px; transform: translateY(-50%) rotate(135deg); }
+
+  /**
+   * The real control, laid transparently over the whole frame.
+   *
+   * Full-bleed so the photograph itself is the drag surface — reaching for a
+   * 40px dot is fussy on a phone, and the thing people actually try to drag
+   * is the picture.
+   */
+  .ba__range {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: ew-resize;
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+  }
+
+  .ba__range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 44px;
+    height: 100%;
+  }
+
+  .ba__range::-moz-range-thumb {
+    width: 44px;
+    height: 100%;
+    border: 0;
+    background: transparent;
+  }
+
+  /* Focus has to be visible on the seam, because the input itself is
+     invisible by design. */
+  .ba__frame:focus-within .ba__handle span {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  .ba__cap { font-size: var(--text-sm); color: var(--text-muted); }
+
+  /* ---- no photographs yet ---- */
+
+  .ba--empty { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-200); }
+
+  .ba__plate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: var(--ba-ratio);
+    border-radius: var(--radius-sm);
+    background:
+      repeating-linear-gradient(135deg, rgba(242,244,246,.045) 0 1px, transparent 1px 9px),
+      var(--surface-inset);
+    border: 1px solid var(--edge-quiet);
+  }
+
+  .ba__plate span {
+    font: var(--type-mono);
+    font-size: 10.5px;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: var(--space-200);
+  }
+</style>
+
+<script>
+  /**
+   * Twelve lines, and only to relay the range's value into a custom property.
+   *
+   * Everything visual is CSS. Without this the range still moves and is still
+   * announced; it just does not drive the clip — so the fallback is the
+   * cleaned photograph at full size, which is the right thing to be looking
+   * at anyway.
+   */
+  for (const frame of document.querySelectorAll<HTMLElement>('.js-ba')) {
+    const range = frame.querySelector<HTMLInputElement>('.ba__range');
+    if (!range) continue;
+
+    const paint = () => frame.style.setProperty('--ba-pos', `${range.value}%`);
+
+    range.addEventListener('input', paint);
+    paint();
+  }
+</script>

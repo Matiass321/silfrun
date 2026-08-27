@@ -3,11 +3,12 @@ import Marketing from '~/layouts/Marketing.astro';
 import ClosingCta from '~/components/ClosingCta.astro';
 import HeroMedia from '~/components/HeroMedia.astro';
 import MediaSlot from '~/components/MediaSlot.astro';
+import BeforeAfter from '~/components/BeforeAfter.astro';
 
 import { LOCALES, SITE, trackedUrl, type Locale } from '~/config/site';
 import { t, alternates } from '~/i18n';
 import { path, areaPath } from '~/i18n/routes';
-import { slotMap, bySlot, type MediaRow } from '~/lib/media';
+import { slotMap, bySlot, galleryPairs, type MediaRow } from '~/lib/media';
 import { env } from '~/lib/admin-guard';
 import { HOME, STEPS, ASSURANCES, LIMITS, FIELDS } from '~/data/homepage';
 
@@ -46,7 +47,7 @@ let proof: MediaRow[] = [];
 }
 
 /* Two at a time reads as a comparison; a grid of six reads as stock. */
-const pairs = proof.slice(0, 4);
+const pairs = galleryPairs(proof).slice(0, 2);
 
 const wa = trackedUrl('whatsapp', {
   from: `/${locale}/`,
@@ -94,18 +95,19 @@ Astro.response.headers.set(
         </div>
       </div>
 
-      {/* Three checkable facts on one line each, on the seam where the
-          visitor decides whether to keep scrolling. */}
-      <div class="wrap">
-        <ul class="assure reveal">
-          {ASSURANCES.map((a) => (
-            <li class="assure__item">
-              <h2 class="assure__title">{a.title[locale]}</h2>
-              <p class="assure__body">{a.body[locale]}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
+    </section>
+
+    {/* Three checkable facts, on their own quiet band under the photograph
+        rather than printed across the bottom of it. */}
+    <section class="assure">
+      <ul class="wrap assure__list reveal">
+        {ASSURANCES.map((a) => (
+          <li class="assure__item">
+            <h2 class="assure__title">{a.title[locale]}</h2>
+            <p class="assure__body">{a.body[locale]}</p>
+          </li>
+        ))}
+      </ul>
     </section>
 
     {/* ══ 2 · Proof ══════════════════════════════════════════════════ */}
@@ -113,30 +115,22 @@ Astro.response.headers.set(
       <div class="wrap">
         <h2 class="only reveal">{c.proofTitle}</h2>
 
-        {pairs.length ? (
-          <ul class="grid grid--4">
-            {pairs.map((m, i) => (
-              <li class="reveal">
-                <MediaSlot slot="gallery" locale={locale} media={m} ratio="4 / 5" priority={i === 0} />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div class="grid grid--4">
-            {[0, 1].map((i) => (
-              <div class="reveal">
-                <MediaSlot
-                  slot="gallery"
-                  locale={locale}
-                  ratio="4 / 5"
-                  label={locale === 'is'
-                    ? (i === 0 ? 'Áður' : 'Eftir')
-                    : (i === 0 ? 'Before' : 'After')}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+<ul class="grid grid--2">
+          {(pairs.length ? pairs : [{}, {}]).map((pair, i) => (
+            <li class="reveal">
+              <BeforeAfter
+                locale={locale}
+                before={pair.before}
+                after={pair.after}
+                ratio="4 / 3"
+                priority={i === 0}
+                label={locale === 'is'
+                  ? 'Áður · sama ljós og sjónarhorn'
+                  : 'Before · same light and angle'}
+              />
+            </li>
+          ))}
+        </ul>
 
         <p class="reveal"><a class="link-arrow" href={path('results', locale)}>{c.proofCta}</a></p>
       </div>
@@ -282,12 +276,26 @@ Astro.response.headers.set(
   /* ------------------------------------------------------------------ *
    * Hero
    * ------------------------------------------------------------------ */
-  .hero { position: relative; padding-block-end: var(--space-800); }
+  /**
+   * The hero runs to the top of the screen and fills it.
+   *
+   * Pulled up by the header's own height so the photograph starts behind the
+   * bar rather than below it — the bar is transparent up there, so the image
+   * is the first thing and the whole thing.
+   *
+   * svh, not vh: on a phone vh is the height with the browser chrome hidden,
+   * so a 100vh hero is cut off by the address bar on load and only fits once
+   * the visitor scrolls. svh is the smallest state, which is the one that has
+   * to fit.
+   */
+  .hero {
+    position: relative;
+    margin-block-start: calc(var(--head-h) * -1);
+  }
 
   .hero__media {
     position: absolute;
-    inset: 0 0 auto;
-    height: min(88svh, 46rem);
+    inset: 0;
     overflow: hidden;
   }
 
@@ -297,8 +305,8 @@ Astro.response.headers.set(
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-300);
-    min-height: min(78svh, 40rem);
-    padding-block: var(--space-800) var(--space-600);
+    min-height: 100svh;
+    padding-block: calc(var(--head-h) + var(--space-600)) var(--space-800);
     justify-content: flex-end;
   }
 
@@ -322,11 +330,11 @@ Astro.response.headers.set(
   /* ---- three assurances ---- */
 
   .assure {
-    display: grid;
-    gap: var(--space-300);
-    padding-block-start: var(--space-500);
-    border-block-start: 1px solid var(--edge-quiet);
+    padding-block: var(--space-600);
+    border-block-end: 1px solid var(--edge-quiet);
   }
+
+  .assure__list { display: grid; gap: var(--space-300); }
 
   .assure__title {
     font-family: var(--font-display);
@@ -443,8 +451,9 @@ Astro.response.headers.set(
    * Wide screens
    * ------------------------------------------------------------------ */
   @media (min-width: 48rem) {
-    .assure { grid-template-columns: repeat(3, 1fr); gap: var(--space-500); }
+    .assure__list { grid-template-columns: repeat(3, 1fr); gap: var(--space-500); }
     .grid--4 { grid-template-columns: repeat(2, 1fr); }
+    .grid--2 { grid-template-columns: repeat(2, 1fr); }
     .limits { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-400); }
     .limits__item:last-child { border-block-end: 0; }
   }

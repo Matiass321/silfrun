@@ -13,7 +13,7 @@ export const en: typeof is = {
   nav: {
     services: 'Services',
     process: 'How it works',
-    work: 'Our work',
+    work: 'Before & after',
     areas: 'Service areas',
     about: 'About',
     faq: 'FAQ',
@@ -88,7 +88,7 @@ export const en: typeof is = {
   },
 
   work: {
-    eyebrow: 'Our work',
+    eyebrow: 'Before & after',
     title: 'See the difference.',
     lead: 'Real jobs, photographed before and after in the same light and the same frame.',
     cta: 'See more work',

@@ -191,6 +191,55 @@ export async function slotMap(
   return out;
 }
 
+/**
+ * Groups gallery rows into before/after pairs.
+ *
+ * Two ways of saying the same thing, because the admin allows both. If rows
+ * carry a pair_id they are grouped by it, which is explicit and survives
+ * reordering. Otherwise consecutive rows tagged 'before' and 'after' are taken
+ * as a pair, which is what somebody uploading two photographs in order will
+ * have produced without knowing there was a field for it.
+ *
+ * Anything that does not pair off is returned on its own, so a single
+ * photograph still appears rather than being silently dropped for lacking a
+ * partner.
+ */
+export function galleryPairs(rows: MediaRow[]): { before?: MediaRow; after?: MediaRow }[] {
+  const out: { before?: MediaRow; after?: MediaRow }[] = [];
+  const byPair = new Map<number, MediaRow[]>();
+  const loose: MediaRow[] = [];
+
+  for (const r of rows) {
+    if (r.pair_id != null) {
+      const list = byPair.get(r.pair_id) ?? [];
+      list.push(r);
+      byPair.set(r.pair_id, list);
+    } else {
+      loose.push(r);
+    }
+  }
+
+  for (const list of byPair.values()) {
+    out.push({
+      before: list.find((r) => r.pair_role === 'before') ?? list[0],
+      after: list.find((r) => r.pair_role === 'after') ?? list[1],
+    });
+  }
+
+  for (let i = 0; i < loose.length; i++) {
+    const a = loose[i];
+    const b = loose[i + 1];
+    if (a.pair_role === 'before' && b?.pair_role === 'after') {
+      out.push({ before: a, after: b });
+      i++;
+    } else {
+      out.push({ before: a, after: undefined });
+    }
+  }
+
+  return out;
+}
+
 /** The whole library, newest first, for the admin. */
 export async function listAll(db: D1Database, limit = 200): Promise<MediaRow[]> {
   const res = await db

@@ -154,7 +154,35 @@ strong { font-weight: var(--weight-medium); }
 }
 
 .sf-rule--foil,
+/**
+ * The header's height, as a token.
+ *
+ * A full-bleed hero has to start at the top of the viewport, behind the bar,
+ * which means pulling itself up by exactly the bar's height. Two places
+ * needing the same number is two places to get it wrong, so it is declared
+ * once and both the header and the hero read it.
+ */
+:root { --head-h: 5.25rem; }
+
+@media (max-width: 64rem) {
+  :root { --head-h: 4.5rem; }
+}
+
 .silfrun-rule { background: var(--foil-hairline); }
+
+/**
+ * The rule under a page title.
+ *
+ * It was declared in three page components' scoped styles and in none of the
+ * other two, so on the process and gallery pages it rendered full-bleed with
+ * no margin at all — a hairline jammed against the descenders of the heading
+ * above it and the first line of the lead below. Shared class, shared
+ * declaration; the scoped copies are gone.
+ */
+.page__rule {
+  max-width: 7rem;
+  margin-block: var(--space-300);
+}
 
 /* Lozenge rule — a foil hairline broken by a cut gem. Used to close a section. */
 .sf-rule--lozenge {
