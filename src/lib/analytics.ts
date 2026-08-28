@@ -28,6 +28,80 @@ export type EventKind =
 
 export const OUTBOUND_KINDS: EventKind[] = ['whatsapp', 'messenger', 'call', 'email'];
 
+/* ------------------------------------------------------------------ *
+ * Who, without knowing who
+ * ------------------------------------------------------------------ */
+
+/**
+ * Today's salt, created on first use and cached for the isolate's life.
+ *
+ * One extra D1 read per day per isolate rather than one per event — the salt
+ * only changes at midnight, so re-reading it on every page view would be pure
+ * waste on the hot path.
+ *
+ * Deleting salts older than two days is the load-bearing part of the whole
+ * design. While the salt exists, a hash can be recomputed from an IP; once it
+ * is gone that is impossible, so yesterday's visitor hashes stop being an
+ * identifier at all.
+ */
+let saltCache: { day: string; salt: string } | null = null;
+
+async function dailySalt(db: D1Database, day: string): Promise<string> {
+  if (saltCache?.day === day) return saltCache.salt;
+
+  const found = await db
+    .prepare('SELECT salt FROM analytics_salt WHERE day = ?')
+    .bind(day)
+    .first<{ salt: string }>();
+
+  if (found?.salt) {
+    saltCache = { day, salt: found.salt };
+    return found.salt;
+  }
+
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const salt = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
+
+  /* Two writers on the same first request of the day both insert; OR IGNORE
+     makes the loser keep the winner's salt instead of overwriting it, which
+     would split one day's visitors across two hash spaces. */
+  await db.prepare('INSERT OR IGNORE INTO analytics_salt (day, salt) VALUES (?, ?)').bind(day, salt).run();
+  await db.prepare("DELETE FROM analytics_salt WHERE day < date(?, '-2 days')").bind(day).run();
+
+  const settled = await db
+    .prepare('SELECT salt FROM analytics_salt WHERE day = ?')
+    .bind(day)
+    .first<{ salt: string }>();
+
+  const value = settled?.salt ?? salt;
+  saltCache = { day, salt: value };
+  return value;
+}
+
+/**
+ * A visitor identifier that lasts exactly one day and identifies nobody.
+ *
+ * The IP address goes in and is never written anywhere. 16 hex characters is
+ * 64 bits — at this site's volume the chance of two visitors colliding in a
+ * day is negligible, and it is half the storage of the full digest.
+ */
+async function visitorHash(
+  db: D1Database, request: Request, day: string
+): Promise<string | null> {
+  const ip = request.headers.get('CF-Connecting-IP');
+  if (!ip) return null;
+
+  const salt = await dailySalt(db, day);
+  const ua = request.headers.get('user-agent') ?? '';
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(`${salt}|${ip}|${ua}|silfrun`)
+  );
+  return [...new Uint8Array(digest)].slice(0, 8)
+    .map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 /**
  * Records one event, and never throws.
  *
@@ -57,6 +131,17 @@ export async function record(
     if (/bot|crawl|spider|slurp|bingpreview|facebookexternalhit|headless|monitor|preview|scrape/i.test(ua)) return;
 
     /**
+     * A preview deployment is not the website.
+     *
+     * Every push to Pages publishes <hash>.silfrun.pages.dev, and those were
+     * being counted: 183 events on this table came from deploy previews being
+     * opened during development, indistinguishable on the stats page from
+     * real traffic. Only the real hostnames are measured now. A number nobody
+     * trusts is worth less than no number.
+     */
+    if (!/(^|\.)silfrun\.(is|com)$/i.test(new URL(request.url).hostname)) return;
+
+    /**
      * Preview deployments are not the website.
      *
      * Cloudflare Pages serves every build at <hash>.silfrun.pages.dev, and
@@ -84,17 +169,20 @@ export async function record(
     if (raw) {
       try {
         const from = new URL(raw).host;
-        const internal = /(^|.)silfrun.(is|com)$/i.test(from) || /(^|.)pages.dev$/i.test(from);
+        const internal = /(^|\.)silfrun\.(is|com)$/i.test(from) || /(^|\.)pages\.dev$/i.test(from);
         referrer = internal ? null : from;
       } catch { /* malformed referrer, drop it */ }
     }
 
     const country = request.headers.get('CF-IPCountry');
 
+    const day = isoDate(Math.floor(Date.now() / 1000));
+    const visitor = await visitorHash(db, request, day);
+
     await db
       .prepare(
-        `INSERT INTO events (kind, path, locale, referrer, country, device, day)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO events (kind, path, locale, referrer, country, device, day, visitor)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .bind(
         input.kind,
@@ -103,7 +191,8 @@ export async function record(
         referrer?.slice(0, 120) ?? null,
         country && country !== 'XX' ? country : null,
         device,
-        isoDate(Math.floor(Date.now() / 1000))
+        day,
+        visitor
       )
       .run();
   } catch {
@@ -229,21 +318,98 @@ export async function viewsOf(db: D1Database, paths: string[], days = 30): Promi
  * ------------------------------------------------------------------ */
 
 /**
- * Page views in the last few minutes.
+ * People on the site right now.
  *
- * Deliberately NOT called "people online". The site sets no cookie and stores
- * no session id — that is what lets it collect anything at all without a
- * consent banner — so there is no honest way to tell one person loading three
- * pages from three people loading one. This counts views, the label says
- * views, and the number is true.
+ * Distinct visitor hashes, not views — this is the number the label claims.
+ * Rows written before the visitor column existed have a null hash and are
+ * excluded rather than counted as one shared ghost visitor.
  */
-export async function activeNow(db: D1Database, minutes = 5): Promise<number> {
+export async function liveVisitors(db: D1Database, minutes = 5): Promise<number> {
   const since = Math.floor(Date.now() / 1000) - minutes * 60;
   const row = await db
-    .prepare("SELECT COUNT(*) AS n FROM events WHERE kind = 'view' AND created_at >= ?")
+    .prepare('SELECT COUNT(DISTINCT visitor) AS n FROM events WHERE created_at >= ? AND visitor IS NOT NULL')
     .bind(since)
     .first<{ n: number }>();
   return row?.n ?? 0;
+}
+
+/** Distinct visitors over a rolling window of hours. */
+export async function visitorsSince(db: D1Database, hours: number): Promise<number> {
+  const since = Math.floor(Date.now() / 1000) - hours * 3600;
+  const row = await db
+    .prepare('SELECT COUNT(DISTINCT visitor) AS n FROM events WHERE created_at >= ? AND visitor IS NOT NULL')
+    .bind(since)
+    .first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
+/**
+ * Distinct visitors over a range of days.
+ *
+ * Summed per day, not counted across the whole range: the salt rotates at
+ * midnight, so the same person on two days is two hashes and COUNT(DISTINCT)
+ * over a month would report visits, dressed up as people. Summing daily
+ * uniques is the honest reading — "visitors per day, added up".
+ */
+export async function visitorsByDay(db: D1Database, days = 30): Promise<DayCount[]> {
+  const now = Math.floor(Date.now() / 1000);
+  const from = isoDate(now - (days - 1) * 86400);
+  const res = await db
+    .prepare(
+      `SELECT day, COUNT(DISTINCT visitor) AS n FROM events
+        WHERE day >= ? AND visitor IS NOT NULL GROUP BY day`
+    )
+    .bind(from)
+    .all<DayCount>();
+
+  const found = new Map((res.results ?? []).map((r) => [r.day, r.n]));
+  const out: DayCount[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = isoDate(now - i * 86400);
+    out.push({ day: d, n: found.get(d) ?? 0 });
+  }
+  return out;
+}
+
+/**
+ * Bounce rate and time on site, from the visitor's own event stream.
+ *
+ * A bounce is a visitor whose whole day was one page view. Time on site is
+ * last event minus first, which is a floor rather than a truth — the time
+ * spent reading the final page is invisible, because nothing reports leaving.
+ * A single-view visitor therefore measures zero and is left out of the
+ * average, otherwise every bounce would drag it towards nothing.
+ */
+export async function engagement(
+  db: D1Database, days = 30
+): Promise<{ visitors: number; bounceRate: number; avgSeconds: number; viewsPerVisitor: number }> {
+  const from = isoDate(Math.floor(Date.now() / 1000) - (days - 1) * 86400);
+  const row = await db
+    .prepare(
+      `WITH per AS (
+         SELECT day, visitor,
+                COUNT(*) FILTER (WHERE kind = 'view') AS views,
+                MAX(created_at) - MIN(created_at) AS secs
+           FROM events
+          WHERE day >= ? AND visitor IS NOT NULL
+          GROUP BY day, visitor
+       )
+       SELECT COUNT(*) AS visitors,
+              SUM(CASE WHEN views <= 1 THEN 1 ELSE 0 END) AS bounced,
+              SUM(views) AS views,
+              AVG(CASE WHEN views > 1 THEN secs END) AS avg_secs
+         FROM per`
+    )
+    .bind(from)
+    .first<{ visitors: number; bounced: number; views: number; avg_secs: number | null }>();
+
+  const visitors = row?.visitors ?? 0;
+  return {
+    visitors,
+    bounceRate: visitors > 0 ? Math.round(((row?.bounced ?? 0) / visitors) * 100) : 0,
+    avgSeconds: Math.round(row?.avg_secs ?? 0),
+    viewsPerVisitor: visitors > 0 ? +(((row?.views ?? 0) / visitors).toFixed(1)) : 0,
+  };
 }
 
 /** Everything that happened today, by kind. */

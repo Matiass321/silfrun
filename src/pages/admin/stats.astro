@@ -6,7 +6,7 @@ import BarList from '~/components/admin/BarList.astro';
 import { requireAdmin, env } from '~/lib/admin-guard';
 import {
   totals, series, topPages, splitBy, viewsOf,
-  activeNow, todayByKind, hourlyViews, sources,
+  liveVisitors, visitorsSince, visitorsByDay, engagement, todayByKind, hourlyViews, sources,
   type DayCount, type LabelCount, type Source,
 } from '~/lib/analytics';
 import { SLUGS } from '~/i18n/routes';
@@ -29,6 +29,9 @@ let srcs: Source[] = [];
 let live = 0;
 let today: Record<string, number> = {};
 let hourly: { hour: string; n: number }[] = [];
+let visitorSeries: DayCount[] = [];
+let visitors24 = 0;
+let eng = { visitors: 0, bounceRate: 0, avgSeconds: 0, viewsPerVisitor: 0 };
 let devices: LabelCount[] = [];
 let countries: LabelCount[] = [];
 let contactViews = 0;
@@ -44,7 +47,7 @@ if (!DB) {
 } else {
   try {
     [t, viewSeries, waSeries, pages, srcs, devices, countries, contactViews, quoteViews,
-     live, today, hourly] =
+     live, today, hourly, visitorSeries, visitors24, eng] =
       await Promise.all([
         totals(DB, days),
         series(DB, 'view', days),
@@ -55,9 +58,12 @@ if (!DB) {
         splitBy(DB, 'country', days),
         viewsOf(DB, contactPaths, days),
         viewsOf(DB, quotePaths, days),
-        activeNow(DB, 5),
+        liveVisitors(DB, 5),
         todayByKind(DB),
         hourlyViews(DB, 24),
+        visitorsByDay(DB, days),
+        visitorsSince(DB, 24),
+        engagement(DB, days),
       ]);
   } catch (e) {
     dbError = `Statistics unavailable. Run the latest migration on the database. (${String(e).slice(0, 90)})`;
@@ -88,6 +94,19 @@ const hourPoints = hourly.map((h) => ({ label: h.hour.slice(11) + ':00', n: h.n 
 
 /** Views today, for the headline number. */
 const todayViews = today.view ?? 0;
+
+/* Daily uniques, summed. Not COUNT(DISTINCT) over the range — see the note on
+   visitorsByDay: the salt rotates nightly, so that would count visits. */
+const visitorTotal = visitorSeries.reduce((n, d) => n + d.n, 0);
+const visitorsToday = visitorSeries[visitorSeries.length - 1]?.n ?? 0;
+
+const mmss = (secs: number) =>
+  secs > 0 ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}` : '—';
+
+/* Rates are per visitor now that visitors are real; that is the number a
+   person means when they ask what share of people got in touch. */
+const perVisitor = (n: number) =>
+  eng.visitors > 0 ? ((n / eng.visitors) * 100).toFixed(1) : '0.0';
 
 const CHANNELS = [
   { l: 'WhatsApp', n: wa },
@@ -162,23 +181,45 @@ const cleared = clearedRaw !== null ? Number(clearedRaw) : null;
         <span class="a-stat__n">
           {live > 0 && <span class="pulse" aria-hidden="true"></span>}{live}
         </span>
-        <span class="a-stat__l">Active now</span>
-        <span class="a-stat__d">views in the last 5 min</span>
+        <span class="a-stat__l">People on the site</span>
+        <span class="a-stat__d">right now</span>
       </div>
       <div class="a-card a-stat">
-        <span class="a-stat__n">{todayViews}</span>
-        <span class="a-stat__l">Today</span>
-        <span class="a-stat__d">views since midnight</span>
+        <span class="a-stat__n">{visitors24}</span>
+        <span class="a-stat__l">Visitors</span>
+        <span class="a-stat__d">last 24 hours</span>
       </div>
       <div class="a-card a-stat">
-        <span class="a-stat__n">{views}</span>
-        <span class="a-stat__l">Views</span>
-        <span class="a-stat__d">last {days} days</span>
+        <span class="a-stat__n">{visitorsToday}</span>
+        <span class="a-stat__l">Visitors today</span>
+        <span class="a-stat__d">{todayViews} views</span>
+      </div>
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{visitorTotal}</span>
+        <span class="a-stat__l">Visitors</span>
+        <span class="a-stat__d">last {days} days · {views} views</span>
+      </div>
+    </div>
+
+    <div class="a-grid a-grid--2 a-sec">
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{mmss(eng.avgSeconds)}</span>
+        <span class="a-stat__l">Avg time on site</span>
+        <span class="a-stat__d">visitors who saw 2+ pages</span>
+      </div>
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{eng.bounceRate}%</span>
+        <span class="a-stat__l">Bounce rate</span>
+        <span class="a-stat__d">left after one page</span>
+      </div>
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{eng.viewsPerVisitor}</span>
+        <span class="a-stat__l">Pages per visitor</span>
       </div>
       <div class="a-card a-stat">
         <span class="a-stat__n">{contacts}</span>
         <span class="a-stat__l">Contacts</span>
-        <span class="a-stat__d">{pct(contacts)}% of views</span>
+        <span class="a-stat__d">{perVisitor(contacts)}% of visitors</span>
       </div>
     </div>
 
@@ -189,13 +230,13 @@ const cleared = clearedRaw !== null ? Number(clearedRaw) : null;
         <div class="a-card a-stat">
           <span class="a-stat__n">{ch.n}</span>
           <span class="a-stat__l">{ch.l}</span>
-          <span class="a-stat__d">{pct(ch.n)}% of views</span>
+          <span class="a-stat__d">{perVisitor(ch.n)}% of visitors</span>
         </div>
       ))}
       <div class="a-card a-stat">
         <span class="a-stat__n">{bookings}</span>
         <span class="a-stat__l">Bookings</span>
-        <span class="a-stat__d">{pct(bookings)}% of views</span>
+        <span class="a-stat__d">{perVisitor(bookings)}% of visitors</span>
       </div>
     </div>
 
@@ -207,9 +248,15 @@ const cleared = clearedRaw !== null ? Number(clearedRaw) : null;
     </section>
 
     <section class="a-sec">
-      <h2 class="a-sec__h">Views per day</h2>
+      <h2 class="a-sec__h">Visitors per day</h2>
       <div class="a-card">
-        <AreaChart data={asPoints(viewSeries)} title="Views per day" height={230} />
+        <AreaChart
+          data={asPoints(visitorSeries)}
+          compare={asPoints(viewSeries)}
+          compareLabel="views"
+          title="Visitors per day"
+          height={230}
+        />
       </div>
     </section>
 
@@ -224,7 +271,7 @@ const cleared = clearedRaw !== null ? Number(clearedRaw) : null;
       <h2 class="a-sec__h">The path to an enquiry</h2>
       <div class="a-card fn">
         {[
-          { l: 'Views', n: views },
+          { l: 'Visitors', n: eng.visitors },
           { l: 'Reached “Request a quote”', n: quoteViews },
           { l: 'Reached “Contact”', n: contactViews },
           { l: 'Clicked a contact channel', n: contacts },
@@ -236,13 +283,16 @@ const cleared = clearedRaw !== null ? Number(clearedRaw) : null;
               <span class="fn__n">{step.n}</span>
             </div>
             <div class="fn__track">
-              <div class="fn__fill" style={`width:${views > 0 ? Math.max((step.n / views) * 100, step.n > 0 ? 1.5 : 0) : 0}%`}></div>
+              <div class="fn__fill" style={`width:${eng.visitors > 0 ? Math.min(Math.max((step.n / eng.visitors) * 100, step.n > 0 ? 1.5 : 0), 100) : 0}%`}></div>
             </div>
           </div>
         ))}
         <p class="fn__note">
-          Rates are against views, not individuals — no identifier is
-          stored, so people cannot be counted.
+          Visitors are counted with a hash of the IP address and a salt that is
+          regenerated every day and deleted after two. No IP is stored and no
+          cookie is set, so a person is countable today and unlinkable
+          tomorrow — which also means someone returning next week counts as a
+          new visitor.
         </p>
       </div>
     </section>
@@ -280,8 +330,9 @@ const cleared = clearedRaw !== null ? Number(clearedRaw) : null;
     </div>
 
     <p class="a-sub priv">
-      No cookie, no IP address and no identifier is stored. That is why
-      the site needs no consent banner.
+      No cookie is set and no IP address is stored. Visitors are counted by a
+      hash of the IP with a salt that rotates daily and is deleted after two
+      days, so the count is real today and cannot be reconstructed later.
     </p>
 
     {confirmingReset ? (
