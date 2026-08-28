@@ -223,3 +223,128 @@ export async function viewsOf(db: D1Database, paths: string[], days = 30): Promi
     .first<{ n: number }>();
   return row?.n ?? 0;
 }
+
+/* ------------------------------------------------------------------ *
+ * Live and today
+ * ------------------------------------------------------------------ */
+
+/**
+ * Page views in the last few minutes.
+ *
+ * Deliberately NOT called "people online". The site sets no cookie and stores
+ * no session id — that is what lets it collect anything at all without a
+ * consent banner — so there is no honest way to tell one person loading three
+ * pages from three people loading one. This counts views, the label says
+ * views, and the number is true.
+ */
+export async function activeNow(db: D1Database, minutes = 5): Promise<number> {
+  const since = Math.floor(Date.now() / 1000) - minutes * 60;
+  const row = await db
+    .prepare("SELECT COUNT(*) AS n FROM events WHERE kind = 'view' AND created_at >= ?")
+    .bind(since)
+    .first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
+/** Everything that happened today, by kind. */
+export async function todayByKind(db: D1Database): Promise<Record<string, number>> {
+  const day = isoDate(Math.floor(Date.now() / 1000));
+  const res = await db
+    .prepare('SELECT kind, COUNT(*) AS n FROM events WHERE day = ? GROUP BY kind')
+    .bind(day)
+    .all<{ kind: string; n: number }>();
+  const out: Record<string, number> = {};
+  for (const r of res.results ?? []) out[r.kind] = r.n;
+  return out;
+}
+
+/**
+ * Views by hour for the last 24 hours, for the live chart.
+ *
+ * Dense, like series() — an hour with no views has to be a zero and not a
+ * missing point, or the line joins 09:00 to 14:00 and draws five hours of
+ * traffic that did not happen.
+ */
+export async function hourlyViews(db: D1Database, hours = 24): Promise<{ hour: string; n: number }[]> {
+  const now = Math.floor(Date.now() / 1000);
+  const since = now - hours * 3600;
+  const res = await db
+    .prepare(
+      `SELECT strftime('%Y-%m-%dT%H', created_at, 'unixepoch') AS hour, COUNT(*) AS n
+         FROM events WHERE kind = 'view' AND created_at >= ?
+        GROUP BY hour`
+    )
+    .bind(since)
+    .all<{ hour: string; n: number }>();
+
+  const found = new Map((res.results ?? []).map((r) => [r.hour, r.n]));
+  const out: { hour: string; n: number }[] = [];
+  for (let i = hours - 1; i >= 0; i--) {
+    const t = new Date((now - i * 3600) * 1000);
+    const key = t.toISOString().slice(0, 13);
+    out.push({ hour: key, n: found.get(key) ?? 0 });
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ *
+ * Where the traffic came from
+ * ------------------------------------------------------------------ */
+
+export interface Source { label: string; n: number; kind: 'social' | 'search' | 'direct' | 'other' }
+
+/**
+ * A referrer host is not an answer to "where did they come from".
+ *
+ * "l.instagram.com", "lm.facebook.com" and "com.google.android.gm" are all
+ * things the browser reports, and none of them is what somebody wants to read
+ * on a dashboard. This maps the hosts onto the handful of names that actually
+ * describe a route to the site.
+ *
+ * A null referrer is genuinely two different things — typed the address, or
+ * followed a link from an app that strips the header — and both are reported
+ * as Direct, because there is no way to separate them and inventing a split
+ * would be worse than the honest merge.
+ */
+const SOURCE_MAP: { test: RegExp; label: string; kind: Source['kind'] }[] = [
+  { test: /instagram/i,                     label: 'Instagram',  kind: 'social' },
+  { test: /facebook|fb\.com|fb\.me|fbcdn/i, label: 'Facebook',   kind: 'social' },
+  { test: /tiktok/i,                        label: 'TikTok',     kind: 'social' },
+  { test: /messenger/i,                     label: 'Messenger',  kind: 'social' },
+  { test: /whatsapp|wa\.me/i,               label: 'WhatsApp',   kind: 'social' },
+  { test: /linkedin|lnkd\.in/i,             label: 'LinkedIn',   kind: 'social' },
+  { test: /pinterest/i,                     label: 'Pinterest',  kind: 'social' },
+  { test: /youtube|youtu\.be/i,             label: 'YouTube',    kind: 'social' },
+  { test: /(^|\.)google\./i,                label: 'Google',     kind: 'search' },
+  { test: /bing\./i,                        label: 'Bing',       kind: 'search' },
+  { test: /duckduckgo/i,                    label: 'DuckDuckGo', kind: 'search' },
+  { test: /ecosia|yahoo|yandex|baidu/i,     label: 'Other search', kind: 'search' },
+  { test: /ja\.is|gulasidurnar|mbl\.is|visir\.is/i, label: 'Icelandic directories', kind: 'other' },
+];
+
+export function classifySource(referrer: string | null): { label: string; kind: Source['kind'] } {
+  if (!referrer) return { label: 'Direct', kind: 'direct' };
+  for (const s of SOURCE_MAP) if (s.test.test(referrer)) return { label: s.label, kind: s.kind };
+  return { label: referrer, kind: 'other' };
+}
+
+/** Views grouped by the name of the route, not the raw host. */
+export async function sources(db: D1Database, days = 30): Promise<Source[]> {
+  const from = isoDate(Math.floor(Date.now() / 1000) - days * 86400);
+  const res = await db
+    .prepare(
+      `SELECT referrer, COUNT(*) AS n FROM events
+        WHERE kind = 'view' AND day >= ? GROUP BY referrer`
+    )
+    .bind(from)
+    .all<{ referrer: string | null; n: number }>();
+
+  const merged = new Map<string, Source>();
+  for (const r of res.results ?? []) {
+    const { label, kind } = classifySource(r.referrer);
+    const prev = merged.get(label);
+    if (prev) prev.n += r.n;
+    else merged.set(label, { label, kind, n: r.n });
+  }
+  return [...merged.values()].sort((a, b) => b.n - a.n);
+}

@@ -125,13 +125,13 @@ const open = (counts.new ?? 0) + (counts.quoted ?? 0) + (counts.scheduled ?? 0);
                     <input type="hidden" name="action" value="sent" />
                     <button class="a-btn a-btn--plain a-btn--sm" type="submit">
                       <span set:html={ADMIN_ICONS.check} />
-                      Merkja sent
+                      Mark as sent
                     </button>
                   </form>
                   <form method="POST" action="/api/admin/reminder">
                     <input type="hidden" name="id" value={r.id} />
                     <input type="hidden" name="action" value="dismiss" />
-                    <button class="a-btn a-btn--quiet a-btn--sm" type="submit">Sleppa</button>
+                    <button class="a-btn a-btn--quiet a-btn--sm" type="submit">Skip</button>
                   </form>
                 </div>
               </li>

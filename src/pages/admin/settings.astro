@@ -54,13 +54,13 @@ try {
 } catch { /* migration 0001 not applied */ }
 
 const checks = [
-  { l: 'Gagnagrunnur', ok: dbOk, d: dbDetail },
+  { l: 'Database', ok: dbOk, d: dbDetail },
   { l: 'Statistics', ok: statsOk, d: statsOk ? 'Active' : 'Migration 0001 not run' },
-  { l: 'Lotulykill', ok: Boolean(ADMIN_SESSION_SECRET), d: ADMIN_SESSION_SECRET ? 'Stilltur' : 'Missing' },
+  { l: 'Session secret', ok: Boolean(ADMIN_SESSION_SECRET), d: ADMIN_SESSION_SECRET ? 'Stilltur' : 'Missing' },
   { l: 'Sign-in', ok: Boolean(adminEmail), d: adminEmail ?? 'No email address set' },
   { l: 'Password', ok: passwordInD1 || Boolean(ADMIN_PASSWORD_HASH), d: passwordInD1 ? 'Stored' : ADMIN_PASSWORD_HASH ? 'In the environment' : 'Not set' },
   { l: 'WhatsApp', ok: whatsappUrl() !== null, d: whatsappUrl() ? SITE.contact.phone : 'Not set' },
-  { l: 'Email address vefs', ok: !isPlaceholder(SITE.contact.email), d: isPlaceholder(SITE.contact.email) ? 'Not set' : String(SITE.contact.email) },
+  { l: 'Website email address', ok: !isPlaceholder(SITE.contact.email), d: isPlaceholder(SITE.contact.email) ? 'Not set' : String(SITE.contact.email) },
   { l: 'Company number', ok: !isPlaceholder(SITE.kennitala), d: isPlaceholder(SITE.kennitala) ? 'MISSING — legally required' : String(SITE.kennitala) },
 ];
 
@@ -129,7 +129,7 @@ const missing = checks.filter((c) => !c.ok).length;
                 <form method="POST" action="/api/admin/calendar-token">
                   <input type="hidden" name="action" value="revoke" />
                   <input type="hidden" name="token" value={t.token} />
-                  <button class="a-btn a-btn--danger a-btn--sm" type="submit">Afturkalla</button>
+                  <button class="a-btn a-btn--danger a-btn--sm" type="submit">Revoke</button>
                 </form>
               </div>
             </div>
@@ -151,7 +151,7 @@ const missing = checks.filter((c) => !c.ok).length;
             <input class="a-in" type="password" name="password" minlength="12" autocomplete="new-password" required />
           </label>
           <label class="a-field">
-            <span class="a-label">Endurtaktu</span>
+            <span class="a-label">Repeat</span>
             <input class="a-in" type="password" name="confirm" minlength="12" autocomplete="new-password" required />
           </label>
         </div>

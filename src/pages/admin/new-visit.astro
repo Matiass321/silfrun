@@ -14,9 +14,9 @@ const { DB } = env(Astro);
 
 const err = Astro.url.searchParams.get('e');
 const MESSAGES: Record<string, string> = {
-  name: 'Name vantar.',
+  name: 'Name is missing.',
   phone: 'Phone number missing.',
-  date: 'Date vantar.',
+  date: 'Date is missing.',
   nodb: 'The database is not connected.',
 };
 

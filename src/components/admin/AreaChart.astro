@@ -1,0 +1,251 @@
+---
+interface Point { label: string; n: number }
+
+interface Props {
+  data: Point[];
+  /** Ticks to print under the axis. Three by default; more is unreadable. */
+  ticks?: number;
+  /** Accessible name — the SVG is the only content, so it needs one. */
+  title: string;
+  height?: number;
+  /** Draw a second, quieter series behind the first (e.g. the prior period). */
+  compare?: Point[];
+  compareLabel?: string;
+}
+
+const { data, ticks = 3, title, height = 200, compare, compareLabel } = Astro.props;
+
+/**
+ * An area chart, drawn as SVG on the server.
+ *
+ * Still no charting library. The admin ships no JavaScript for the same reason
+ * the public site does not, and a chart is not a good enough reason to start —
+ * this is about sixty lines of arithmetic and it renders before the page
+ * paints, with no loading state and nothing to hydrate.
+ *
+ * The shape is a filled area under a smooth line, because the quantity IS
+ * continuous here: views accumulate through a day whether or not anybody is
+ * looking at the chart. That is the opposite of the reasoning behind the bar
+ * chart this replaces, which was right when the series had many zero days —
+ * a line dipping to zero and back reads as "quiet", which is true, where a
+ * missing bar reads as "no data", which is not.
+ */
+const W = 960;
+const H = height;
+const PAD = { t: 14, r: 8, b: 26, l: 34 };
+
+const plotW = W - PAD.l - PAD.r;
+const plotH = H - PAD.t - PAD.b;
+
+const n = Math.max(data.length, 2);
+const rawMax = Math.max(...data.map((d) => d.n), ...(compare ?? []).map((d) => d.n), 1);
+
+/**
+ * Round the ceiling up to something a person would choose.
+ *
+ * A max of exactly the peak puts the highest point on the frame's edge and
+ * makes every chart look full. Rounding to a 1/2/5 step also gives grid lines
+ * at readable numbers rather than at 29 and 58.
+ */
+function niceCeil(v: number): number {
+  if (v <= 5) return 5;
+  const mag = 10 ** Math.floor(Math.log10(v));
+  const step = [1, 2, 2.5, 5, 10].find((s) => v <= s * mag) ?? 10;
+  return step * mag;
+}
+const max = niceCeil(rawMax);
+
+const x = (i: number) => PAD.l + (i / (n - 1)) * plotW;
+const y = (v: number) => PAD.t + plotH - (v / max) * plotH;
+
+/**
+ * A monotone cubic through the points.
+ *
+ * A plain Catmull-Rom overshoots: with a spike from 0 to 29 and back the curve
+ * dips BELOW zero on the way out, drawing negative page views. Two things stop
+ * that — tangents clamped to the sign of the neighbouring slopes, and control
+ * points clamped to the plot box. The first was not enough on its own; see the
+ * note on the control points below.
+ */
+function smoothPath(pts: { x: number; y: number }[], close: boolean): string {
+  if (pts.length < 2) return '';
+  const d: string[] = [`M ${pts[0].x} ${pts[0].y}`];
+
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] ?? p2;
+
+    const clamp = (t: number, a: number, b: number) =>
+      (a < 0) === (b < 0) ? Math.max(Math.min(t, Math.max(a, b)), Math.min(a, b)) : 0;
+
+    const m1 = clamp((p2.y - p0.y) / 6, p1.y - p0.y, p2.y - p1.y);
+    const m2 = clamp((p3.y - p1.y) / 6, p2.y - p1.y, p3.y - p2.y);
+
+    /**
+     * The control points are clamped to the plot box.
+     *
+     * The tangent clamping above is not on its own enough: a lone spike
+     * — [0,0,0,50,0,0,0] — still pushed a control point 12px past the
+     * baseline, and the curve drew page views below zero. A cubic Bezier
+     * is contained by the convex hull of its four control points, and the
+     * two ends are data points that are in range by construction, so
+     * clamping the middle two puts containment beyond argument.
+     */
+    const top = PAD.t;
+    const bot = PAD.t + plotH;
+    const fit = (v: number) => Math.max(top, Math.min(bot, v));
+
+    d.push(
+      `C ${p1.x + (p2.x - p1.x) / 3} ${fit(p1.y + m1)}, ` +
+      `${p2.x - (p2.x - p1.x) / 3} ${fit(p2.y - m2)}, ` +
+      `${p2.x} ${p2.y}`
+    );
+  }
+
+  if (close) {
+    d.push(`L ${pts[pts.length - 1].x} ${PAD.t + plotH}`);
+    d.push(`L ${pts[0].x} ${PAD.t + plotH}`);
+    d.push('Z');
+  }
+  return d.join(' ');
+}
+
+const pts = data.map((d, i) => ({ x: x(i), y: y(d.n) }));
+const cmpPts = (compare ?? []).map((d, i) => ({ x: x(i), y: y(d.n) }));
+
+const line = smoothPath(pts, false);
+const area = smoothPath(pts, true);
+const cmpLine = cmpPts.length ? smoothPath(cmpPts, false) : '';
+
+/* Four grid lines, at values a person would read off. */
+const grid = [0, 0.25, 0.5, 0.75, 1].map((f) => ({ v: Math.round(max * f), y: y(max * f) }));
+
+const tickIdx = data.length
+  ? Array.from({ length: Math.min(ticks, data.length) }, (_, k) =>
+      Math.round((k / Math.max(ticks - 1, 1)) * (data.length - 1)))
+  : [];
+
+const total = data.reduce((s, d) => s + d.n, 0);
+const peak = data.reduce((b, d) => (d.n > b.n ? d : b), data[0] ?? { label: '', n: 0 });
+const last = data[data.length - 1];
+
+/* A unique id per instance, so two charts on one page do not share a gradient. */
+const uid = 'ac-' + Math.abs([...title].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7)).toString(36);
+---
+
+<figure class="ac">
+  <svg
+    class="ac__svg"
+    viewBox={`0 0 ${W} ${H}`}
+    preserveAspectRatio="none"
+    role="img"
+    aria-label={`${title}. ${total} in total, peak ${peak.n} on ${peak.label}.`}
+  >
+    <defs>
+      <linearGradient id={`${uid}-fill`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--a-accent)" stop-opacity="0.28" />
+        <stop offset="70%" stop-color="var(--a-accent)" stop-opacity="0.06" />
+        <stop offset="100%" stop-color="var(--a-accent)" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+
+    {grid.map((g) => (
+      <>
+        <line class="ac__grid" x1={PAD.l} x2={W - PAD.r} y1={g.y} y2={g.y} />
+        <text class="ac__ytick" x={PAD.l - 8} y={g.y + 3.5} text-anchor="end">{g.v}</text>
+      </>
+    ))}
+
+    {cmpLine && <path class="ac__cmp" d={cmpLine} />}
+
+    <path class="ac__area" d={area} fill={`url(#${uid}-fill)`} />
+    <path class="ac__line" d={line} />
+
+    {/* The last point is called out, because "where is it now" is the question
+        somebody opens a chart with. */}
+    {pts.length > 0 && (
+      <>
+        <circle class="ac__dotHalo" cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="7" />
+        <circle class="ac__dot" cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="3.5" />
+      </>
+    )}
+
+    {tickIdx.map((i) => (
+      <text class="ac__xtick" x={x(i)} y={H - 8}
+            text-anchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'}>
+        {data[i]?.label}
+      </text>
+    ))}
+  </svg>
+
+  <figcaption class="ac__foot">
+    <span><strong>{total}</strong> total</span>
+    {peak.n > 0 && <span>peak <strong>{peak.n}</strong> · {peak.label}</span>}
+    {last && <span>latest <strong>{last.n}</strong></span>}
+    {compareLabel && cmpLine && <span class="ac__cmpkey">{compareLabel}</span>}
+  </figcaption>
+</figure>
+
+<style>
+  .ac { margin: 0; }
+
+  /* preserveAspectRatio="none" stretches the drawing to the box, so strokes
+     would stretch with it. vector-effect keeps every line at its stated
+     width whatever the container does. */
+  .ac__svg {
+    display: block;
+    width: 100%;
+    height: var(--ac-h, 200px);
+    overflow: visible;
+  }
+
+  .ac__grid {
+    stroke: var(--a-line);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .ac__area { stroke: none; }
+
+  .ac__line {
+    fill: none;
+    stroke: var(--a-accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .ac__cmp {
+    fill: none;
+    stroke: var(--a-ink-4);
+    stroke-width: 1.5;
+    stroke-dasharray: 3 4;
+    vector-effect: non-scaling-stroke;
+    opacity: .8;
+  }
+
+  .ac__dot { fill: var(--a-accent); }
+  .ac__dotHalo { fill: var(--a-accent); opacity: .18; }
+
+  .ac__ytick,
+  .ac__xtick {
+    fill: var(--a-ink-3);
+    font-family: var(--a-mono, ui-monospace, monospace);
+    font-size: 11px;
+  }
+
+  .ac__foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--a-ink-3);
+  }
+
+  .ac__foot strong { color: var(--a-ink); font-weight: 600; }
+  .ac__cmpkey::before { content: '– – '; color: var(--a-ink-4); }
+</style>

@@ -78,9 +78,9 @@ export function isk(amount: number | null | undefined): string {
 /** "in 3 days", "yesterday" — relative to today, for list rows. */
 export function relativeDays(iso: string, from = today()): string {
   const diff = Math.round((startOfDay(iso) - startOfDay(from)) / 86400);
-  if (diff === 0) return 'í dag';
-  if (diff === 1) return 'á morgun';
-  if (diff === -1) return 'í gær';
-  if (diff > 0) return `eftir ${diff} daga`;
-  return `fyrir ${Math.abs(diff)} dögum`;
+  if (diff === 0) return 'today';
+  if (diff === 1) return 'tomorrow';
+  if (diff === -1) return 'yesterday';
+  if (diff > 0) return `in ${diff} days`;
+  return `${Math.abs(diff)} days ago`;
 }

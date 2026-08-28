@@ -38,7 +38,7 @@ const MESSAGES: Record<string, string> = {
     </p>
 
     {!DB && <p class="a-msg a-msg--err">The database is not connected.</p>}
-    {!ADMIN_SESSION_SECRET && <p class="a-msg a-msg--err">ADMIN_SESSION_SECRET vantar.</p>}
+    {!ADMIN_SESSION_SECRET && <p class="a-msg a-msg--err">ADMIN_SESSION_SECRET is not set.</p>}
     {err && MESSAGES[err] && <p class="a-msg a-msg--err">{MESSAGES[err]}</p>}
 
     <form class="a-form" method="POST" action="/api/admin/setup">

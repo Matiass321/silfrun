@@ -91,7 +91,7 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
     {current && (
       <section class="a-card md__edit">
         <div class="a-row__top">
-          <h2 class="a-sec__h" style="margin:0">Breyta</h2>
+          <h2 class="a-sec__h" style="margin:0">Edit</h2>
           <a class="a-btn a-btn--quiet a-btn--sm" href="/admin/media/">Close</a>
         </div>
 
@@ -175,7 +175,7 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
         <form method="POST" action="/api/admin/media" class="md__del">
           <input type="hidden" name="action" value="delete" />
           <input type="hidden" name="id" value={current.id} />
-          <button class="a-btn a-btn--danger a-btn--sm" type="submit">Delete varanlega</button>
+          <button class="a-btn a-btn--danger a-btn--sm" type="submit">Delete permanently</button>
         </form>
       </section>
     )}
@@ -197,7 +197,7 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
                   ) : (
                     <img src={mediaUrl(m.key)} alt={m.alt_is ?? ''} loading="lazy" decoding="async" />
                   )}
-                  {m.kind === 'video' && <span class="md__vid">Myndband</span>}
+                  {m.kind === 'video' && <span class="md__vid">Video</span>}
                 </span>
 
                 <span class="md__foot">

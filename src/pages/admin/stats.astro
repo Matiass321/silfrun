@@ -1,12 +1,13 @@
 ---
 import { ADMIN_ICONS } from '~/data/admin-icons';
 import Admin from '~/layouts/Admin.astro';
-import Sparkline from '~/components/admin/Sparkline.astro';
+import AreaChart from '~/components/admin/AreaChart.astro';
 import BarList from '~/components/admin/BarList.astro';
 import { requireAdmin, env } from '~/lib/admin-guard';
 import {
-  totals, series, topPages, topReferrers, splitBy, viewsOf,
-  type DayCount, type LabelCount,
+  totals, series, topPages, splitBy, viewsOf,
+  activeNow, todayByKind, hourlyViews, sources,
+  type DayCount, type LabelCount, type Source,
 } from '~/lib/analytics';
 import { SLUGS } from '~/i18n/routes';
 
@@ -24,7 +25,10 @@ let t: Record<string, number> = {};
 let viewSeries: DayCount[] = [];
 let waSeries: DayCount[] = [];
 let pages: LabelCount[] = [];
-let refs: LabelCount[] = [];
+let srcs: Source[] = [];
+let live = 0;
+let today: Record<string, number> = {};
+let hourly: { hour: string; n: number }[] = [];
 let devices: LabelCount[] = [];
 let countries: LabelCount[] = [];
 let contactViews = 0;
@@ -39,17 +43,21 @@ if (!DB) {
   dbError = 'The database is not connected.';
 } else {
   try {
-    [t, viewSeries, waSeries, pages, refs, devices, countries, contactViews, quoteViews] =
+    [t, viewSeries, waSeries, pages, srcs, devices, countries, contactViews, quoteViews,
+     live, today, hourly] =
       await Promise.all([
         totals(DB, days),
         series(DB, 'view', days),
         series(DB, 'whatsapp', days),
         topPages(DB, days),
-        topReferrers(DB, days),
+        sources(DB, days),
         splitBy(DB, 'device', days),
         splitBy(DB, 'country', days),
         viewsOf(DB, contactPaths, days),
         viewsOf(DB, quotePaths, days),
+        activeNow(DB, 5),
+        todayByKind(DB),
+        hourlyViews(DB, 24),
       ]);
   } catch (e) {
     dbError = `Statistics unavailable. Run the latest migration on the database. (${String(e).slice(0, 90)})`;
@@ -69,6 +77,24 @@ const contacts = wa + (t.messenger ?? 0) + (t.call ?? 0) + (t.email ?? 0);
  * than implying a per-person rate the data cannot support.
  */
 const pct = (n: number) => (views > 0 ? ((n / views) * 100).toFixed(1) : '0.0');
+
+const calls = t.call ?? 0;
+const emails = t.email ?? 0;
+const messenger = t.messenger ?? 0;
+
+/* The charts want a { label, n } shape; the series give { day, n }. */
+const asPoints = (rows: DayCount[]) => rows.map((r) => ({ label: r.day.slice(5).replace('-', '.'), n: r.n }));
+const hourPoints = hourly.map((h) => ({ label: h.hour.slice(11) + ':00', n: h.n }));
+
+/** Views today, for the headline number. */
+const todayViews = today.view ?? 0;
+
+const CHANNELS = [
+  { l: 'WhatsApp', n: wa },
+  { l: 'Phone', n: calls },
+  { l: 'Email', n: emails },
+  { l: 'Messenger', n: messenger },
+].filter((c) => c.n > 0 || c.l !== 'Messenger');
 
 const RANGES = [
   { d: 7, l: '7 days' },
@@ -132,38 +158,65 @@ const cleared = clearedRaw !== null ? Number(clearedRaw) : null;
     )}
 
     <div class="a-grid a-grid--2">
-      <div class="a-card a-stat">
-        <span class="a-stat__n">{views}</span>
-        <span class="a-stat__l">Flettingar</span>
+      <div class="a-card a-stat a-stat--live">
+        <span class="a-stat__n">
+          {live > 0 && <span class="pulse" aria-hidden="true"></span>}{live}
+        </span>
+        <span class="a-stat__l">Active now</span>
+        <span class="a-stat__d">views in the last 5 min</span>
       </div>
       <div class="a-card a-stat">
-        <span class="a-stat__n">{wa}</span>
-        <span class="a-stat__l">WhatsApp</span>
-        <span class="a-stat__d">{pct(wa)}% af flettingum</span>
+        <span class="a-stat__n">{todayViews}</span>
+        <span class="a-stat__l">Today</span>
+        <span class="a-stat__d">views since midnight</span>
+      </div>
+      <div class="a-card a-stat">
+        <span class="a-stat__n">{views}</span>
+        <span class="a-stat__l">Views</span>
+        <span class="a-stat__d">last {days} days</span>
       </div>
       <div class="a-card a-stat">
         <span class="a-stat__n">{contacts}</span>
-        <span class="a-stat__l">All contacts</span>
-        <span class="a-stat__d">{pct(contacts)}%</span>
+        <span class="a-stat__l">Contacts</span>
+        <span class="a-stat__d">{pct(contacts)}% of views</span>
       </div>
+    </div>
+
+    {/* Every channel, each with its own number — "all contacts" hides which
+        one people actually reach for, which is the thing worth knowing. */}
+    <div class="a-grid a-grid--2 a-sec">
+      {CHANNELS.map((ch) => (
+        <div class="a-card a-stat">
+          <span class="a-stat__n">{ch.n}</span>
+          <span class="a-stat__l">{ch.l}</span>
+          <span class="a-stat__d">{pct(ch.n)}% of views</span>
+        </div>
+      ))}
       <div class="a-card a-stat">
         <span class="a-stat__n">{bookings}</span>
         <span class="a-stat__l">Bookings</span>
-        <span class="a-stat__d">{pct(bookings)}%</span>
+        <span class="a-stat__d">{pct(bookings)}% of views</span>
       </div>
     </div>
 
     <section class="a-sec">
+      <h2 class="a-sec__h">Last 24 hours</h2>
+      <div class="a-card">
+        <AreaChart data={hourPoints} title="Views per hour, last 24 hours" height={170} ticks={4} />
+      </div>
+    </section>
+
+    <section class="a-sec">
       <h2 class="a-sec__h">Views per day</h2>
       <div class="a-card">
-        <Sparkline data={viewSeries} label="flettingar" />
+        <AreaChart data={asPoints(viewSeries)} title="Views per day" height={230} />
       </div>
     </section>
 
     <section class="a-sec">
       <h2 class="a-sec__h">WhatsApp clicks per day</h2>
       <div class="a-card">
-        <Sparkline data={waSeries} label="smellir" />
+        <AreaChart data={asPoints(waSeries)} title="WhatsApp clicks per day" height={150} />
       </div>
     </section>
 
@@ -171,7 +224,7 @@ const cleared = clearedRaw !== null ? Number(clearedRaw) : null;
       <h2 class="a-sec__h">The path to an enquiry</h2>
       <div class="a-card fn">
         {[
-          { l: 'Flettingar', n: views },
+          { l: 'Views', n: views },
           { l: 'Reached “Request a quote”', n: quoteViews },
           { l: 'Reached “Contact”', n: contactViews },
           { l: 'Clicked a contact channel', n: contacts },
@@ -197,12 +250,18 @@ const cleared = clearedRaw !== null ? Number(clearedRaw) : null;
     <div class="a-grid a-grid--wide a-sec">
       <div class="a-card">
         <h2 class="a-sec__h">Most-viewed pages</h2>
-        <BarList items={pages} labels={PAGE_LABEL} empty="Engar flettingar enn." />
+        <BarList items={pages} labels={PAGE_LABEL} empty="No views yet." />
       </div>
 
       <div class="a-card">
         <h2 class="a-sec__h">Where they came from</h2>
-        <BarList items={refs} empty="No external referrals yet." />
+        <BarList
+          items={srcs.map((s) => ({ label: s.label, n: s.n }))}
+          empty="No traffic recorded yet."
+        />
+        <p class="src__note">
+          Direct covers a typed address and any app that strips the referrer.
+        </p>
       </div>
 
       <div class="a-card">
@@ -254,6 +313,27 @@ const cleared = clearedRaw !== null ? Number(clearedRaw) : null;
 </Admin>
 
 <style>
+  .a-stat--live .a-stat__n { display: flex; align-items: center; gap: 8px; }
+
+  .pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--a-good);
+    box-shadow: 0 0 0 0 var(--a-good);
+    animation: pulse 2s ease-out infinite;
+  }
+
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(23, 80, 62, .45); }
+    70%  { box-shadow: 0 0 0 9px rgba(23, 80, 62, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(23, 80, 62, 0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+
+  .src__note { margin-top: 10px; font-size: 12px; color: var(--a-ink-3); }
+
   .rs { display: flex; flex-direction: column; gap: 14px; margin: 20px 0 28px; }
   .rs__title { font-size: 18px; margin: 0; color: var(--a-ink); }
   .rs__body { font-size: 14.5px; line-height: 1.55; color: var(--a-ink-2); }

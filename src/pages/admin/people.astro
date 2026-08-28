@@ -76,7 +76,7 @@ const repeat = all.filter((c) => (counts[c.id] ?? 0) > 1).length;
       </div>
       <div class="a-card a-stat">
         <span class="a-stat__n">{repeat}</span>
-        <span class="a-stat__l">Endurteknir</span>
+        <span class="a-stat__l">Repeat customers</span>
       </div>
       <div class="a-card a-stat">
         <span class="a-stat__n">{subs}</span>
@@ -90,11 +90,11 @@ const repeat = all.filter((c) => (counts[c.id] ?? 0) > 1).length;
 
     <form class="pp__search a-sec" method="GET" action="/admin/people/" role="search">
       <label class="a-field pp__f">
-        <span class="a-hide">Leita</span>
+        <span class="a-hide">Search</span>
         <input class="a-in" type="search" name="q" value={q} placeholder="Name, phone or area…" />
       </label>
-      <button class="a-btn a-btn--plain" type="submit">Leita</button>
-      {q && <a class="a-btn a-btn--quiet" href="/admin/people/">Hreinsa</a>}
+      <button class="a-btn a-btn--plain" type="submit">Search</button>
+      {q && <a class="a-btn a-btn--quiet" href="/admin/people/">Clear</a>}
     </form>
 
     {rows.length === 0 ? (
