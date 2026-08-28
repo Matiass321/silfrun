@@ -20,12 +20,15 @@ interface Props {
 const { locale, pageKey, alternates } = Astro.props;
 const s = t(locale);
 
+/** Every page, in one place. The menu is the only navigation now. */
 const links: { key: PageKey; label: string }[] = [
   { key: 'services', label: s.nav.services },
   { key: 'process',  label: s.nav.process },
   { key: 'results',  label: s.nav.work },
   { key: 'areas',    label: s.nav.areas },
   { key: 'about',    label: s.nav.about },
+  { key: 'faq',      label: s.nav.faq },
+  { key: 'contact',  label: s.nav.contact },
 ];
 
 const others = LOCALES.filter((l) => l !== locale);
@@ -58,22 +61,6 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
     <a class="head__brand" href={path('home', locale)} aria-label={s.nav.home}>
       <Logo foil />
     </a>
-
-    <nav class="head__nav" aria-label={s.nav.menu}>
-      <ul class="head__list">
-        {links.map((l) => (
-          <li>
-            <a
-              class:list={['head__link', { 'head__link--current': l.key === pageKey }]}
-              href={path(l.key, locale)}
-              aria-current={l.key === pageKey ? 'page' : undefined}
-            >
-              {l.label}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
 
     <div class="head__end">
       <ul class="head__langs" aria-label={s.nav.language}>
@@ -112,12 +99,6 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
                   >{l.label}</a>
                 </li>
               ))}
-              <li>
-                <a class="menu__link" href={path('faq', locale)}>{s.nav.faq}</a>
-              </li>
-              <li>
-                <a class="menu__link" href={path('contact', locale)}>{s.nav.contact}</a>
-              </li>
             </ul>
           </nav>
         </div>
@@ -182,6 +163,15 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
   }
 
   .head__inner {
+    /* Its own stacking context, above the veil.
+
+       .head__veil animates opacity and carries a backdrop-filter, so it is
+       promoted to a compositing layer. Without this the bar's contents were
+       rasterised into that same layer and resampled every frame as it faded
+       — which is why the quote button went soft on scroll. */
+    position: relative;
+    z-index: 1;
+
     display: flex;
     align-items: center;
     gap: var(--space-500);
@@ -199,49 +189,11 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
     inset: -11px -6px;
   }
 
-  .head__nav { margin-inline-start: auto; }
-
-  .head__list {
-    display: flex;
-    align-items: center;
-    gap: var(--space-400);
-  }
-
   /**
    * Nav items are micro-caps, and the active state is a 1px lit rule that
    * scales in from the left — never a filled tab or a colour swap.
    */
-  .head__link {
-    position: relative;
-    display: inline-block;
-    padding-block: var(--space-100);
-    font: var(--type-eyebrow);
-    letter-spacing: var(--tracking-eyebrow);
-    text-transform: uppercase;
-    color: var(--text-muted);
-    text-decoration: none;
-    transition: color var(--dur-fast) var(--ease-glide);
-  }
 
-  .head__link::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 1px;
-    background: var(--text-primary);
-    opacity: 0;
-    transform: scaleX(.4);
-    transform-origin: left;
-    transition: opacity var(--dur-base) var(--ease-settle), transform var(--dur-base) var(--ease-settle);
-  }
-
-  .head__link:hover { color: var(--text-primary); }
-  .head__link:hover::after { opacity: .55; transform: scaleX(1); }
-
-  .head__link--current { color: var(--text-primary); }
-  .head__link--current::after { opacity: 1; transform: scaleX(1); }
 
   .head__end {
     display: flex;
@@ -360,12 +312,9 @@ const LABEL: Record<Locale, string> = { is: 'IS', en: 'EN' };
   .menu__link:hover { color: var(--text-primary); background: var(--surface-hover); }
   .menu__link--current { color: var(--text-primary); }
 
-  @media (max-width: 64rem) {
-    .head__nav { display: none; }
-    .menu { display: block; }
-    .head__end { margin-inline-start: auto; }
-    .head__inner { gap: var(--space-200); }
-  }
+  /* The menu is the navigation at every width now, so it is never hidden. */
+  .menu { display: block; }
+  .head__end { margin-inline-start: auto; }
 
   /* The contact bar carries the actions on a phone, and the hero carries them
      again one screen up. A third copy beside the menu button was noise. It

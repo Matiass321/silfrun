@@ -10,7 +10,7 @@ import { t, alternates } from '~/i18n';
 import { path, areaPath } from '~/i18n/routes';
 import { slotMap, bySlot, galleryPairs, type MediaRow } from '~/lib/media';
 import { env } from '~/lib/admin-guard';
-import { HOME, STEPS, ASSURANCES, LIMITS, FIELDS } from '~/data/homepage';
+import { HOME, STEPS, FIELDS } from '~/data/homepage';
 
 /**
  * Rendered per request, not at build.
@@ -81,7 +81,6 @@ Astro.response.headers.set(
       </div>
 
       <div class="wrap hero__inner">
-        <p class="eyebrow hero__eyebrow">{c.heroEyebrow}</p>
         <h1 class="hero__title">{c.heroTitle}</h1>
         <p class="hero__lead">{c.heroLead}</p>
 
@@ -95,19 +94,6 @@ Astro.response.headers.set(
         </div>
       </div>
 
-    </section>
-
-    {/* Three checkable facts, on their own quiet band under the photograph
-        rather than printed across the bottom of it. */}
-    <section class="assure">
-      <ul class="wrap assure__list reveal">
-        {ASSURANCES.map((a) => (
-          <li class="assure__item">
-            <h2 class="assure__title">{a.title[locale]}</h2>
-            <p class="assure__body">{a.body[locale]}</p>
-          </li>
-        ))}
-      </ul>
     </section>
 
     {/* ══ 2 · Proof ══════════════════════════════════════════════════ */}
@@ -158,46 +144,6 @@ Astro.response.headers.set(
             </li>
           ))}
         </ul>
-      </div>
-    </section>
-
-    {/* ══ 4 · The material decides ═══════════════════════════════════ */}
-    <section class="section section--deep s-care">
-      <div class="wrap care">
-        <div class="care__text reveal">
-          <h2>{c.careTitle}</h2>
-          <p class="lead">{c.careLead}</p>
-          <p><a class="link-arrow" href={path('process', locale)}>{c.careCta}</a></p>
-        </div>
-
-        <div class="care__shot reveal">
-          <MediaSlot
-            slot="home-fibre"
-            locale={locale}
-            media={media['home-fibre']}
-            ratio="4 / 5"
-            label={locale === 'is'
-              ? 'Nærmynd af ló í ská-birtu'
-              : 'Macro of pile in raking light'}
-          />
-        </div>
-      </div>
-    </section>
-
-    {/* ══ 5 · Limits ═════════════════════════════════════════════════ *
-      * Three lines and a link. The full stain and fibre registers moved to
-      * the stains page, where somebody looking for them will look — on the
-      * homepage they were a ten-row table nobody had asked for yet.
-      */}
-    <section class="section section--tight s-limits">
-      <div class="wrap">
-        <h2 class="only reveal">{c.limitsTitle}</h2>
-
-        <ul class="limits reveal">
-          {LIMITS.map((l) => <li class="limits__item">{l[locale]}</li>)}
-        </ul>
-
-        <p class="reveal"><a class="link-arrow" href={path('stains', locale)}>{c.limitsCta}</a></p>
       </div>
     </section>
 
@@ -350,22 +296,6 @@ Astro.response.headers.set(
 
   /* ---- three assurances ---- */
 
-  .assure {
-    padding-block: var(--space-600);
-    border-block-end: 1px solid var(--edge-quiet);
-  }
-
-  .assure__list { display: grid; gap: var(--space-300); }
-
-  .assure__title {
-    font-family: var(--font-display);
-    font-size: var(--text-md);
-    color: var(--text-primary);
-    margin: 0 0 var(--space-050);
-  }
-
-  .assure__body { font-size: var(--text-sm); color: var(--text-muted); }
-
   /* ------------------------------------------------------------------ *
    * One grid for every row of four on the page — photographs, service
    * cards and steps all sit on the same rhythm rather than each inventing
@@ -403,24 +333,9 @@ Astro.response.headers.set(
    * Care — the one section still making an argument, so the one that
    * keeps a lead paragraph.
    * ------------------------------------------------------------------ */
-  .care { display: grid; gap: var(--space-500); align-items: center; }
-  .care__text { display: flex; flex-direction: column; gap: var(--space-250); }
-
   /* ------------------------------------------------------------------ *
    * Limits — three lines, no explanation under each.
    * ------------------------------------------------------------------ */
-  .limits { display: flex; flex-direction: column; margin-block-end: var(--space-400); }
-
-  .limits__item {
-    padding-block: var(--space-300);
-    border-block-start: 1px solid var(--edge-quiet);
-    font-family: var(--font-display);
-    font-size: var(--display-xs);
-    color: var(--text-primary);
-    text-wrap: balance;
-  }
-
-  .limits__item:last-child { border-block-end: 1px solid var(--edge-quiet); }
 
   /* ------------------------------------------------------------------ *
    * Areas
@@ -472,11 +387,9 @@ Astro.response.headers.set(
    * Wide screens
    * ------------------------------------------------------------------ */
   @media (min-width: 48rem) {
-    .assure__list { grid-template-columns: repeat(3, 1fr); gap: var(--space-500); }
     .grid--4 { grid-template-columns: repeat(2, 1fr); }
     .grid--2 { grid-template-columns: repeat(2, 1fr); }
     .limits { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-400); }
-    .limits__item:last-child { border-block-end: 0; }
   }
 
   @media (min-width: 64rem) {

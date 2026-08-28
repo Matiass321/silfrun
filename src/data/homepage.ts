@@ -92,7 +92,6 @@ export const LIMITS: Bi[] = [
 ];
 
 export const HOME: Record<Locale, {
-  heroEyebrow: string;
   heroTitle: string;
   heroLead: string;
   heroPrimary: string;
@@ -104,22 +103,14 @@ export const HOME: Record<Locale, {
 
   fieldsTitle: string;
 
-  careTitle: string;
-  careLead: string;
-  careCta: string;
-
-  limitsTitle: string;
-  limitsCta: string;
-
   stepsTitle: string;
 
   areasTitle: string;
   areasCta: string;
 }> = {
   is: {
-    heroEyebrow: 'Höfuðborgarsvæðið',
-    heroTitle: 'Við prófum efnið áður en nokkuð snertir það.',
-    heroLead: 'Sófar, teppi og gólfteppi.',
+    heroTitle: 'Sófar og teppi, hreinsuð heima.',
+    heroLead: 'Höfuðborgarsvæðið. Við prófum efnið fyrst.',
     heroPrimary: 'Fá tilboð',
     heroSecondary: 'Senda mynd',
 
@@ -129,13 +120,6 @@ export const HOME: Record<Locale, {
 
     fieldsTitle: 'Hvað við hreinsum.',
 
-    careTitle: 'Efnið ræður aðferðinni.',
-    careLead: 'Ull, silki og viskósa fá hvert sína aðferð. Við lesum merkimiðann og prófum efnið.',
-    careCta: 'Sjá ferlið',
-
-    limitsTitle: 'Það sem við gerum ekki.',
-    limitsCta: 'Fer bletturinn úr?',
-
     stepsTitle: 'Fjögur skref.',
 
     areasTitle: 'Höfuðborgarsvæðið.',
@@ -143,9 +127,8 @@ export const HOME: Record<Locale, {
   },
 
   en: {
-    heroEyebrow: 'Greater Reykjavík',
-    heroTitle: 'We test the fabric before anything touches it.',
-    heroLead: 'Sofas, rugs and carpets.',
+    heroTitle: 'Sofas and rugs, cleaned at home.',
+    heroLead: 'Greater Reykjavík. We test the fabric first.',
     heroPrimary: 'Request a quote',
     heroSecondary: 'Send a photo',
 
@@ -154,13 +137,6 @@ export const HOME: Record<Locale, {
     proofCta: 'See more work',
 
     fieldsTitle: 'What we clean.',
-
-    careTitle: 'The material decides the method.',
-    careLead: 'Wool, silk and viscose each get their own. We read the label and test the fabric.',
-    careCta: 'See the process',
-
-    limitsTitle: 'What we will not do.',
-    limitsCta: 'Will the stain come out?',
 
     stepsTitle: 'Four steps.',
 
