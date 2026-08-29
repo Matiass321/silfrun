@@ -1,7 +1,7 @@
 ---
 import Admin from '~/layouts/Admin.astro';
 import { requireAdmin, env } from '~/lib/admin-guard';
-import { listAll, SLOTS, mediaUrl, type MediaRow } from '~/lib/media';
+import { listAll, SLOTS, mediaUrl, slotMeta, type MediaRow } from '~/lib/media';
 import { ADMIN_ICONS } from '~/data/admin-icons';
 
 export const prerender = false;
@@ -38,13 +38,39 @@ if (!DB) {
   }
 }
 
-const placed = items.filter((m) => m.slot).length;
 const totalMb = (items.reduce((n, m) => n + m.bytes, 0) / 1048576).toFixed(1);
 const current = editing ? items.find((m) => m.id === editing) : null;
 
-/** Which slots still have nothing in them — the actual to-do list. */
-const filledSlots = new Set(items.map((m) => m.slot).filter(Boolean));
-const emptySlots = SLOTS.filter((s) => !filledSlots.has(s.key));
+/**
+ * The page is organised by SLOT, not by file.
+ *
+ * The library was a flat grid of thumbnails and the slots were a separate
+ * to-do list of names, so the one question somebody actually has — what is on
+ * my website right now, and where — could only be answered by opening every
+ * photograph in turn. Every frame the site can show is listed here with its
+ * contents in it.
+ */
+const bySlotKey = new Map<string, MediaRow[]>();
+for (const m of items) {
+  if (!m.slot) continue;
+  const list = bySlotKey.get(m.slot) ?? [];
+  list.push(m);
+  bySlotKey.set(m.slot, list);
+}
+for (const list of bySlotKey.values()) list.sort((a, b) => a.position - b.position || a.id - b.id);
+
+const slotsFilled = SLOTS.filter((sl) => (bySlotKey.get(sl.key)?.length ?? 0) > 0).length;
+const unplaced = items.filter((m) => !m.slot);
+
+/** Which slots each file sits in, so the library can say so on the thumbnail. */
+const placementsOf = (key: string) =>
+  items.filter((m) => m.key === key && m.slot).map((m) => slotMeta(m.slot!)?.label ?? m.slot!);
+
+/** Highlight the slot just changed, so a save is visibly attached to a place. */
+const justSaved = Astro.url.searchParams.get('slot');
+
+/** A photo needing alt text is a real to-do; count it where it can be seen. */
+const missingAlt = items.filter((m) => m.slot && !m.alt_is).length;
 
 const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.round(n / 1024) + ' kB');
 ---
@@ -54,7 +80,10 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
     <header class="a-head">
       <div>
         <h1 class="a-h1">Photos</h1>
-        <p class="a-sub">{items.length} files · {placed} placed · {totalMb} MB</p>
+        <p class="a-sub">
+          {slotsFilled} of {SLOTS.length} places filled · {items.length} files · {totalMb} MB
+          {missingAlt > 0 && <> · <strong class="md__warn">{missingAlt} missing alt text</strong></>}
+        </p>
       </div>
     </header>
 
@@ -180,60 +209,123 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
       </section>
     )}
 
-    {/* ── The library ─────────────────────────────────────────────── */}
+    {/* ── Where the photographs go ────────────────────────────────── */}
     <section class="a-sec">
-      <h2 class="a-sec__h">Library</h2>
+      <h2 class="a-sec__h">Where photos appear on the site</h2>
+
+      <ul class="sl__grid">
+        {SLOTS.map((sl) => {
+          const held = bySlotKey.get(sl.key) ?? [];
+          const usable = items.filter((m) => sl.kinds.includes(m.kind));
+          return (
+            <li class:list={['sl', { 'sl--just': justSaved === sl.key }]}>
+              <div class="sl__frame" style={`--sl-ratio: ${sl.ratio}`}>
+                {held.length ? (
+                  held[0].kind === 'video' ? (
+                    <video src={mediaUrl(held[0].key)} muted playsinline preload="metadata"></video>
+                  ) : (
+                    <img src={mediaUrl(held[0].key)} alt={held[0].alt_is ?? ''} loading="lazy" decoding="async" />
+                  )
+                ) : (
+                  <span class="sl__empty">{sl.ratio}</span>
+                )}
+                {held.length > 1 && <span class="sl__count">+{held.length - 1}</span>}
+              </div>
+
+              <div class="sl__body">
+                <p class="sl__name">{sl.label}</p>
+                <p class="sl__where">{sl.where}</p>
+
+                {held.length === 0 && sl.brief && <p class="sl__brief">{sl.brief}</p>}
+
+                {held.length > 0 && !held[0].alt_is && (
+                  <p class="sl__alert">Needs alt text before it is fair to publish.</p>
+                )}
+
+                <div class="sl__acts">
+                  {usable.length > 0 && (
+                    <details class="sl__pick">
+                      <summary class="a-btn a-btn--quiet a-btn--sm">
+                        {held.length ? (sl.multi ? 'Add another' : 'Replace') : 'Choose photo'}
+                      </summary>
+                      <div class="sl__panel">
+                        <p class="sl__panelh">Tap a photo to put it here</p>
+                        <ul class="sl__choices">
+                          {usable.map((m) => (
+                            <li>
+                              <form method="POST" action="/api/admin/media">
+                                <input type="hidden" name="action" value="assign" />
+                                <input type="hidden" name="id" value={m.id} />
+                                <input type="hidden" name="slot" value={sl.key} />
+                                <button class="sl__choice" type="submit" title={m.alt_is ?? ''}>
+                                  {m.kind === 'video' ? (
+                                    <video src={mediaUrl(m.key)} muted playsinline preload="metadata"></video>
+                                  ) : (
+                                    <img src={mediaUrl(m.key)} alt="" loading="lazy" decoding="async" />
+                                  )}
+                                </button>
+                              </form>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </details>
+                  )}
+
+                  {held.map((m) => (
+                    <>
+                      <a class="a-btn a-btn--plain a-btn--sm" href={`/admin/media/?edit=${m.id}`}>Edit</a>
+                      <form method="POST" action="/api/admin/media">
+                        <input type="hidden" name="action" value="unassign" />
+                        <input type="hidden" name="id" value={m.id} />
+                        <button class="a-btn a-btn--plain a-btn--sm" type="submit">Remove</button>
+                      </form>
+                    </>
+                  ))}
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+
+    {/* ── Everything uploaded ─────────────────────────────────────── */}
+    <section class="a-sec">
+      <h2 class="a-sec__h">
+        Library
+        {unplaced.length > 0 && <span class="a-sub"> · {unplaced.length} not used anywhere</span>}
+      </h2>
 
       {items.length === 0 ? (
         <p class="a-empty">No photographs yet. Upload the first one above.</p>
       ) : (
         <ul class="md__grid">
-          {items.map((m) => (
-            <li>
-              <a class="md__item" href={`/admin/media/?edit=${m.id}`}>
-                <span class="md__thumb">
-                  {m.kind === 'video' ? (
-                    <video src={mediaUrl(m.key)} muted playsinline preload="metadata"></video>
-                  ) : (
-                    <img src={mediaUrl(m.key)} alt={m.alt_is ?? ''} loading="lazy" decoding="async" />
-                  )}
-                  {m.kind === 'video' && <span class="md__vid">Video</span>}
-                </span>
-
-                <span class="md__foot">
-                  <span class:list={['a-pill', m.slot ? 'a-pill--scheduled' : 'a-pill--done']}>
-                    {m.slot ? SLOTS.find((s) => s.key === m.slot)?.label ?? m.slot : 'Unplaced'}
+          {items.filter((m, i, all) => all.findIndex((o) => o.key === m.key) === i).map((m) => {
+            const where = placementsOf(m.key);
+            return (
+              <li>
+                <a class="md__item" href={`/admin/media/?edit=${m.id}`}>
+                  <span class="md__thumb">
+                    {m.kind === 'video' ? (
+                      <video src={mediaUrl(m.key)} muted playsinline preload="metadata"></video>
+                    ) : (
+                      <img src={mediaUrl(m.key)} alt={m.alt_is ?? ''} loading="lazy" decoding="async" />
+                    )}
+                    {m.kind === 'video' && <span class="md__vid">Video</span>}
                   </span>
-                  {m.slot && !m.alt_is && <span class="a-pill a-pill--quoted">Alt text missing</span>}
-                </span>
-              </a>
-            </li>
-          ))}
+                  <span class="md__where">
+                    {where.length
+                      ? where.map((w) => <span class="md__tag">{w}</span>)
+                      : <span class="md__tag md__tag--none">Not used</span>}
+                  </span>
+                </a>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
-
-    {/* ── What is still missing ───────────────────────────────────── */}
-    {emptySlots.length > 0 && (
-      <section class="a-sec">
-        <h2 class="a-sec__h">
-          Empty slots
-          <span class="a-badge">{emptySlots.length}</span>
-        </h2>
-        <p class="md__note">
-          These slots are still empty and show marked plates on the site. See
-          <code>docs/photography.md</code> for how the photographs should be shot.
-        </p>
-        <ul class="md__slots">
-          {emptySlots.map((s) => (
-            <li class="md__slot">
-              <span class="md__slotname">{s.label}</span>
-              <span class="md__slotratio">{s.ratio.replace(' / ', ':')}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-    )}
   </div>
 </Admin>
 
@@ -324,24 +416,137 @@ const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math
     font-weight: 600;
   }
 
-  .md__foot { display: flex; flex-wrap: wrap; gap: 4px; }
+  /* ------------------------------------------------------------------ *
+   * The slot grid — one card per frame the website can show.
+   * ------------------------------------------------------------------ */
 
-  /* ---- empty slots ---- */
-
-  .md__note { font-size: 13.5px; color: var(--a-ink-2); line-height: 1.55; margin-bottom: 10px; }
-  .md__note code { font-family: var(--a-mono); font-size: 12.5px; color: var(--a-accent); }
-
-  .md__slots { display: flex; flex-direction: column; gap: 1px; background: var(--a-line); border-radius: var(--a-r); overflow: hidden; }
-
-  .md__slot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 11px 13px;
-    background: var(--a-surface);
+  .sl__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
-  .md__slotname { font-size: 14px; }
-  .md__slotratio { font-family: var(--a-mono); font-size: 11.5px; color: var(--a-ink-3); }
+  @media (min-width: 40rem) { .sl__grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 68rem) { .sl__grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .sl {
+    display: flex;
+    flex-direction: column;
+    background: var(--a-surface);
+    border: 1px solid var(--a-line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  /* The slot just changed gets a ring, so a save is attached to a place
+     rather than being a message at the top of a long page. */
+  .sl--just { outline: 2px solid var(--a-accent); outline-offset: -2px; }
+
+  .sl__frame {
+    position: relative;
+    aspect-ratio: var(--sl-ratio, 3 / 2);
+    background:
+      repeating-linear-gradient(135deg, rgba(20,24,28,.05) 0 1px, transparent 1px 9px),
+      var(--a-inset);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sl__frame img,
+  .sl__frame video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .sl__empty { font-family: var(--a-mono); font-size: 12px; color: var(--a-ink-4); }
+
+  .sl__count {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(20,24,28,.78);
+    color: #fff;
+    font-family: var(--a-mono);
+    font-size: 11px;
+  }
+
+  .sl__body { display: flex; flex-direction: column; gap: 4px; padding: 12px; }
+  .sl__name { font-weight: 600; font-size: 14.5px; color: var(--a-ink); }
+  .sl__where { font-size: 12.5px; color: var(--a-ink-3); }
+
+  .sl__brief {
+    margin-top: 4px;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--a-ink-3);
+  }
+
+  .sl__alert { margin-top: 4px; font-size: 12.5px; color: var(--a-bad); }
+
+  .sl__acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+
+  /* ---- the picker ---- */
+
+  .sl__pick { position: relative; }
+  .sl__pick summary { list-style: none; cursor: pointer; }
+  .sl__pick summary::-webkit-details-marker { display: none; }
+  .sl__pick summary::marker { content: ''; }
+
+  .sl__panel {
+    margin-top: 8px;
+    padding: 10px;
+    background: var(--a-inset);
+    border: 1px solid var(--a-line);
+    border-radius: 8px;
+  }
+
+  .sl__panelh {
+    font-size: 12px;
+    color: var(--a-ink-3);
+    margin-bottom: 8px;
+  }
+
+  .sl__choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 6px;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+
+  /* A whole-thumbnail button: the target is the picture, which is the thing
+     somebody is actually aiming at. */
+  .sl__choice {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 1px solid var(--a-line);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--a-sunken);
+    cursor: pointer;
+  }
+
+  .sl__choice img,
+  .sl__choice video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sl__choice:hover { border-color: var(--a-accent); }
+  .sl__choice:focus-visible { outline: 2px solid var(--a-accent); outline-offset: 2px; }
+
+  /* ---- library tags ---- */
+
+  .md__where { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; }
+
+  .md__tag {
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--a-good-soft);
+    color: var(--a-good);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .md__tag--none { background: var(--a-sunken); color: var(--a-ink-3); }
+
+  .md__warn { color: var(--a-bad); }
 </style>

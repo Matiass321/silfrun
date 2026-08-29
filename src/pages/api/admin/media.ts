@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { requireAdmin, env } from '~/lib/admin-guard';
-import { hashKey, dimensions, ACCEPTED, MAX_BYTES, isSlot, type MediaKind } from '~/lib/media';
+import { hashKey, dimensions, ACCEPTED, MAX_BYTES, isSlot, slotMeta, type MediaKind } from '~/lib/media';
 
 export const prerender = false;
 
@@ -39,6 +39,68 @@ export const POST: APIRoute = async (context) => {
       await DB.prepare('DELETE FROM media WHERE id = ?').bind(id).run();
       if (MEDIA && (others?.n ?? 0) === 0) await MEDIA.delete(row.key);
     }
+    return back('?saved=1');
+  }
+
+  /* ---- assign a library file to a slot ---------------------------- */
+  /**
+   * "Put this photograph here", as one tap from the slot itself.
+   *
+   * Placing used to mean opening the file, finding the right entry in a
+   * seventeen-option select, and saving. This is the same operation from the
+   * other end, which is the end somebody actually starts from — they are
+   * looking at an empty frame on the page and want something in it.
+   *
+   * A single slot is exclusive: whatever was there is returned to the library
+   * rather than deleted, so swapping a hero shot never loses the old one. A
+   * gallery slot accumulates instead, because that is what a gallery is.
+   */
+  if (action === 'assign') {
+    const id = Number(form.get('id'));
+    const slotRaw = String(form.get('slot') ?? '').trim();
+    if (!Number.isFinite(id) || !isSlot(slotRaw)) return back('?e=bad');
+
+    const row = await DB
+      .prepare('SELECT id, key, kind, mime, bytes, width, height, alt_is, alt_en FROM media WHERE id = ?')
+      .bind(id)
+      .first<{
+        id: number; key: string; kind: string; mime: string; bytes: number;
+        width: number | null; height: number | null; alt_is: string | null; alt_en: string | null;
+      }>();
+    if (!row) return back('?e=bad');
+
+    const meta = slotMeta(slotRaw);
+
+    if (!meta?.multi) {
+      /* Return the current occupant to the library. */
+      await DB.prepare('UPDATE media SET slot = NULL, updated_at = unixepoch() WHERE slot = ? AND id != ?')
+        .bind(slotRaw, id).run();
+    }
+
+    /* If this file is already placed somewhere else, copy it rather than move
+       it — the person picking it for a second slot did not ask to empty the
+       first one. */
+    const alreadyPlaced = await DB
+      .prepare('SELECT slot FROM media WHERE id = ?').bind(id).first<{ slot: string | null }>();
+
+    if (alreadyPlaced?.slot && alreadyPlaced.slot !== slotRaw) {
+      await DB.prepare(
+        `INSERT INTO media (key, kind, mime, bytes, width, height, slot, alt_is, alt_en)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(row.key, row.kind, row.mime, row.bytes, row.width, row.height, slotRaw, row.alt_is, row.alt_en).run();
+    } else {
+      await DB.prepare('UPDATE media SET slot = ?, updated_at = unixepoch() WHERE id = ?')
+        .bind(slotRaw, id).run();
+    }
+
+    return back('?saved=1&slot=' + encodeURIComponent(slotRaw));
+  }
+
+  /* ---- take a file out of its slot, without deleting it ----------- */
+  if (action === 'unassign') {
+    const id = Number(form.get('id'));
+    if (!Number.isFinite(id)) return back('?e=bad');
+    await DB.prepare('UPDATE media SET slot = NULL, updated_at = unixepoch() WHERE id = ?').bind(id).run();
     return back('?saved=1');
   }
 
@@ -96,8 +158,19 @@ export const POST: APIRoute = async (context) => {
   const buf = await file.arrayBuffer();
   const key = await hashKey(buf);
 
+  /**
+   * The same file uploaded twice is not an error.
+   *
+   * It used to be refused outright, which meant one photograph could never
+   * appear in two places — and the obvious thing somebody wants is the same
+   * hero shot on the phone slot as well as the desktop one. The bytes are
+   * content-addressed so there is still only one object in KV; what is created
+   * is a second ROW pointing at it, which is exactly what a second placement
+   * is. The delete path already refuses to drop the object while another row
+   * references the key.
+   */
   const existing = await DB.prepare('SELECT id FROM media WHERE key = ?').bind(key).first<{ id: number }>();
-  if (existing) return back('?e=dupe');
+  if (existing) return back('?e=dupe&have=' + existing.id);
 
   await MEDIA.put(key, buf, { metadata: { mime: file.type } });
 

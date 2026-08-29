@@ -42,7 +42,20 @@ export interface MediaRow {
  * admin silently produces a slot nothing renders, and no way to tell that from
  * a slot that is simply empty.
  */
-export const SLOTS: { key: string; label: string; ratio: string; kinds: MediaKind[] }[] = [
+export interface Slot {
+  key: string;
+  label: string;
+  /** Where it shows up, so the admin does not have to guess from the name. */
+  where: string;
+  ratio: string;
+  kinds: MediaKind[];
+  /** A gallery holds many; every other slot holds one. */
+  multi?: boolean;
+  /** What to photograph, shown on the empty plate. */
+  brief?: string;
+}
+
+export const SLOTS: Slot[] = [
   /**
    * The hero is TWO slots, not one image scaled.
    *
@@ -52,29 +65,40 @@ export const SLOTS: { key: string; label: string; ratio: string; kinds: MediaKin
    * is a detail of it. Those are different photographs, so they are different
    * slots and the page picks between them with a media query.
    */
-  { key: 'hero',        label: 'Home — hero (desktop)', ratio: '16 / 9', kinds: ['image', 'video'] },
-  { key: 'hero-mobile', label: 'Home — hero (phone)',  ratio: '4 / 5',  kinds: ['image', 'video'] },
-  { key: 'home-label', label: 'Home — care label',        ratio: '1 / 1',  kinds: ['image'] },
-  { key: 'home-fibre', label: 'Home — pile close-up',    ratio: '1 / 1',  kinds: ['image'] },
-  { key: 'home-1',     label: 'Home — plate 1',          ratio: '4 / 5',  kinds: ['image'] },
-  { key: 'home-2',     label: 'Home — plate 2',          ratio: '4 / 5',  kinds: ['image'] },
-  { key: 'home-3',     label: 'Home — plate 3',          ratio: '4 / 5',  kinds: ['image'] },
-  { key: 'process-1',  label: 'Process — step 1',           ratio: '4 / 5',  kinds: ['image'] },
-  { key: 'process-2',  label: 'Process — step 2',           ratio: '4 / 5',  kinds: ['image'] },
-  { key: 'process-3',  label: 'Process — step 3',           ratio: '4 / 5',  kinds: ['image'] },
-  { key: 'process-4',  label: 'Process — step 4',           ratio: '4 / 5',  kinds: ['image'] },
-  { key: 'gallery',    label: 'Our work — gallery',   ratio: '4 / 5',  kinds: ['image', 'video'] },
-  { key: 'sofa',       label: 'Sofa cleaning',               ratio: '3 / 2',  kinds: ['image'] },
-  { key: 'rug',        label: 'Rug cleaning',              ratio: '3 / 2',  kinds: ['image'] },
-  { key: 'carpet',     label: 'Carpet cleaning',          ratio: '3 / 2',  kinds: ['image'] },
-  { key: 'stains',     label: 'Stains and odour',            ratio: '3 / 2',  kinds: ['image'] },
-  { key: 'about',      label: 'About',                   ratio: '3 / 2',  kinds: ['image'] },
+  { key: 'hero',        label: 'Hero — desktop', where: 'Home, top of the page', ratio: '16 / 9', kinds: ['image', 'video'],
+    brief: 'Wide room shot. The sofa or rug is the subject; leave space on the left for the headline.' },
+  { key: 'hero-mobile', label: 'Hero — phone',   where: 'Home, top of the page on a phone', ratio: '4 / 5', kinds: ['image', 'video'],
+    brief: 'Upright version of the same scene. Closer in — a detail, not the whole room.' },
+
+  { key: 'gallery',     label: 'Before & after', where: 'Home and the Before & after page', ratio: '4 / 3', kinds: ['image', 'video'], multi: true,
+    brief: 'Pairs. Same frame, same light, same angle — tag one Before and the next After.' },
+
+  { key: 'sofa',   label: 'Sofa cleaning',   where: 'Sofa cleaning page', ratio: '3 / 2', kinds: ['image'],
+    brief: 'Upholstery being worked on, or a finished sofa in good light.' },
+  { key: 'rug',    label: 'Rug cleaning',    where: 'Rug cleaning page', ratio: '3 / 2', kinds: ['image'],
+    brief: 'A rug mid-clean or laid out finished.' },
+  { key: 'carpet', label: 'Carpet cleaning', where: 'Carpet cleaning page', ratio: '3 / 2', kinds: ['image'],
+    brief: 'Fitted carpet, ideally showing the cleaned strip against the rest.' },
+  { key: 'stains', label: 'Stains & odour',  where: 'Stains and odour page', ratio: '3 / 2', kinds: ['image'],
+    brief: 'A stain close up, or the same spot after treatment.' },
+
+  { key: 'process-1', label: 'Step 1 — photographs', where: 'How it works', ratio: '4 / 5', kinds: ['image'],
+    brief: 'A phone photographing a sofa, or a care label under a cushion.' },
+  { key: 'process-2', label: 'Step 2 — assessment',  where: 'How it works', ratio: '4 / 5', kinds: ['image'],
+    brief: 'Hands on the fibre, or a colourfastness test on a hidden panel.' },
+  { key: 'process-3', label: 'Step 3 — the clean',   where: 'How it works', ratio: '4 / 5', kinds: ['image'],
+    brief: 'The extraction head mid-pass. Show the machine working.' },
+  { key: 'process-4', label: 'Step 4 — before we go', where: 'How it works', ratio: '4 / 5', kinds: ['image'],
+    brief: 'The finished piece, drying, room tidy.' },
+
+  { key: 'about', label: 'About us', where: 'About page', ratio: '3 / 2', kinds: ['image'],
+    brief: 'The people or the van. A face does more here than equipment.' },
 ];
 
 export type SlotKey = string;
 
 export const isSlot = (v: string): v is SlotKey => SLOTS.some((s) => s.key === v);
-export const slotMeta = (v: string) => SLOTS.find((s) => s.key === v);
+export const slotMeta = (v: string): Slot | undefined => SLOTS.find((s) => s.key === v);
 
 /** 25 MB is the KV value ceiling. Refused before upload, not after. */
 export const MAX_BYTES = 25 * 1024 * 1024;

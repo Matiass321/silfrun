@@ -39,7 +39,7 @@ let proof: MediaRow[] = [];
   if (DB) {
     try {
       [media, proof] = await Promise.all([
-        slotMap(DB, ['hero', 'hero-mobile', 'home-fibre', 'sofa', 'rug', 'carpet', 'stains']),
+        slotMap(DB, ['hero', 'hero-mobile', 'sofa', 'rug', 'carpet', 'stains']),
         bySlot(DB, 'gallery'),
       ]);
     } catch { /* every slot falls back to its marked plate */ }
