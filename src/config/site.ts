@@ -105,10 +105,16 @@ export const SITE = {
     whatsapp: '3547713011',
 
     /**
-     * Facebook page username for m.me, without the domain — the part after
-     * facebook.com/. Found under Page settings, not the numeric page id.
+     * The Facebook page for m.me — a username, or the numeric id when the page
+     * has no username set.
+     *
+     * This page has none, so it is the id from its profile.php URL. Worth
+     * knowing that a wrong value here fails SILENTLY in the worst way: m.me
+     * answers 200 with no redirect for a username nobody owns, so the button
+     * works, opens Messenger, and goes nowhere — or worse, to whoever does own
+     * the name. 'silfrun' was somebody else's.
      */
-    messenger: 'silfrun',
+    messenger: '61593713613584',
   },
 
   /**
@@ -144,7 +150,7 @@ export const SITE = {
 
   social: {
     instagram: TODO(''),
-    facebook: TODO(''),
+    facebook: 'https://www.facebook.com/profile.php?id=61593713613584',
     googleBusinessProfile: TODO(''),
   },
 
@@ -258,10 +264,22 @@ export function whatsappUrl(prefill?: string): string | null {
 export function messengerUrl(): string | null {
   const handle = SITE.contact.messenger;
   if (isPlaceholder(handle)) return null;
-  const clean = String(handle)
+  const raw = String(handle).trim();
+
+  /**
+   * A page with no username is copied out of the address bar as
+   * facebook.com/profile.php?id=6159…, and stripping the domain off that
+   * leaves "profile.php?id=…" — which m.me does not understand. Pull the id
+   * out instead, so pasting the URL straight in works.
+   */
+  const byId = raw.match(/[?&]id=(\d+)/);
+  if (byId) return `https://m.me/${byId[1]}`;
+
+  const clean = raw
     .replace(/^https?:\/\//, '')
     .replace(/^(?:www\.)?(?:facebook|fb)\.com\//, '')
     .replace(/^m\.me\//, '')
+    .replace(/[?#].*$/, '')
     .replace(/^\/+|\/+$/g, '');
   return clean ? `https://m.me/${clean}` : null;
 }
