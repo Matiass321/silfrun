@@ -1,6 +1,6 @@
 ---
 import { SITE, whatsappUrl, isPlaceholder } from '~/config/site';
-import { mediaUrl, type MediaRow } from '~/lib/media';
+import { mediaUrl, altFor, type MediaRow } from '~/lib/media';
 
 interface Props {
   hero?: MediaRow;
@@ -13,194 +13,202 @@ const { hero, heroMobile, status } = Astro.props;
 
 const wa = whatsappUrl('Halló Silfrun. Hvenær opnið þið?');
 const phone = isPlaceholder(SITE.contact.phone) ? null : SITE.contact.phone;
+const email = isPlaceholder(SITE.contact.email) ? null : SITE.contact.email;
 
 const both = hero && heroMobile;
 const only = hero ?? heroMobile;
+const alt = altFor(only, 'is');
 ---
 
 <div class="cs">
-  {/* The photograph, full bleed, unfiltered — same treatment as the site it
-      is standing in for. */}
-  {only && (
-    <div class="cs__media" aria-hidden="true">
-      {both ? (
-        <picture>
-          <source media="(min-width: 48rem)" srcset={mediaUrl(hero!.key)} />
-          <img src={mediaUrl(heroMobile!.key)} alt="" fetchpriority="high" decoding="async" />
-        </picture>
-      ) : (
-        <img src={mediaUrl(only.key)} alt="" fetchpriority="high" decoding="async" />
-      )}
-    </div>
-  )}
+  {/*
+    A split, not an overlay.
 
-  <main class="cs__inner">
-    <div class="cs__brand">
+    Text laid over a photograph either needs a scrim — which dulls the one
+    asset the page has — or it fights whatever happens to be behind it. Here
+    the copy has its own ground and the photograph is left completely alone:
+    no gradient, no wash, no grain. It also means the sofa stays the subject
+    instead of being something the headline sits on top of.
+  */}
+  <div class="cs__pane">
+    <header class="cs__brand" style="--i: 0">
       <svg class="cs__mark" viewBox="0 0 48 64" fill="none" aria-hidden="true">
         <path d="M24 2 Q16 17 6 32 Q16 47 24 62 Z" fill="currentColor" opacity=".14" />
         <path d="M24 2 Q32 17 42 32 Q32 47 24 62 Q16 47 6 32 Q16 17 24 2 Z"
-              stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+              stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
       </svg>
       <span class="cs__word">{SITE.brand}</span>
-    </div>
+    </header>
 
-    <div class="cs__copy">
-      <p class="cs__eyebrow">Opnum fljótlega</p>
+    <main class="cs__main">
+      <p class="cs__eyebrow" style="--i: 1">Opnum fljótlega</p>
 
-      <h1 class="cs__title">Sófar og teppi,<br />hreinsuð heima.</h1>
+      <h1 class="cs__title" style="--i: 2">Sófar og teppi,<br />hreinsuð heima.</h1>
 
-      <p class="cs__lead">
-        Sérhæfð hreinsun á sófum, teppum og gólfteppum á höfuðborgarsvæðinu.
-        Við prófum efnið áður en nokkuð snertir það.
+      <p class="cs__lead" style="--i: 3">
+        Sérhæfð hreinsun á höfuðborgarsvæðinu.
       </p>
 
-      <p class="cs__lead cs__lead--en" lang="en">
-        Specialist sofa, rug and carpet cleaning in the Reykjavík area.
-        Opening soon.
-      </p>
-    </div>
-
-    {/* ---- the signup ---- */}
-    <section class="cs__join" id="join">
-      <h2 class="cs__joinh">
-        Sendu okkur netfangið þitt og við látum vita þegar við opnum.
-      </h2>
-
-      <form class="cs__form" method="POST" action="/api/subscribe">
+      {/* One line, one field. Everything the page had to say is above it. */}
+      <form class="cs__form" method="POST" action="/api/subscribe" id="join" style="--i: 4">
         <input type="hidden" name="locale" value="is" />
 
-        <label class="cs__field">
-          <span class="visually-hidden">Netfang</span>
+        <label class="cs__label" for="cs-email">
+          Skildu eftir netfang og við látum vita þegar við opnum.
+        </label>
+
+        <div class="cs__row">
           <input
             class="cs__input"
+            id="cs-email"
             type="email"
             name="email"
             inputmode="email"
             autocomplete="email"
-            placeholder="netfangið þitt"
+            placeholder="netfang"
             required
-            aria-describedby="join-note"
           />
-        </label>
+          <button class="cs__go" type="submit" aria-label="Láta mig vita">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 12h15M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.6"
+                    stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
 
-        <button class="cs__submit" type="submit">Láta mig vita</button>
+        {status === 'ok' && <p class="cs__msg cs__msg--ok" role="status">Takk. Við sendum línu þegar við opnum.</p>}
+        {status === 'bad' && <p class="cs__msg cs__msg--bad" role="status">Netfangið leit ekki rétt út.</p>}
+        {status === 'err' && <p class="cs__msg cs__msg--bad" role="status">Eitthvað fór úrskeiðis. Reyndu aftur.</p>}
       </form>
+    </main>
 
-      {status === 'ok' && (
-        <p class="cs__msg cs__msg--ok" role="status">
-          Takk. Við sendum línu um leið og við opnum.
+    <footer class="cs__foot" style="--i: 5">
+      {(wa || phone) && (
+        <p class="cs__now">
+          {wa && <a class="cs__link" href={wa} target="_blank" rel="noopener nofollow">WhatsApp</a>}
+          {wa && phone && <span class="cs__dot" aria-hidden="true">·</span>}
+          {phone && <a class="cs__link" href={`tel:${SITE.contact.phoneE164}`}>{phone}</a>}
+          {email && <span class="cs__dot" aria-hidden="true">·</span>}
+          {/*
+            email_off stops Cloudflare rewriting the address into a
+            [email protected] placeholder. That rewrite relies on a decoder
+            script to put the address back, and this site sends
+            script-src 'none' — so the placeholder was permanent and the link
+            was dead for every visitor.
+          */}
+          {email && (
+            <Fragment set:html={`<!--email_off--><a class="cs__link" href="mailto:${email}">${email}</a><!--/email_off-->`} />
+          )}
         </p>
       )}
-      {status === 'bad' && (
-        <p class="cs__msg cs__msg--bad" role="status">
-          Netfangið leit ekki rétt út. Reyndu aftur.
-        </p>
-      )}
-      {status === 'err' && (
-        <p class="cs__msg cs__msg--bad" role="status">
-          Eitthvað fór úrskeiðis. Reyndu aftur eftir smá stund.
-        </p>
-      )}
 
-      <p class="cs__note" id="join-note">
-        Aðeins eitt bréf þegar við opnum. Engin auglýsingapóstur, engin
-        miðlun til annarra.
-      </p>
-    </section>
-
-    {(wa || phone) && (
-      <p class="cs__early">
-        Liggur á?
-        {wa && <> <a class="cs__link" href={wa} target="_blank" rel="noopener nofollow">Sendu WhatsApp-skilaboð</a></>}
-        {wa && phone && <> eða </>}
-        {phone && <a class="cs__link" href={`tel:${SITE.contact.phoneE164}`}>hringdu í {phone}</a>}.
-      </p>
-    )}
-
-    <footer class="cs__foot">
-      <span>{SITE.legalName} · kt. {SITE.kennitala}</span>
-      {!isPlaceholder(SITE.contact.email) && (
-        <a class="cs__link" href={`mailto:${SITE.contact.email}`}>{SITE.contact.email}</a>
-      )}
+      <p class="cs__legal">{SITE.legalName} · kt. {SITE.kennitala}</p>
     </footer>
-  </main>
+  </div>
+
+  {only && (
+    <div class="cs__shot">
+      {both ? (
+        <picture>
+          <source media="(min-width: 60rem)" srcset={mediaUrl(heroMobile!.key)} />
+          <img src={mediaUrl(hero!.key)} alt={alt} fetchpriority="high" decoding="async" />
+        </picture>
+      ) : (
+        <img src={mediaUrl(only.key)} alt={alt} fetchpriority="high" decoding="async" />
+      )}
+    </div>
+  )}
 </div>
 
 <style>
   /**
-   * The holding page.
-   *
-   * One screen, one photograph, one thing to do. It is standing in for the
-   * whole site, so it carries the site's own materials — the obsidian ground,
-   * the display face, the foil wordmark — rather than looking like a different
-   * company's placeholder.
+   * Phone: the photograph on top, the copy under it on its own ground.
+   * Desktop: two columns, copy left, photograph right, full height.
    */
   .cs {
-    position: relative;
     min-height: 100svh;
     display: flex;
+    flex-direction: column-reverse;
     background: var(--surface-page);
   }
 
-  .cs__media {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
+  /* The page is one screen. Anything that cannot fit scrolls inside the copy
+     column rather than pushing the photograph off the bottom of the window. */
+  @media (min-width: 60rem) {
+    .cs { height: 100svh; overflow: hidden; }
+    .cs__pane { overflow-y: auto; }
   }
 
-  .cs__media :global(picture) { display: block; width: 100%; height: 100%; }
+  /**
+   * 34svh, so the field clears the fold.
+   *
+   * At 42svh the strip pushed the whole page to 990px on an 844px screen and
+   * the one thing the page is for — the email field — sat below the fold. The
+   * photograph is establishing the business, not carrying the page; it can
+   * give up the height.
+   */
+  .cs__shot { position: relative; height: 32svh; overflow: hidden; }
+  .cs__shot :global(picture) { display: block; width: 100%; height: 100%; }
 
-  .cs__media img {
+  .cs__shot img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: 50% 42%;
+    object-position: 50% 45%;
     display: block;
   }
 
-  .cs__inner {
-    position: relative;
-    z-index: 1;
+  .cs__pane {
     display: flex;
     flex-direction: column;
-    gap: var(--space-500);
-    width: 100%;
-    max-width: 34rem;
-    padding: var(--space-600) var(--space-400) var(--space-500);
-    margin-inline-end: auto;
-    justify-content: center;
+    gap: var(--space-400);
+    padding: var(--space-500) var(--space-400) var(--space-300);
+    flex: 1;
   }
 
-  /* The copy sits on the photograph, so it carries its own legibility rather
-     than a wash over the picture. Same decision as the site's hero. */
-  .cs__inner > * {
-    text-shadow: 0 1px 2px rgba(7, 8, 10, .5), 0 2px 30px rgba(7, 8, 10, .4);
-  }
+  /* ---- brand ---- */
 
   .cs__brand { display: flex; align-items: center; gap: var(--space-200); }
-  .cs__mark { width: 22px; height: 30px; color: var(--text-primary); flex: none; }
+  .cs__mark { width: 18px; height: 24px; color: var(--text-secondary); flex: none; }
 
   .cs__word {
     font-family: var(--font-display);
-    font-size: 20px;
-    letter-spacing: 0.34em;
+    font-size: 15px;
+    letter-spacing: 0.36em;
     text-transform: uppercase;
     color: var(--text-primary);
   }
 
-  .cs__copy { display: flex; flex-direction: column; gap: var(--space-250); }
+  /* ---- copy ---- */
 
-  .cs__eyebrow {
-    font: var(--type-eyebrow);
-    letter-spacing: var(--tracking-eyebrow);
-    text-transform: uppercase;
-    color: var(--text-accent);
+  .cs__main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-300);
+    margin-block: auto;
   }
 
+  .cs__eyebrow {
+    font: var(--type-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /**
+   * Sized to the column it lives in, not to the window.
+   *
+   * 9vw is a full-width measurement, and this headline sits in a 33rem pane —
+   * at 1440 it resolved to 68px in a 432px measure, so "Sófar og teppi," broke
+   * mid-phrase and the manual break after it produced four ragged lines
+   * instead of the two the line was written as.
+   */
   .cs__title {
     font-family: var(--font-display);
-    font-size: clamp(2.25rem, 8vw, 3.5rem);
+    font-size: clamp(2.5rem, 5vw, 3.25rem);
     line-height: 1.04;
+    letter-spacing: -0.015em;
     color: var(--text-primary);
     text-wrap: balance;
   }
@@ -208,101 +216,149 @@ const only = hero ?? heroMobile;
   .cs__lead {
     font-size: var(--text-lg);
     color: var(--text-secondary);
-    max-width: 34ch;
+    max-width: 30ch;
   }
 
-  .cs__lead--en { font-size: var(--text-md); color: var(--text-muted); }
+  /* ---- the field ----
+   *
+   * A rule, not a box. Two grey rectangles side by side is the shape of every
+   * newsletter form on the internet; a single underlined line with the action
+   * sitting on the end of it reads as one gesture.
+   */
 
-  /* ---- signup ---- */
+  .cs__form { display: flex; flex-direction: column; gap: var(--space-200); margin-block-start: var(--space-300); }
 
-  .cs__join { display: flex; flex-direction: column; gap: var(--space-200); }
+  .cs__label { font-size: var(--text-sm); color: var(--text-muted); max-width: 34ch; }
 
-  .cs__joinh {
-    font-size: var(--text-md);
-    font-weight: 400;
-    color: var(--text-secondary);
-    max-width: 36ch;
+  .cs__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-200);
+    max-width: 26rem;
+    border-block-end: 1px solid var(--edge-control);
+    transition: border-color var(--dur-base) var(--ease-glide);
   }
 
-  .cs__form { display: flex; flex-wrap: wrap; gap: var(--space-150); }
-  .cs__field { flex: 1 1 14rem; min-width: 0; }
+  .cs__row:focus-within { border-block-end-color: var(--text-primary); }
 
   .cs__input {
-    width: 100%;
-    height: var(--control-h);
-    padding: 0 var(--pad-field-x);
-    background: rgba(11, 13, 15, .55);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid var(--edge-control);
-    border-radius: var(--radius-sm);
+    flex: 1;
+    min-width: 0;
+    height: 3.25rem;
+    padding: 0;
+    background: none;
+    border: 0;
     color: var(--text-primary);
-    /* 16px minimum: below it iOS Safari zooms the viewport on focus. */
+    /* 16px floor: below it iOS zooms the viewport when the field takes focus. */
     font-size: var(--text-md);
+    font-family: inherit;
   }
 
   .cs__input::placeholder { color: var(--text-muted); }
+  .cs__input:focus { outline: none; }
 
-  .cs__input:focus {
-    border-color: var(--edge-focus);
-    outline: 2px solid var(--focus-ring);
-    outline-offset: 1px;
-  }
-
-  .cs__submit {
-    height: var(--control-h);
-    padding-inline: var(--space-400);
-    border: 0;
-    border-radius: var(--radius-sm);
-    background: var(--btn-hero-bg);
-    color: var(--btn-hero-ink);
-    box-shadow: var(--shadow-100), var(--btn-hero-edge, none);
-    font: var(--type-eyebrow);
-    letter-spacing: var(--tracking-eyebrow);
-    text-transform: uppercase;
+  .cs__go {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--edge-control);
+    border-radius: 50%;
+    background: none;
+    color: var(--text-primary);
     cursor: pointer;
-    flex: 0 0 auto;
-    transition: filter var(--dur-fast) var(--ease-glide);
+    transition: background var(--dur-base) var(--ease-glide),
+                border-color var(--dur-base) var(--ease-glide),
+                transform var(--dur-base) var(--ease-glide);
   }
 
-  .cs__submit:hover { filter: brightness(1.08); }
-  .cs__submit:active { filter: brightness(.94); transform: translateY(1px); }
+  .cs__go svg { width: 18px; height: 18px; }
+
+  .cs__go:hover {
+    background: var(--text-primary);
+    border-color: var(--text-primary);
+    color: var(--surface-page);
+    transform: translateX(2px);
+  }
+
+  .cs__go:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
 
   .cs__msg { font-size: var(--text-sm); }
   .cs__msg--ok { color: var(--signal-positive); }
   .cs__msg--bad { color: var(--signal-negative); }
 
-  .cs__note { font-size: var(--text-xs); color: var(--text-muted); max-width: 40ch; }
+  /* ---- foot ---- */
 
-  /* ---- the rest ---- */
+  .cs__foot { display: flex; flex-direction: column; gap: var(--space-150); }
 
-  .cs__early { font-size: var(--text-sm); color: var(--text-secondary); }
+  .cs__now { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-150); font-size: var(--text-sm); }
+  .cs__dot { color: var(--text-muted); }
 
   .cs__link {
-    color: var(--text-primary);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    text-decoration-color: var(--edge-strong);
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color var(--dur-fast) var(--ease-glide);
   }
 
-  .cs__link:hover { text-decoration-color: currentColor; }
+  .cs__link:hover { color: var(--text-primary); }
 
-  .cs__foot {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-100) var(--space-300);
+  .cs__legal {
     font: var(--type-mono);
-    font-size: 11px;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
     color: var(--text-muted);
-    padding-block-start: var(--space-300);
-    border-block-start: 1px solid var(--edge-quiet);
   }
 
-  @media (min-width: 62rem) {
-    .cs__inner {
-      max-width: 42rem;
-      padding-inline: var(--space-1000) var(--space-600);
+  /* ---- desktop ---- */
+
+  @media (min-width: 60rem) {
+    .cs { flex-direction: row; }
+
+    .cs__pane {
+      flex: 0 0 auto;
+      width: min(44%, 33rem);
       gap: var(--space-600);
+      padding: var(--space-700, var(--space-600)) var(--space-600);
+      justify-content: space-between;
     }
+
+    .cs__shot { flex: 1; height: auto; }
+
+    /* The portrait frame is nearly square once it fills this column, and the
+       subject sits low in it — centring the crop lands on the wall above the
+       sofa, which reads as an empty black panel. */
+    .cs__shot img { object-position: 50% 68%; }
+  }
+
+  /**
+   * A short, staggered settle on load.
+   *
+   * Six elements, 70ms apart, 12px of travel. Enough to feel considered and
+   * not enough to make anybody wait — the whole sequence is over in under
+   * half a second, and nothing moves that the visitor might be reaching for.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    .cs__brand,
+    .cs__eyebrow,
+    .cs__title,
+    .cs__lead,
+    .cs__form,
+    .cs__foot {
+      animation: cs-in 620ms cubic-bezier(.22, .61, .36, 1) both;
+      animation-delay: calc(var(--i, 0) * 70ms);
+    }
+
+    .cs__shot { animation: cs-fade 900ms cubic-bezier(.22, .61, .36, 1) both; }
+  }
+
+  @keyframes cs-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  @keyframes cs-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
 </style>
