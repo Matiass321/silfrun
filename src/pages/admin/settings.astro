@@ -1,6 +1,7 @@
 ---
 import Admin from '~/layouts/Admin.astro';
 import { requireAdmin, env, EMAIL_KEY } from '~/lib/admin-guard';
+import { isComingSoon } from '~/lib/launch';
 import { getSettingOrNull } from '~/lib/auth';
 import { SITE, isPlaceholder, whatsappUrl } from '~/config/site';
 import { ADMIN_ICONS } from '~/data/admin-icons';
@@ -11,6 +12,10 @@ const gate = await requireAdmin(Astro);
 if (gate) return gate;
 
 const { DB, ADMIN_SESSION_SECRET, ADMIN_PASSWORD_HASH } = env(Astro);
+
+const closed = await isComingSoon(DB);
+const confirmingLaunch = Astro.url.searchParams.get('launch') === 'confirm';
+const launched = Astro.url.searchParams.get('launched');
 
 const saved = Astro.url.searchParams.get('saved') === '1';
 const err = Astro.url.searchParams.get('e');
@@ -69,6 +74,57 @@ const missing = checks.filter((c) => !c.ok).length;
 
 <Admin title="Settings">
   <div class="a-wrap se">
+    {launched === '1' && (
+      <p class="a-msg a-msg--ok">The site is open. Every page is live.</p>
+    )}
+    {launched === '0' && (
+      <p class="a-msg a-msg--ok">The holding page is back. Visitors see that and nothing else.</p>
+    )}
+
+    <section class="a-card lc">
+      <div class="a-row__top">
+        <h2 class="a-sec__h" style="margin:0">
+          {closed ? 'The site is not open yet' : 'The site is open'}
+        </h2>
+        <span class:list={['lc__pill', closed ? 'lc__pill--closed' : 'lc__pill--open']}>
+          {closed ? 'Coming soon' : 'Live'}
+        </span>
+      </div>
+
+      <p class="lc__body">
+        {closed
+          ? 'Visitors see the holding page and can leave an email address. Every other page redirects to it. The admin is unaffected.'
+          : 'Every page is reachable, and search engines are free to index them.'}
+      </p>
+
+      {confirmingLaunch ? (
+        <div class="lc__confirm">
+          <p class="lc__warn">
+            Opening makes the whole site public and lets search engines index it.
+            Any photo slot still empty will show a marked plate.
+          </p>
+          <div class="a-acts">
+            <form method="POST" action="/api/admin/launch">
+              <input type="hidden" name="state" value="open" />
+              <button class="a-btn a-btn--primary" type="submit">Yes, open the site</button>
+            </form>
+            <a class="a-btn a-btn--quiet" href="/admin/settings/">Not yet</a>
+          </div>
+        </div>
+      ) : (
+        <div class="a-acts">
+          {closed ? (
+            <a class="a-btn a-btn--primary" href="/admin/settings/?launch=confirm">Open the site</a>
+          ) : (
+            <form method="POST" action="/api/admin/launch">
+              <input type="hidden" name="state" value="closed" />
+              <button class="a-btn a-btn--quiet" type="submit">Put the holding page back</button>
+            </form>
+          )}
+        </div>
+      )}
+    </section>
+
     <header class="a-head">
       <div>
         <h1 class="a-h1">Settings</h1>
@@ -206,4 +262,22 @@ const missing = checks.filter((c) => !c.ok).length;
   .se__used { font-size: 12.5px; color: var(--a-ink-3); }
 
   .se__out { margin-top: 22px; }
+
+  .lc { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .lc__body { font-size: 13.5px; color: var(--a-ink-2); line-height: 1.55; }
+
+  .lc__pill {
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .03em;
+    white-space: nowrap;
+  }
+
+  .lc__pill--closed { background: var(--a-warn-soft); color: var(--a-warn); }
+  .lc__pill--open   { background: var(--a-good-soft); color: var(--a-good); }
+
+  .lc__confirm { display: flex; flex-direction: column; gap: 10px; }
+  .lc__warn { font-size: 13.5px; color: var(--a-bad); line-height: 1.55; }
 </style>

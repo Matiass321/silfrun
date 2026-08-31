@@ -5,6 +5,15 @@ import '@fontsource-variable/archivo';
 
 import { LOCALES, SITE } from '~/config/site';
 
+import '~/styles/tokens.css';
+import '~/styles/base.css';
+import '@fontsource/ibm-plex-mono/400.css';
+
+import ComingSoon from '~/components/ComingSoon.astro';
+import { env } from '~/lib/admin-guard';
+import { isComingSoon } from '~/lib/launch';
+import { slotMap, type MediaRow } from '~/lib/media';
+
 /**
  * Root entry point.
  *
@@ -30,9 +39,65 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 const target = `${base}/${SITE.defaultLocale}/`;
 const LABEL: Record<string, string> = { is: 'Íslenska', en: 'English' };
+
+/**
+ * The root is two pages.
+ *
+ * While the business is not open it is the holding page; once the switch is
+ * flipped in the admin it goes back to being the language chooser it has
+ * always been, and every other route unlocks with it. Two states in one file
+ * rather than a redirect, so there is never a moment where somebody sees one
+ * and lands on the other.
+ */
+export const prerender = false;
+
+const { DB } = env(Astro);
+const closed = await isComingSoon(DB);
+
+let media: Record<string, MediaRow | undefined> = {};
+if (closed && DB) {
+  try { media = await slotMap(DB, ['hero', 'hero-mobile']); } catch { /* the plate is a fine fallback */ }
+}
+
+const signupStatus = Astro.url.searchParams.get('s');
 ---
 
 <!doctype html>
+{closed ? (
+  <html lang="is">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+      <title>Silfrun — opnum fljótlega</title>
+      <meta
+        name="description"
+        content="Sérhæfð hreinsun á sófum, teppum og gólfteppum á höfuðborgarsvæðinu. Opnum fljótlega."
+      />
+
+      <meta name="theme-color" content="#0B0D0F" />
+      <meta name="color-scheme" content="dark" />
+      <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+      {/*
+        noindex while it is a holding page. An "opening soon" snippet is
+        exactly what would get cached as the description of the business, and
+        it would outlive the holding page by weeks. follow, so the crawler
+        still walks whatever it finds once this opens.
+      */}
+      <meta name="robots" content="noindex, follow" />
+    </head>
+
+    <body class="silfrun-grain">
+      <ComingSoon hero={media['hero']} heroMobile={media['hero-mobile']} status={signupStatus} />
+
+      {/* Counted like any other page: how many people arrived before opening
+          is the entire reason for collecting an address from them. */}
+      <img src="/px.gif?p=%2F" alt="" width="1" height="1"
+           fetchpriority="low" aria-hidden="true" style="position:absolute" />
+    </body>
+  </html>
+) : (
 <html lang={SITE.defaultLocale}>
   <head>
     <meta charset="utf-8" />
@@ -184,3 +249,4 @@ const LABEL: Record<string, string> = { is: 'Íslenska', en: 'English' };
     </main>
   </body>
 </html>
+)}

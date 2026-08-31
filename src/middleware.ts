@@ -1,4 +1,5 @@
 import { defineMiddleware } from 'astro:middleware';
+import { isComingSoon, isOpenPath } from './lib/launch';
 
 /**
  * Security headers for on-demand responses.
@@ -66,6 +67,27 @@ const BASE: Record<string, string> = {
 const PRIVATE = [/^\/admin(\/|$)/, /^\/api(\/|$)/, /^\/booking-received(\/|$)/];
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  /**
+   * Before launch, the site is one page.
+   *
+   * A redirect rather than a password: the point is to look finished to a
+   * customer who arrives early, not to keep anybody out. Anyone who does find
+   * a deeper URL — from a search result, or a link sent before launch — lands
+   * on the holding page and can leave an address, which is better than a 404.
+   *
+   * 302, not 301: this is temporary by definition, and a permanent redirect
+   * would be cached by browsers long after the site opened.
+   */
+  {
+    const url = new URL(context.request.url);
+    if (!isOpenPath(url.pathname)) {
+      const runtime = (context.locals as { runtime?: { env?: { DB?: D1Database } } })?.runtime?.env;
+      if (await isComingSoon(runtime?.DB)) {
+        return context.redirect('/', 302);
+      }
+    }
+  }
+
   const response = await next();
 
   /* A redirect's body is never rendered, but its headers still travel. */

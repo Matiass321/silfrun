@@ -1,0 +1,308 @@
+---
+import { SITE, whatsappUrl, isPlaceholder } from '~/config/site';
+import { mediaUrl, type MediaRow } from '~/lib/media';
+
+interface Props {
+  hero?: MediaRow;
+  heroMobile?: MediaRow;
+  /** 'ok' | 'bad' | 'err' — the result of a signup, read back from the URL. */
+  status?: string | null;
+}
+
+const { hero, heroMobile, status } = Astro.props;
+
+const wa = whatsappUrl('Halló Silfrun. Hvenær opnið þið?');
+const phone = isPlaceholder(SITE.contact.phone) ? null : SITE.contact.phone;
+
+const both = hero && heroMobile;
+const only = hero ?? heroMobile;
+---
+
+<div class="cs">
+  {/* The photograph, full bleed, unfiltered — same treatment as the site it
+      is standing in for. */}
+  {only && (
+    <div class="cs__media" aria-hidden="true">
+      {both ? (
+        <picture>
+          <source media="(min-width: 48rem)" srcset={mediaUrl(hero!.key)} />
+          <img src={mediaUrl(heroMobile!.key)} alt="" fetchpriority="high" decoding="async" />
+        </picture>
+      ) : (
+        <img src={mediaUrl(only.key)} alt="" fetchpriority="high" decoding="async" />
+      )}
+    </div>
+  )}
+
+  <main class="cs__inner">
+    <div class="cs__brand">
+      <svg class="cs__mark" viewBox="0 0 48 64" fill="none" aria-hidden="true">
+        <path d="M24 2 Q16 17 6 32 Q16 47 24 62 Z" fill="currentColor" opacity=".14" />
+        <path d="M24 2 Q32 17 42 32 Q32 47 24 62 Q16 47 6 32 Q16 17 24 2 Z"
+              stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+      </svg>
+      <span class="cs__word">{SITE.brand}</span>
+    </div>
+
+    <div class="cs__copy">
+      <p class="cs__eyebrow">Opnum fljótlega</p>
+
+      <h1 class="cs__title">Sófar og teppi,<br />hreinsuð heima.</h1>
+
+      <p class="cs__lead">
+        Sérhæfð hreinsun á sófum, teppum og gólfteppum á höfuðborgarsvæðinu.
+        Við prófum efnið áður en nokkuð snertir það.
+      </p>
+
+      <p class="cs__lead cs__lead--en" lang="en">
+        Specialist sofa, rug and carpet cleaning in the Reykjavík area.
+        Opening soon.
+      </p>
+    </div>
+
+    {/* ---- the signup ---- */}
+    <section class="cs__join" id="join">
+      <h2 class="cs__joinh">
+        Sendu okkur netfangið þitt og við látum vita þegar við opnum.
+      </h2>
+
+      <form class="cs__form" method="POST" action="/api/subscribe">
+        <input type="hidden" name="locale" value="is" />
+
+        <label class="cs__field">
+          <span class="visually-hidden">Netfang</span>
+          <input
+            class="cs__input"
+            type="email"
+            name="email"
+            inputmode="email"
+            autocomplete="email"
+            placeholder="netfangið þitt"
+            required
+            aria-describedby="join-note"
+          />
+        </label>
+
+        <button class="cs__submit" type="submit">Láta mig vita</button>
+      </form>
+
+      {status === 'ok' && (
+        <p class="cs__msg cs__msg--ok" role="status">
+          Takk. Við sendum línu um leið og við opnum.
+        </p>
+      )}
+      {status === 'bad' && (
+        <p class="cs__msg cs__msg--bad" role="status">
+          Netfangið leit ekki rétt út. Reyndu aftur.
+        </p>
+      )}
+      {status === 'err' && (
+        <p class="cs__msg cs__msg--bad" role="status">
+          Eitthvað fór úrskeiðis. Reyndu aftur eftir smá stund.
+        </p>
+      )}
+
+      <p class="cs__note" id="join-note">
+        Aðeins eitt bréf þegar við opnum. Engin auglýsingapóstur, engin
+        miðlun til annarra.
+      </p>
+    </section>
+
+    {(wa || phone) && (
+      <p class="cs__early">
+        Liggur á?
+        {wa && <> <a class="cs__link" href={wa} target="_blank" rel="noopener nofollow">Sendu WhatsApp-skilaboð</a></>}
+        {wa && phone && <> eða </>}
+        {phone && <a class="cs__link" href={`tel:${SITE.contact.phoneE164}`}>hringdu í {phone}</a>}.
+      </p>
+    )}
+
+    <footer class="cs__foot">
+      <span>{SITE.legalName} · kt. {SITE.kennitala}</span>
+      {!isPlaceholder(SITE.contact.email) && (
+        <a class="cs__link" href={`mailto:${SITE.contact.email}`}>{SITE.contact.email}</a>
+      )}
+    </footer>
+  </main>
+</div>
+
+<style>
+  /**
+   * The holding page.
+   *
+   * One screen, one photograph, one thing to do. It is standing in for the
+   * whole site, so it carries the site's own materials — the obsidian ground,
+   * the display face, the foil wordmark — rather than looking like a different
+   * company's placeholder.
+   */
+  .cs {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    background: var(--surface-page);
+  }
+
+  .cs__media {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .cs__media :global(picture) { display: block; width: 100%; height: 100%; }
+
+  .cs__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 42%;
+    display: block;
+  }
+
+  .cs__inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-500);
+    width: 100%;
+    max-width: 34rem;
+    padding: var(--space-600) var(--space-400) var(--space-500);
+    margin-inline-end: auto;
+    justify-content: center;
+  }
+
+  /* The copy sits on the photograph, so it carries its own legibility rather
+     than a wash over the picture. Same decision as the site's hero. */
+  .cs__inner > * {
+    text-shadow: 0 1px 2px rgba(7, 8, 10, .5), 0 2px 30px rgba(7, 8, 10, .4);
+  }
+
+  .cs__brand { display: flex; align-items: center; gap: var(--space-200); }
+  .cs__mark { width: 22px; height: 30px; color: var(--text-primary); flex: none; }
+
+  .cs__word {
+    font-family: var(--font-display);
+    font-size: 20px;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+  }
+
+  .cs__copy { display: flex; flex-direction: column; gap: var(--space-250); }
+
+  .cs__eyebrow {
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--text-accent);
+  }
+
+  .cs__title {
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 8vw, 3.5rem);
+    line-height: 1.04;
+    color: var(--text-primary);
+    text-wrap: balance;
+  }
+
+  .cs__lead {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+    max-width: 34ch;
+  }
+
+  .cs__lead--en { font-size: var(--text-md); color: var(--text-muted); }
+
+  /* ---- signup ---- */
+
+  .cs__join { display: flex; flex-direction: column; gap: var(--space-200); }
+
+  .cs__joinh {
+    font-size: var(--text-md);
+    font-weight: 400;
+    color: var(--text-secondary);
+    max-width: 36ch;
+  }
+
+  .cs__form { display: flex; flex-wrap: wrap; gap: var(--space-150); }
+  .cs__field { flex: 1 1 14rem; min-width: 0; }
+
+  .cs__input {
+    width: 100%;
+    height: var(--control-h);
+    padding: 0 var(--pad-field-x);
+    background: rgba(11, 13, 15, .55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--edge-control);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    /* 16px minimum: below it iOS Safari zooms the viewport on focus. */
+    font-size: var(--text-md);
+  }
+
+  .cs__input::placeholder { color: var(--text-muted); }
+
+  .cs__input:focus {
+    border-color: var(--edge-focus);
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+  }
+
+  .cs__submit {
+    height: var(--control-h);
+    padding-inline: var(--space-400);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--btn-hero-bg);
+    color: var(--btn-hero-ink);
+    box-shadow: var(--shadow-100), var(--btn-hero-edge, none);
+    font: var(--type-eyebrow);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    cursor: pointer;
+    flex: 0 0 auto;
+    transition: filter var(--dur-fast) var(--ease-glide);
+  }
+
+  .cs__submit:hover { filter: brightness(1.08); }
+  .cs__submit:active { filter: brightness(.94); transform: translateY(1px); }
+
+  .cs__msg { font-size: var(--text-sm); }
+  .cs__msg--ok { color: var(--signal-positive); }
+  .cs__msg--bad { color: var(--signal-negative); }
+
+  .cs__note { font-size: var(--text-xs); color: var(--text-muted); max-width: 40ch; }
+
+  /* ---- the rest ---- */
+
+  .cs__early { font-size: var(--text-sm); color: var(--text-secondary); }
+
+  .cs__link {
+    color: var(--text-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--edge-strong);
+  }
+
+  .cs__link:hover { text-decoration-color: currentColor; }
+
+  .cs__foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-100) var(--space-300);
+    font: var(--type-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    padding-block-start: var(--space-300);
+    border-block-start: 1px solid var(--edge-quiet);
+  }
+
+  @media (min-width: 62rem) {
+    .cs__inner {
+      max-width: 42rem;
+      padding-inline: var(--space-1000) var(--space-600);
+      gap: var(--space-600);
+    }
+  }
+</style>
